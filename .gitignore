@@ -1,3 +1,6 @@
 Datos\
 Resultados_Analisis\
 Resultados_Simulador\
+node_modules\
+.venv\
+.next\
