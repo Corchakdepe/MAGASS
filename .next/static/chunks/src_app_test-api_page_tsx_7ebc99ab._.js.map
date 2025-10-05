@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/ageudepetris/Desktop/TFG%20project/src/app/test-api/page.tsx"],"sourcesContent":["'use client';\nimport { useEffect, useState } from 'react';\n\nexport default function TestAPI() {\n  const [data, setData] = useState<any>(null);\n\n  useEffect(() => {\n    fetch(\"http://127.0.0.1:8000/zones/\")\n      .then(res => res.json())\n      .then(json => {\n        console.log(\"API Response:\", json);\n        setData(json);\n      })\n      .catch(err => console.error(\"Error fetching:\", err));\n  }, []);\n\n  return (\n    <div className=\"p-6\">\n      <h1 className=\"text-xl font-bold\">Test API</h1>\n      <pre>{JSON.stringify(data, null, 2)}</pre>\n    </div>\n  );\n}\n"],"names":[],"mappings":";;;;AACA;;;AADA;;AAGe,SAAS;;IACtB,MAAM,CAAC,MAAM,QAAQ,GAAG,CAAA,GAAA,6JAAA,CAAA,WAAQ,AAAD,EAAO;IAEtC,CAAA,GAAA,6JAAA,CAAA,YAAS,AAAD;6BAAE;YACR,MAAM,gCACH,IAAI;qCAAC,CAAA,MAAO,IAAI,IAAI;oCACpB,IAAI;qCAAC,CAAA;oBACJ,QAAQ,GAAG,CAAC,iBAAiB;oBAC7B,QAAQ;gBACV;oCACC,KAAK;qCAAC,CAAA,MAAO,QAAQ,KAAK,CAAC,mBAAmB;;QACnD;4BAAG,EAAE;IAEL,qBACE,6LAAC;QAAI,WAAU;;0BACb,6LAAC;gBAAG,WAAU;0BAAoB;;;;;;0BAClC,6LAAC;0BAAK,KAAK,SAAS,CAAC,MAAM,MAAM;;;;;;;;;;;;AAGvC;GAnBwB;KAAA","debugId":null}}]
+}

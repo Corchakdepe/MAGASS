@@ -1,0 +1,27 @@
+# Base health
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+
+# Optional hello route (add if implemented as /hello/{name})
+GET http://127.0.0.1:8000/hello/User
+Accept: application/json
+
+###
+
+# Simulate with defaults
+GET http://127.0.0.1:8000/exe/simular?rutaEntrada=./uploads/&rutaSalida=./results/&comando_stress=0&tipoStress=0&coste_andar=1&delta=15
+Accept: application/json
+
+###
+
+# Analyze (template) — fill entrada/salida and any args; unused fields can be omitted
+GET http://127.0.0.1:8000/exe/analizar?entradaFicheros=./results&salidaFicheros=./Resultados_Analisis/Marzo_Reales&seleccion_agregacion=-1&deltaMedia=&deltaAcumulada=&graf_barras_est_med=&graf_barras_est_acum=&graf_barras_dia=&graf_linea_comp_est=&graf_linea_comp_mats=&mapa_densidad=0&video_densidad=&mapa_voronoi=&mapa_circulo=&mapa_desplazamientos=&filtrado_EstValor=&filtrado_EstValorDias=&filtrado_Horas=&filtrado_PorcentajeEstaciones=
+Accept: application/json
+
+###
+
+# Zones KPIs
+GET http://127.0.0.1:8000/zones
+Accept: application/json
