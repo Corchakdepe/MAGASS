@@ -1,7 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,9 +20,21 @@ import {
 } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronsUpDown } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import FilterPanel, {
+  FilterState,
+  buildFilterString,
+} from '@/components/FilterPanel';
 
 const NULL_CHAR = '_';
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
 const MATRICES = [
   { label: 'Matriz externa (usuario)', id: -1 },
@@ -46,11 +57,8 @@ const MATRICES = [
 type GraficaDef = { label: string; arg: string; backendArg?: string };
 
 const GRAFICAS: GraficaDef[] = [
-  // histograma medio estación: requiere "estacion-dias" (ej: 1-all, 2-10;20)
   { label: 'Gráfico de barra por estación (medio)', arg: 'graf_barras_est_med' },
-  // histograma acumulado estación: también "estacion-dias"
   { label: 'Frecuencia de valores (acumulado estación)', arg: 'graf_barras_est_acum' },
-  // histograma día: acepta all-M-Frec, etc.
   { label: 'Histograma del día (all-M-Frec)', arg: 'graf_barras_dia' },
   { label: 'Líneas (comparación estaciones)', arg: 'graf_linea', backendArg: 'graf_linea_comp_est' },
   { label: 'Gráfica de estaciones (barras día)', arg: 'graf_estaciones', backendArg: 'graf_barras_dia' },
@@ -58,37 +66,68 @@ const GRAFICAS: GraficaDef[] = [
   { label: 'Líneas comparación de matrices', arg: 'graf_linea_comp_mats' },
 ];
 
-export default function GraphSimulationForm() {
+const DELTA_OPTIONS = [
+  { label: '15 min', value: '15' },
+  { label: '30 min', value: '30' },
+  { label: '60 min (1h)', value: '60' },
+  { label: '120 min (2h)', value: '120' },
+  { label: '1440 min (1 día)', value: '1440' },
+  { label: 'Otro…', value: 'custom' },
+];
+
+export default function GraphAnalysisSidebar() {
   const [entrada, setEntrada] = useState('');
   const [salida, setSalida] = useState('');
   const [seleccionAgreg, setSeleccionAgreg] = useState('');
-  const [deltaAcumTxt, setDeltaAcumTxt] = useState('');
-  const [apiBusy, setApiBusy] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const selectedIds = seleccionAgreg
     .split(';')
-    .map((s) => s.trim())
-    .filter((s) => s !== '');
+    .map(s => s.trim())
+    .filter(s => s !== '');
 
   const toggleMatrix = (id: number) => {
     const idStr = String(id);
     let next = [...selectedIds];
-    if (next.includes(idStr)) next = next.filter((x) => x !== idStr);
+    if (next.includes(idStr)) next = next.filter(x => x !== idStr);
     else next.push(idStr);
     setSeleccionAgreg(next.join(';'));
   };
 
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [instantesCharts, setInstantesCharts] = useState<Record<string, string>>({});
-  const [stationPerChart, setStationPerChart] = useState<Record<string, string>>({});
+  const [instantesCharts, setInstantesCharts] = useState<
+    Record<string, string>
+  >({});
+  const [stationPerChart, setStationPerChart] = useState<
+    Record<string, string>
+  >({});
 
   const toggleChart = (arg: string) => {
     let next = [...selectedCharts];
-    if (next.includes(arg)) next = next.filter((x) => x !== arg);
+    if (next.includes(arg)) next = next.filter(x => x !== arg);
     else next.push(arg);
     setSelectedCharts(next);
   };
+
+  const [selectedDeltaOption, setSelectedDeltaOption] = useState<string>('');
+  const [customDelta, setCustomDelta] = useState<string>('');
+
+  const effectiveDeltaAcum = useMemo(() => {
+    if (!selectedDeltaOption) return '';
+    if (selectedDeltaOption === 'custom') return customDelta.trim();
+    return selectedDeltaOption;
+  }, [selectedDeltaOption, customDelta]);
+
+  const [filter, setFilter] = useState<FilterState>({
+    operator: '>=',
+    value: '',
+    stationsPct: '',
+    days: 'all',
+    minHours: '',
+  });
+  const [filterEnabled, setFilterEnabled] = useState<boolean>(false);
+
+  const [apiBusy, setApiBusy] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
     if (apiBusy) return;
@@ -97,14 +136,19 @@ export default function GraphSimulationForm() {
 
     const nz = (s?: string) => (s && s.trim().length ? s.trim() : NULL_CHAR);
 
+    const deltaAcumuladaParam = nz(effectiveDeltaAcum);
+
+    let filtradoEstValor = NULL_CHAR;
+    if (filterEnabled) {
+      filtradoEstValor = buildFilterString(filter, NULL_CHAR);
+    }
+
     const commonParams: Record<string, string> = {
       inputFolder: entrada || '',
       outputFolder: salida || '',
       seleccion_agregacion: seleccionAgreg || '-1',
-
-      // Delta media ALWAYS 60 for graphs
       deltaMedia: '60',
-      deltaAcumulada: nz(deltaAcumTxt),
+      deltaAcumulada: deltaAcumuladaParam,
 
       graf_barras_est_med: NULL_CHAR,
       graf_barras_est_acum: NULL_CHAR,
@@ -118,29 +162,29 @@ export default function GraphSimulationForm() {
       mapa_circulo: NULL_CHAR,
       mapa_desplazamientos: NULL_CHAR,
 
-      filtrado_EstValor: NULL_CHAR,
+      filtrado_EstValor: filtradoEstValor,
       filtrado_EstValorDias: NULL_CHAR,
       filtrado_Horas: NULL_CHAR,
       filtrado_PorcentajeEstaciones: NULL_CHAR,
     };
 
-    const chartRequests = selectedCharts.map(async (uiArg) => {
-      const def = GRAFICAS.find((d) => d.arg === uiArg);
+    const chartRequests = selectedCharts.map(async uiArg => {
+      const def = GRAFICAS.find(d => d.arg === uiArg);
       const backendKey = def?.backendArg ?? uiArg;
 
       const params = { ...commonParams };
 
       if (uiArg === 'graf_barras_dia') {
-        // histograma día: default all-M-Frec unless the user overrides
         const val = instantesCharts[uiArg]?.trim() || 'all-M-Frec';
         params['graf_barras_dia'] = val;
-      } else if (uiArg === 'graf_barras_est_med' || uiArg === 'graf_barras_est_acum') {
-        // station-based graphs: need "estacion-dias"
-        const station = (stationPerChart[uiArg] || '0').trim(); // default station 0
+      } else if (
+        uiArg === 'graf_barras_est_med' ||
+        uiArg === 'graf_barras_est_acum'
+      ) {
+        const station = (stationPerChart[uiArg] || '0').trim();
         const dias = instantesCharts[uiArg]?.trim() || 'all';
         params[backendKey] = `${station}-${dias}`;
       } else {
-        // other graphs: send raw value or _
         params[backendKey] =
           instantesCharts[uiArg]?.trim().length
             ? instantesCharts[uiArg].trim()
@@ -148,14 +192,22 @@ export default function GraphSimulationForm() {
       }
 
       const search = new URLSearchParams(params).toString();
-      const res = await fetch(`${API_BASE}/exe/analizar?${search}`);
-      if (!res.ok) throw new Error(`Error analizando gráfica ${uiArg}: ${res.statusText}`);
-      return await res.json();
+      const res = await fetch(`${API_BASE}/exe/analizar?${search}`, {
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        throw new Error(
+          `Error analizando gráfica ${uiArg}: ${res.status} ${res.statusText}`
+        );
+      }
+      const json = await res.json();
+      console.log('Backend JSON for', uiArg, json);
+      return json;
     });
 
     try {
       const results = await Promise.all(chartRequests);
-      console.log('Resultados análisis gráficas:', results);
+      console.log('Resultados análisis gráficas (todas):', results);
     } catch (e: any) {
       setApiError(e?.message ?? 'Error inesperado');
     } finally {
@@ -164,55 +216,69 @@ export default function GraphSimulationForm() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col h-full gap-3">
+      {/* Paths */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Entradas y opciones</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="entrada">Entrada ficheros</Label>
-              <Input
-                id="entrada"
-                value={entrada}
-                onChange={(e) => setEntrada(e.target.value)}
-                placeholder="./Resultados_Simulador/Marzo_Reales"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="salida">Salida ficheros</Label>
-              <Input
-                id="salida"
-                value={salida}
-                onChange={(e) => setSalida(e.target.value)}
-                placeholder="./Resultados_Analisis/Marzo_Reales"
-              />
-            </div>
+        <CardContent className="pt-4 space-y-2">
+          <div className="space-y-1">
+            <Label htmlFor="entrada" className="text-xs">
+              Entrada
+            </Label>
+            <Input
+              id="entrada"
+              value={entrada}
+              onChange={e => setEntrada(e.target.value)}
+              placeholder="results/20251124_...sim..."
+              className="h-8 text-xs"
+            />
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="salida" className="text-xs">
+              Salida
+            </Label>
+            <Input
+              id="salida"
+              value={salida}
+              onChange={e => setSalida(e.target.value)}
+              placeholder="results/20251124_...sim..."
+              className="h-8 text-xs"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-2">
-            <Label>Selección/agregación matrices</Label>
+      {/* Analysis area */}
+      <Card className="shadow-sm flex-1 min-h-0">
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm font-semibold">Análisis</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-3 h-[calc(100vh-18rem)] overflow-y-auto">
+          {/* Matrices */}
+          <div className="space-y-1">
+            <Label className="text-xs">Matriz / combinación</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
+                  size="sm"
                   className="w-full justify-between"
                 >
                   {selectedIds.length > 0
-                    ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(';')}`
+                    ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(
+                        ';'
+                      )}`
                     : 'Selecciona matrices...'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0">
+              <PopoverContent className="w-[320px] p-0 max-h-72 overflow-y-auto">
                 <Command>
                   <CommandInput placeholder="Buscar matriz..." />
                   <CommandEmpty>No encontrada</CommandEmpty>
                   <CommandList>
                     <CommandGroup>
-                      {MATRICES.map((m) => (
+                      {MATRICES.map(m => (
                         <CommandItem
                           key={m.id}
                           onSelect={() => toggleMatrix(m.id)}
@@ -222,7 +288,7 @@ export default function GraphSimulationForm() {
                             checked={selectedIds.includes(String(m.id))}
                             onCheckedChange={() => toggleMatrix(m.id)}
                           />
-                          <span className="text-sm">
+                          <span className="text-xs">
                             {m.label} ({m.id})
                           </span>
                         </CommandItem>
@@ -234,77 +300,54 @@ export default function GraphSimulationForm() {
             </Popover>
             <Input
               value={seleccionAgreg}
-              onChange={(e) => setSeleccionAgreg(e.target.value)}
+              onChange={e => setSeleccionAgreg(e.target.value)}
               placeholder="Ej: 1;2;3"
+              className="h-8 text-xs"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="space-y-1">
-              <Label htmlFor="deltaMedia">Delta Media (fijo)</Label>
-              <Input
-                id="deltaMedia"
-                value="60"
-                disabled
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="deltaAcum">Delta Acumulada</Label>
-              <Input
-                id="deltaAcum"
-                value={deltaAcumTxt}
-                onChange={(e) => setDeltaAcumTxt(e.target.value)}
-                placeholder="4, 60, 1440…"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="newDelta">Nuevo Delta (simulación)</Label>
-              <Input
-                id="newDelta"
-                type="number"
-                value={0}
-                disabled
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2 mt-4">
-            <Label>Gráficas a generar</Label>
+          {/* Graph selection */}
+          <div className="space-y-1">
+            <Label className="text-xs">Tipo de gráfica</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className="w-full justify-between">
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  size="sm"
+                  className="w-full justify-between"
+                >
                   {selectedCharts.length > 0
-                    ? `${selectedCharts.length} seleccionada(s): ${selectedCharts.join(';')}`
+                    ? `${selectedCharts.length} seleccionada(s)`
                     : 'Selecciona gráficas...'}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[460px] p-0">
+              <PopoverContent className="w-[340px] p-0 max-h-80 overflow-y-auto">
                 <Command>
                   <CommandInput placeholder="Buscar gráfica..." />
                   <CommandEmpty>No encontrada</CommandEmpty>
                   <CommandList>
                     <CommandGroup>
-                      {GRAFICAS.map((g) => (
+                      {GRAFICAS.map(g => (
                         <div key={g.arg} className="flex flex-col py-1 px-2">
                           <div className="flex items-center space-x-2">
                             <Checkbox
                               checked={selectedCharts.includes(g.arg)}
                               onCheckedChange={() => toggleChart(g.arg)}
                             />
-                            <span className="text-sm">{g.label}</span>
+                            <span className="text-xs">{g.label}</span>
                           </div>
 
-                          {/* Station + days for per-station graphs */}
                           {selectedCharts.includes(g.arg) &&
                             (g.arg === 'graf_barras_est_med' ||
                               g.arg === 'graf_barras_est_acum') && (
                               <div className="ml-6 mt-1 flex gap-2">
                                 <Input
-                                  className="w-20"
+                                  className="w-16 h-7 text-xs"
                                   placeholder="Est."
                                   value={stationPerChart[g.arg] ?? '0'}
-                                  onChange={(e) =>
+                                  onChange={e =>
                                     setStationPerChart({
                                       ...stationPerChart,
                                       [g.arg]: e.target.value,
@@ -312,10 +355,10 @@ export default function GraphSimulationForm() {
                                   }
                                 />
                                 <Input
-                                  className="w-64"
+                                  className="w-32 h-7 text-xs"
                                   placeholder="Días ej: all o 10;20"
                                   value={instantesCharts[g.arg] || ''}
-                                  onChange={(e) =>
+                                  onChange={e =>
                                     setInstantesCharts({
                                       ...instantesCharts,
                                       [g.arg]: e.target.value,
@@ -325,27 +368,32 @@ export default function GraphSimulationForm() {
                               </div>
                             )}
 
-                          {/* Histograma día: string estilo all-M-Frec */}
-                          {selectedCharts.includes(g.arg) && g.arg === 'graf_barras_dia' && (
-                            <Input
-                              className="ml-6 mt-1 w-[320px]"
-                              value={instantesCharts[g.arg] || 'all-M-Frec'}
-                              onChange={(e) =>
-                                setInstantesCharts({
-                                  ...instantesCharts,
-                                  [g.arg]: e.target.value,
-                                })
-                              }
-                            />
-                          )}
-
-                          {/* Generic single-arg charts */}
                           {selectedCharts.includes(g.arg) &&
-                            !['graf_barras_est_med', 'graf_barras_est_acum', 'graf_barras_dia'].includes(g.arg) && (
+                            g.arg === 'graf_barras_dia' && (
                               <Input
-                                className="ml-6 mt-1 w-[320px]"
+                                className="ml-6 mt-1 w-[260px] h-7 text-xs"
+                                value={
+                                  instantesCharts[g.arg] || 'all-M-Frec'
+                                }
+                                onChange={e =>
+                                  setInstantesCharts({
+                                    ...instantesCharts,
+                                    [g.arg]: e.target.value,
+                                  })
+                                }
+                              />
+                            )}
+
+                          {selectedCharts.includes(g.arg) &&
+                            ![
+                              'graf_barras_est_med',
+                              'graf_barras_est_acum',
+                              'graf_barras_dia',
+                            ].includes(g.arg) && (
+                              <Input
+                                className="ml-6 mt-1 w-[260px] h-7 text-xs"
                                 value={instantesCharts[g.arg] || ''}
-                                onChange={(e) =>
+                                onChange={e =>
                                   setInstantesCharts({
                                     ...instantesCharts,
                                     [g.arg]: e.target.value,
@@ -361,29 +409,77 @@ export default function GraphSimulationForm() {
                 </Command>
               </PopoverContent>
             </Popover>
-            <Input
-              value={selectedCharts
-                .map((k) =>
-                  instantesCharts[k]
-                    ? `${k}(${instantesCharts[k]})`
-                    : stationPerChart[k]
-                    ? `${k}(${stationPerChart[k]}-${instantesCharts[k] || 'all'})`
-                    : k,
-                )
-                .join(';')}
-              readOnly
-              placeholder="Ej: graf_barras_est_acum(1-10;20);graf_barras_dia(all-M-Frec)"
-            />
+          </div>
+
+          {/* Delta transform */}
+          <div className="space-y-1">
+            <Label className="text-xs">Transformación de delta</Label>
+            <div className="grid grid-cols-[1.1fr,0.9fr] gap-2 items-center">
+              <Select
+                value={selectedDeltaOption}
+                onValueChange={setSelectedDeltaOption}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Sin cambio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DELTA_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                className="h-8 text-xs"
+                placeholder="Custom min. (opcional)"
+                value={customDelta}
+                onChange={e => setCustomDelta(e.target.value)}
+                disabled={selectedDeltaOption !== 'custom'}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex gap-3 items-center">
-        <Button onClick={handleAnalyze} disabled={apiBusy}>
-          {apiBusy ? 'Analizando...' : 'Analizar'}
+      {/* Filters area (optional) */}
+      <Card className="shadow-sm">
+        <CardHeader className="py-2">
+          <CardTitle className="text-sm font-semibold">Filtros</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="enable-filter"
+              checked={filterEnabled}
+              onCheckedChange={v => setFilterEnabled(Boolean(v))}
+            />
+            <Label htmlFor="enable-filter" className="text-xs">
+              Activar filtro por valor
+            </Label>
+          </div>
+
+          {filterEnabled ? (
+            <FilterPanel value={filter} onChange={setFilter} compact />
+          ) : (
+            <p className="text-[10px] text-muted-foreground">
+              Sin filtro activo. Se enviará <code>_</code> al backend.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Action */}
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={handleAnalyze}
+          disabled={apiBusy || selectedCharts.length === 0}
+        >
+          {apiBusy ? 'Analizando…' : 'Analizar gráficas'}
         </Button>
         {apiError && (
-          <span className="text-sm text-destructive">{apiError}</span>
+          <span className="text-xs text-destructive">{apiError}</span>
         )}
       </div>
     </div>
