@@ -1,72 +1,78 @@
-// components/visualizationsMaps.tsx
+// components/visualization-maps.tsx
 'use client';
 
-import { ExternalLink, Download } from 'lucide-react';
+import type { RawResultItem } from '@/components/main-content';
 
-type MapItem = {
-  id: string;
-  name: string;
-  kind: 'map';
-  format: 'html' | 'png';
-  url: string;
-};
-
-type VisualizationsMapsProps = {
+type VisualizationMapsProps = {
   runId: string;
-  maps: MapItem[];
   apiBase: string;
+  maps: RawResultItem[];
 };
 
-export default function VisualizationsMaps({ runId, maps, apiBase }: VisualizationsMapsProps) {
-  if (!maps?.length) {
+export default function VisualizationMaps({
+  runId,
+  apiBase,
+  maps,
+}: VisualizationMapsProps) {
+  if (!maps || maps.length === 0) {
     return (
-      <div className="rounded border p-4 text-sm text-muted-foreground">
-        No maps for run {runId}. Generate density/voronoi/circles in the analyzer and refresh.
-      </div>
+      <section>
+        <h2 className="text-lg font-semibold mb-2">Maps – {runId}</h2>
+        <p className="text-xs text-muted-foreground">
+          No map results found for this run.
+        </p>
+      </section>
     );
   }
 
   return (
-    <section className="space-y-4">
-      <header className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Maps ({maps.length})</h2>
-      </header>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {maps.map(m => (
-          <article key={m.id} className="rounded-md border bg-card">
-            <div className="flex items-center justify-between px-3 py-2 border-b">
-              <span className="text-sm font-medium truncate">{m.name}</span>
-              <div className="flex items-center gap-2">
-                <a
-                  href={m.url}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center gap-1 text-sm underline"
-                >
-                  <ExternalLink className="h-4 w-4" /> Open
-                </a>
-                <a
-                  href={m.url}
-                  download
-                  className="inline-flex items-center gap-1 text-sm underline"
-                >
-                  <Download className="h-4 w-4" /> Download
-                </a>
-              </div>
-            </div>
-            <div className="p-3">
-              {m.format === 'html' ? (
+    <section>
+      <h2 className="text-lg font-semibold mb-2">Maps – {runId}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {maps.map(map => {
+          const href = map.api_full_url ?? `${apiBase}${map.url}`;
+          const isHtml = map.format === 'html';
+          const isPng = map.format === 'png';
+
+          return (
+            <div
+              key={map.id}
+              className="border rounded-md p-4 bg-card text-sm text-muted-foreground"
+            >
+              <p className="font-medium mb-1">{map.name}</p>
+              <p className="text-xs mb-2">
+                Format: {map.format} | Kind: {map.kind}
+              </p>
+
+              {isHtml && (
                 <iframe
-                  src={m.url}
-                  sandbox="allow-scripts allow-same-origin"
-                  className="w-full h-[520px] rounded border"
+                  src={href}
+                  className="w-full h-64 border rounded"
+                  loading="lazy"
                 />
-              ) : (
-                <img src={m.url} alt={m.name} className="w-full rounded border" />
+              )}
+
+              {isPng && (
+                <img
+                  src={href}
+                  alt={map.name}
+                  className="w-full h-64 object-cover rounded"
+                />
+              )}
+
+              {!isHtml && !isPng && (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary underline"
+                >
+                  Open map
+                </a>
               )}
             </div>
-          </article>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

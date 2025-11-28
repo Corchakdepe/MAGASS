@@ -1,92 +1,56 @@
 // components/visualizations-panel.tsx
 'use client';
 
-import type { SimulationData } from '@/types/simulation';
-import VisualizationsGraphs from '@/components/visualizationsGraphs';
-import VisualizationsMaps from '@/components/visualizationsMaps';
-import Visualizations from '@/components/visualizations';
-import type { MainContentMode } from '@/types/view-mode';
-import type { RawResultItem as RawResultItemMain } from '@/components/main-content';
+import type {SimulationData} from '@/types/simulation';
+import type {MainContentMode} from '@/types/view-mode';
+import VisualizationGraphs from '@/components/visualizationsGraphs';
+import VisualizationMaps from '@/components/visualizationsMaps';
+import type {RawResultItem} from '@/components/main-content';
 
-// Solo gráficos
-export type GraphItem = RawResultItemMain & {
-  kind: 'graph';
-  format: 'csv' | 'json';
-};
-
-// Mapa simplificado
-type MapItem = {
-  id: string;
-  name: string;
-  kind: 'map';
-  format: 'html' | 'png';
-  url: string;
+export type GraphItem = RawResultItem & {
+    // extend later if needed
 };
 
 type VisualizationsPanelProps = {
-  mode: MainContentMode;
-  apiBase: string;
-  runId: string | null;
-  simulationData: SimulationData | null;
-  graphs: GraphItem[];
-  maps: RawResultItemMain[];
-  chartsFromApi: any[];
+    mode: MainContentMode;
+    apiBase: string;
+    runId: string;
+    simulationData: SimulationData | null;
+    graphs: GraphItem[];
+    maps: RawResultItem[];
+    chartsFromApi: any[];
 };
 
 export default function VisualizationsPanel({
-  mode,
-  apiBase,
-  runId,
-  simulationData,
-  graphs,
-  maps,
-  chartsFromApi,
-}: VisualizationsPanelProps) {
-  if (!runId) return null;
-
-  if (mode === 'simulations') {
-    return <Visualizations simulationData={simulationData} />;
-  }
-
-  if (mode === 'analyticsGraphs') {
-    if (chartsFromApi.length > 0) {
-      return (
-        <VisualizationsGraphs
-          runId={runId}
-          chartsFromApi={chartsFromApi as any}
-        />
-      );
-    }
-    return (
-      <VisualizationsGraphs
-        runId={runId}
-        graphs={graphs}
-        apiBase={apiBase}
-      />
-    );
-  }
-
-  if (mode === 'maps' || mode === 'analyticsMaps') {
-    const mapItems: MapItem[] = maps
-      .filter(
-        m => m.kind === 'map' && (m.format === 'html' || m.format === 'png'),
-      )
-      .map(m => ({
-        id: m.id,
-        name: m.name,
-        kind: 'map' as const,
-        format: m.format as 'html' | 'png',
-        url: m.api_full_url || `${apiBase}${m.url}`,
-      }));
+                                                mode,
+                                                apiBase,
+                                                runId,
+                                                graphs,
+                                                maps,
+                                                chartsFromApi,
+                                            }: VisualizationsPanelProps) {
+    const showGraphs = mode === 'analyticsGraphs';
+    const showMaps = mode === 'maps' || mode === 'analyticsMaps';
 
     return (
-      <VisualizationsMaps
-        runId={runId}
-        maps={mapItems}
-        apiBase={apiBase}
-      />
-    );
-  }
 
-  return null;
+        <div className="space-y-6">
+            {showGraphs && (
+                <VisualizationGraphs
+                    runId={runId}
+                    apiBase={apiBase}
+                    graphs={graphs}
+                    // remove chartsFromApi here
+                />
+            )}
+
+            {showMaps && (
+                <VisualizationMaps
+                    runId={runId}
+                    apiBase={apiBase}
+                    maps={maps}
+                />
+            )}
+        </div>
+    );
 }

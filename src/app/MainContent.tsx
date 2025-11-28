@@ -1,68 +1,19 @@
 // app/MainContent.tsx
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import VisualizationsGraphs from '@/components/oldv/visualizationsGraphs';
+import MainContent from '@/components/main-content';
+import type { SimulationData, SimulationSummaryData } from '@/types/simulation';
+import type { MainContentMode } from '@/types/view-mode';
 
-export type RawResultItem = {
-  id: string;
-  name: string;
-  kind: 'graph';
-  format: 'csv' | 'json';
-  url: string;
-  api_full_url?: string;
-  created?: string;
-  meta?: Record<string, unknown>;
-};
-
-type BackendChart = {
-  id: string;
-  kind: string;
-  format: string;
-  x: (number | string)[];
-  series: Record<string, number[]>;
-  meta?: Record<string, any>;
-};
-
-type AnalysisResponse = {
-  ok: boolean;
-  charts: BackendChart[];
-};
-
-type SimulationSummaryData = {
-  deltaMinutes: number;
-  stressPercentage: number;
-  realPickupKms: number;
-  realDropoffKms: number;
-  fictionalPickupKms: number;
-  fictionalDropoffKms: number;
-  resolvedRealPickups: number;
-  resolvedRealDropoffs: number;
-  unresolvedRealPickups: number;
-  unresolvedRealDropoffs: number;
-  resolvedFictionalPickups: number;
-  resolvedFictionalDropoffs: number;
-  unresolvedFictionalPickups: number;
-  unresolvedFictionalDropoffs: number;
-};
-
-type SimulationData = {
-  folder: string;
-  created: string;
-  fileCount: number;
-  simulationSummary: SimulationSummaryData;
-  chartData: unknown[];
-  mapUrl: string;
-  heatmapUrl: string;
-  csvData: string;
-};
-
-type MainContentProps = {
-  simulationData: SimulationData | null;
+type AppMainContentProps = {
+  mode?: MainContentMode;
   triggerRefresh?: number;
 };
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
 const defaultSummary: SimulationSummaryData = {
   deltaMinutes: 0,
@@ -80,8 +31,6 @@ const defaultSummary: SimulationSummaryData = {
   unresolvedFictionalPickups: 0,
   unresolvedFictionalDropoffs: 0,
 };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
 const parseSimulationData = (dataString: string): SimulationSummaryData => {
   const cleaned = dataString.trim().replace(/^"|"$/g, '');
@@ -104,18 +53,14 @@ const parseSimulationData = (dataString: string): SimulationSummaryData => {
   };
 };
 
-export default function MainContent({
-  simulationData: externalSimData,
+export default function AppMainContent({
+  mode = 'analyticsGraphs',
   triggerRefresh,
-}: MainContentProps) {
-  const [simulationData, setSimulationData] = useState<SimulationData | null>(
-    externalSimData
-  );
+}: AppMainContentProps) {
+  const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
+  const [latestFolder, setLatestFolder] = useState<string | null>(null);
   const [simulationSummary, setSimulationSummary] =
     useState<SimulationSummaryData>(defaultSummary);
-  const [latestFolder, setLatestFolder] = useState<string | null>(null);
-  const [graphs, setGraphs] = useState<RawResultItem[]>([]);
-  const [chartsFromApi, setChartsFromApi] = useState<BackendChart[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -134,12 +79,12 @@ export default function MainContent({
         setLatestFolder(latest.name);
 
         let summary = defaultSummary;
-        const summaryResponse = await fetch(
-          `${API_BASE}/simulation-summary`,
-          { cache: 'no-store' }
-        );
-        if (summaryResponse.ok)
+        const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
+          cache: 'no-store',
+        });
+        if (summaryResponse.ok) {
           summary = parseSimulationData(await summaryResponse.text());
+        }
         setSimulationSummary(summary);
 
         const sim: SimulationData = {
@@ -153,29 +98,10 @@ export default function MainContent({
           csvData: '',
         };
         setSimulationData(sim);
-
-
-
-        // Existing: file-based graphs
-        const graphsRes = await fetch(
-          `${API_BASE}/results/list?run=${encodeURIComponent(latest.name)}&kind=graph`,
-          { cache: 'no-store' }
-        );
-        if (graphsRes.ok) {
-          const { items } = await graphsRes.json();
-          const graphItems = (items as RawResultItem[]).filter(
-            x => x.kind === 'graph' && (x.format === 'csv' || x.format === 'json')
-          );
-          setGraphs(graphItems);
-        } else {
-          setGraphs([]);
-        }
       } else {
         setSimulationData(null);
         setLatestFolder(null);
         setSimulationSummary(defaultSummary);
-        setGraphs([]);
-        setChartsFromApi([]);
       }
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load simulation data');
@@ -188,23 +114,13 @@ export default function MainContent({
     fetchLatest();
     const interval = setInterval(fetchLatest, 30000);
     return () => clearInterval(interval);
-  }, [triggerRefresh]);
-
-  useEffect(() => {
-    if (externalSimData) {
-      setSimulationData(externalSimData);
-      if (externalSimData.simulationSummary)
-        setSimulationSummary(externalSimData.simulationSummary);
-    }
-  }, [externalSimData]);
+  }, [triggerRefresh, mode]);
 
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
         </header>
         <main className="flex-1 grid place-items-center">
           <div className="text-center">
@@ -220,9 +136,7 @@ export default function MainContent({
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
           <Button variant="secondary" onClick={fetchLatest}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
@@ -242,9 +156,7 @@ export default function MainContent({
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
         </header>
         <main className="flex-1 grid place-items-center text-muted-foreground">
           <div className="text-center">
@@ -257,34 +169,10 @@ export default function MainContent({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="flex items-center justify-between p-4 border-b bg-card">
-        <div>
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Latest: {latestFolder}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchLatest}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-      </header>
-      <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-        {chartsFromApi.length > 0 ? (
-          <VisualizationsGraphs runId={latestFolder} chartsFromApi={chartsFromApi} />
-        ) : (
-          <VisualizationsGraphs
-            runId={latestFolder}
-            graphs={graphs}
-            apiBase={API_BASE}
-          />
-        )}
-      </main>
-    </div>
+    <MainContent
+      simulationData={{ ...simulationData, simulationSummary }}
+      triggerRefresh={triggerRefresh}
+      mode={mode}
+    />
   );
 }
