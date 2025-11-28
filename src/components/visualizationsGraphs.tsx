@@ -1,19 +1,30 @@
+// components/visualizations-graphs.tsx
 'use client';
 
 import { useState } from 'react';
-import type { RawResultItem } from '@/components/main-content-graphs';
 import Papa from 'papaparse';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
+import type { RawResultItem } from '@/components/oldv/main-content-graphs';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend
+);
 
 type GraphItem = RawResultItem;
 
@@ -32,10 +43,12 @@ type BackendChart = {
   };
 };
 
-type ChartDataState = {
-  labels: (string | number)[];
-  datasets: { label: string; data: number[]; backgroundColor: string }[];
-} | null;
+type ChartDataState =
+  | {
+      labels: (string | number)[];
+      datasets: { label: string; data: number[]; backgroundColor: string }[];
+    }
+  | null;
 
 type Props =
   | {
@@ -101,17 +114,33 @@ export default function VisualizationsGraphs(props: Props) {
       skipEmptyLines: true,
     });
 
-    const rows = parsed.data as { x?: string; value?: string }[];
+    const rows = parsed.data as Record<string, string>[];
 
     const xs: number[] = [];
     const ys: number[] = [];
 
     rows.forEach(r => {
       const x = Number(r.x);
-      const rawY = Number(r.value);
-      if (!Number.isNaN(x) && !Number.isNaN(rawY)) {
+      let yRaw: number | null = null;
+
+      if (r.value !== undefined) {
+        yRaw = Number(r.value);
+      } else if (r.cum !== undefined) {
+        yRaw = Number(r.cum);
+      } else {
+        for (const [k, v] of Object.entries(r)) {
+          if (k === 'x') continue;
+          const num = Number(v);
+          if (!Number.isNaN(num)) {
+            yRaw = num;
+            break;
+          }
+        }
+      }
+
+      if (!Number.isNaN(x) && yRaw !== null && !Number.isNaN(yRaw)) {
         xs.push(x);
-        ys.push(Math.round(rawY));
+        ys.push(yRaw);
       }
     });
 
@@ -135,7 +164,6 @@ export default function VisualizationsGraphs(props: Props) {
     setChartData(null);
     setContent('');
 
-    // JSON mode (charts from /exe/analizar)
     if (jsonMode && (props as any).chartsFromApi) {
       const chartsFromApi = (props as any).chartsFromApi as BackendChart[];
       const chart = chartsFromApi.find(c => c.id === id);
@@ -147,7 +175,6 @@ export default function VisualizationsGraphs(props: Props) {
       return;
     }
 
-    // File mode (existing CSV/JSON files)
     if (!fileMode || !(props as any).graphs || !(props as any).apiBase) return;
 
     const graphs = (props as any).graphs as GraphItem[];
@@ -186,8 +213,27 @@ export default function VisualizationsGraphs(props: Props) {
     fileMode && (props as any).graphs
       ? ((props as any).graphs as GraphItem[]).find(g => g.id === selectedId)
       : jsonMode && (props as any).chartsFromApi
-      ? ((props as any).chartsFromApi as BackendChart[]).find(c => c.id === selectedId)
+      ? ((props as any).chartsFromApi as BackendChart[]).find(
+          c => c.id === selectedId
+        )
       : null;
+
+  let chartType: 'bar' | 'line' = 'bar';
+
+  if (jsonMode && (props as any).chartsFromApi && selectedId) {
+    const chartsFromApi = (props as any).chartsFromApi as BackendChart[];
+    const apiChart = chartsFromApi.find(c => c.id === selectedId);
+    if (apiChart?.meta?.type === 'line') {
+      chartType = 'line';
+    }
+  } else if (fileMode && selectedItem) {
+    const name = ((selectedItem as any).name || (selectedItem as any).id || '')
+      .toString()
+      .toLowerCase();
+    if (name.includes('acumulado') || name.includes('acumulad')) {
+      chartType = 'line';
+    }
+  }
 
   return (
     <section className="space-y-3">
@@ -236,8 +282,8 @@ export default function VisualizationsGraphs(props: Props) {
               )}
 
               {selectedItem && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium">
                         {'name' in selectedItem
@@ -272,35 +318,66 @@ export default function VisualizationsGraphs(props: Props) {
                   </div>
 
                   {chartData && (
-                    <div className="mb-3">
-                      <Bar
-                        data={chartData}
-                        options={{
-                          responsive: true,
-                          plugins: {
-                            legend: {
-                              display: chartData.datasets.length > 1,
-                            },
-                          },
-                          scales: {
-                            x: {
-                              title: {
-                                display: !!(selectedItem as any)?.meta?.xLabel,
-                                text:
-                                  (selectedItem as any)?.meta?.xLabel || 'X',
+                    <div>
+                      {chartType === 'bar' ? (
+                        <Bar
+                          data={chartData}
+                          options={{
+                            responsive: true,
+                            plugins: {
+                              legend: {
+                                display: chartData.datasets.length > 1,
                               },
                             },
-                            y: {
-                              title: {
-                                display: !!(selectedItem as any)?.meta?.yLabel,
-                                text:
-                                  (selectedItem as any)?.meta?.yLabel || 'Y',
+                            scales: {
+                              x: {
+                                title: {
+                                  display: !!(selectedItem as any)?.meta?.xLabel,
+                                  text:
+                                    (selectedItem as any)?.meta?.xLabel || 'X',
+                                },
                               },
-                              beginAtZero: true,
+                              y: {
+                                title: {
+                                  display: !!(selectedItem as any)?.meta?.yLabel,
+                                  text:
+                                    (selectedItem as any)?.meta?.yLabel || 'Y',
+                                },
+                                beginAtZero: true,
+                              },
                             },
-                          },
-                        }}
-                      />
+                          }}
+                        />
+                      ) : (
+                        <Line
+                          data={chartData}
+                          options={{
+                            responsive: true,
+                            plugins: {
+                              legend: {
+                                display: chartData.datasets.length > 1,
+                              },
+                            },
+                            scales: {
+                              x: {
+                                title: {
+                                  display: !!(selectedItem as any)?.meta?.xLabel,
+                                  text:
+                                    (selectedItem as any)?.meta?.xLabel || 'X',
+                                },
+                              },
+                              y: {
+                                title: {
+                                  display: !!(selectedItem as any)?.meta?.yLabel,
+                                  text:
+                                    (selectedItem as any)?.meta?.yLabel || 'Y',
+                                },
+                                beginAtZero: true,
+                              },
+                            },
+                          }}
+                        />
+                      )}
                     </div>
                   )}
 

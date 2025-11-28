@@ -62,13 +62,13 @@ export default function StatisticsForm() {
 
   const selectedIds = seleccionAgreg
     .split(';')
-    .map(s => s.trim())
-    .filter(s => s !== '');
+    .map((s) => s.trim())
+    .filter((s) => s !== '');
 
   const toggleMatrix = (id: number) => {
     const idStr = String(id);
     let next = [...selectedIds];
-    if (next.includes(idStr)) next = next.filter(x => x !== idStr);
+    if (next.includes(idStr)) next = next.filter((x) => x !== idStr);
     else next.push(idStr);
     setSeleccionAgreg(next.join(';'));
   };
@@ -78,11 +78,12 @@ export default function StatisticsForm() {
 
   const toggleMap = (apiKey: string) => {
     let next = [...selectedMaps];
-    if (next.includes(apiKey)) next = next.filter(x => x !== apiKey);
+    if (next.includes(apiKey)) next = next.filter((x) => x !== apiKey);
     else next.push(apiKey);
     setSelectedMaps(next);
   };
 
+  // Make a fetch for EACH selected map, submitting only the relevant argument for each
   const handleAnalyze = async () => {
     if (apiBusy) return;
     setApiBusy(true);
@@ -112,7 +113,8 @@ export default function StatisticsForm() {
       filtrado_PorcentajeEstaciones: NULL_CHAR,
     };
 
-    const mapRequests = selectedMaps.map(async apiKey => {
+    const mapRequests = selectedMaps.map(async (apiKey) => {
+      // Set only this map parameter, others blank
       const params = { ...commonParams };
       params[apiKey] =
         instantesMaps[apiKey]?.trim().length
@@ -126,6 +128,7 @@ export default function StatisticsForm() {
 
     try {
       const results = await Promise.all(mapRequests);
+      // Handle all maps' results (e.g., display success/error, log, etc)
       console.log('Resultados análisis mapas:', results);
     } catch (e: any) {
       setApiError(e?.message ?? 'Error inesperado');
@@ -148,7 +151,7 @@ export default function StatisticsForm() {
               <Input
                 id="entrada"
                 value={entrada}
-                onChange={e => setEntrada(e.target.value)}
+                onChange={(e) => setEntrada(e.target.value)}
                 placeholder="./Resultados_Simulador"
               />
             </div>
@@ -157,12 +160,11 @@ export default function StatisticsForm() {
               <Input
                 id="salida"
                 value={salida}
-                onChange={e => setSalida(e.target.value)}
+                onChange={(e) => setSalida(e.target.value)}
                 placeholder="./Resultados_Analisis"
               />
             </div>
           </div>
-
           {/* Select de matrices */}
           <div className="space-y-2">
             <Label>Selección/agregación matrices</Label>
@@ -185,7 +187,7 @@ export default function StatisticsForm() {
                   <CommandEmpty>No encontrada</CommandEmpty>
                   <CommandList>
                     <CommandGroup>
-                      {MATRICES.map(m => (
+                      {MATRICES.map((m) => (
                         <CommandItem
                           key={m.id}
                           onSelect={() => toggleMatrix(m.id)}
@@ -207,11 +209,10 @@ export default function StatisticsForm() {
             </Popover>
             <Input
               value={seleccionAgreg}
-              onChange={e => setSeleccionAgreg(e.target.value)}
+              onChange={(e) => setSeleccionAgreg(e.target.value)}
               placeholder="Ej: 1;2;3"
             />
           </div>
-
           {/* Deltas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="space-y-1">
@@ -219,7 +220,7 @@ export default function StatisticsForm() {
               <Input
                 id="deltaMedia"
                 value={deltaMediaTxt}
-                onChange={e => setDeltaMediaTxt(e.target.value)}
+                onChange={(e) => setDeltaMediaTxt(e.target.value)}
                 placeholder="4, 60, 1440…"
               />
             </div>
@@ -228,26 +229,26 @@ export default function StatisticsForm() {
               <Input
                 id="deltaAcum"
                 value={deltaAcumTxt}
-                onChange={e => setDeltaAcumTxt(e.target.value)}
+                onChange={(e) => setDeltaAcumTxt(e.target.value)}
                 placeholder="4, 60, 1440…"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="newDelta">Nuevo Delta (simulación)</Label>
-              <Input id="newDelta" type="number" value={60} disabled />
+              <Input
+                id="newDelta"
+                type="number"
+                value={60}
+                disabled
+              />
             </div>
           </div>
-
           {/* Mapas */}
           <div className="space-y-2 mt-4">
             <Label>Mapas a generar</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between"
-                >
+                <Button variant="outline" role="combobox" className="w-full justify-between">
                   {selectedMaps.length > 0
                     ? `${selectedMaps.length} seleccionada(s): ${selectedMaps.join(';')}`
                     : 'Selecciona mapas...'}
@@ -260,7 +261,7 @@ export default function StatisticsForm() {
                   <CommandEmpty>No encontrado</CommandEmpty>
                   <CommandList>
                     <CommandGroup>
-                      {MAPAS.map(m => (
+                      {MAPAS.map((m) => (
                         <div key={m.arg} className="flex flex-col py-1">
                           <div className="flex items-center space-x-2">
                             <Checkbox
@@ -271,14 +272,14 @@ export default function StatisticsForm() {
                           </div>
                           {selectedMaps.includes(m.arg) && (
                             <Input
-                              value={instantesMaps[m.arg] || ''}
-                              onChange={e =>
+                              value={instantesMaps[m.arg] || ""}
+                              onChange={(e) =>
                                 setInstantesMaps({
                                   ...instantesMaps,
-                                  [m.arg]: e.target.value,
+                                  [m.arg]: e.target.value
                                 })
                               }
-                              placeholder="Instantes ej: 30;31;32"
+                              placeholder='Instantes ej: 30;31;32'
                               className="ml-6 mt-1 w-[250px]"
                             />
                           )}
@@ -291,9 +292,7 @@ export default function StatisticsForm() {
             </Popover>
             <Input
               value={selectedMaps
-                .map(k =>
-                  instantesMaps[k] ? `${k}(${instantesMaps[k]})` : k
-                )
+                .map(k => instantesMaps[k] ? `${k}(${instantesMaps[k]})` : k)
                 .join(';')}
               readOnly
               placeholder="Ej: mapa_circulo(30;31;32)"
@@ -301,7 +300,7 @@ export default function StatisticsForm() {
           </div>
         </CardContent>
       </Card>
-
+      {/* Botones */}
       <div className="flex gap-3 items-center">
         <Button onClick={handleAnalyze} disabled={apiBusy}>
           {apiBusy ? 'Analizando...' : 'Analizar'}

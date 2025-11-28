@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw } from 'lucide-react';
-import ZoneSummaryAnalysis from '@/components/zone-summary-analysis';
-import Visualizations from '@/components/visualizations';
+import ZoneSummaryAnalysis from '@/components/oldv/zone-summary-analysis';
+import Visualizations from '@/components/oldv/visualizations';
 import { useState, useEffect } from 'react';
 import type { SimulationData, SimulationSummaryData } from '@/types/simulation';
 

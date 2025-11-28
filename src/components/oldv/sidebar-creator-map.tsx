@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import FileUpload from '@/components/file-upload';
-import SimulationForm from '@/components/simulation-form';
+import FileUpload from '@/components/oldv/file-upload';
+
 import { Button } from '@/components/ui/button';
 import {
   SidebarHeader,
@@ -84,16 +84,6 @@ export default function SidebarContentUpload({ onSimulationComplete }: SidebarCo
       </SidebarHeader>
       <SidebarBody className="p-4 space-y-6 overflow-y-auto">
         <FileUpload folderPath={folderPath} setFolderPath={setFolderPath} />
-        <SimulationForm
-          stress={stress}
-          setStress={setStress}
-          walkCost={walkCost}
-          setWalkCost={setWalkCost}
-          delta={delta}
-          setDelta={setDelta}
-          stressType={stressType}
-          setStressType={setStressType}
-        />
       </SidebarBody>
       <SidebarFooter className="p-4 border-t">
         <Button

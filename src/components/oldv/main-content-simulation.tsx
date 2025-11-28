@@ -1,9 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import StatisticsForm from '@/components/statistics-form';
 import { Download, RefreshCw } from 'lucide-react';
-import Visualizations from '@/components/visualizations';
+import ZoneSummarySimulation from '@/components/oldv/zone-summary-simulation';
+import Visualizations from '@/components/oldv/visualizations';
 import { useState, useEffect } from 'react';
 import type { SimulationData, SimulationSummaryData } from '@/types/simulation';
 
@@ -170,12 +170,12 @@ export default function MainContent({ simulationData: externalSimData, triggerRe
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
         </header>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
-            <p className="text-muted-foreground">Loading data...</p>
+            <p className="text-muted-foreground">Loading simulation data...</p>
           </div>
         </main>
       </div>
@@ -186,7 +186,7 @@ export default function MainContent({ simulationData: externalSimData, triggerRe
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
           <Button variant="secondary" onClick={fetchLatestSimulation}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
@@ -206,7 +206,7 @@ export default function MainContent({ simulationData: externalSimData, triggerRe
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
         </header>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
@@ -222,18 +222,26 @@ export default function MainContent({ simulationData: externalSimData, triggerRe
     <div className="flex flex-col h-full">
       <header className="flex items-center justify-between p-4 border-b bg-card">
         <div>
-          <h1 className="text-2xl font-bold font-headline">Dashboard</h1>
+          <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
           <p className="text-xs text-muted-foreground mt-1">
             Latest: {latestFolder}
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchLatestSimulation}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
           <Button variant="secondary" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export Data
           </Button>
         </div>
       </header>
+      <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+        <ZoneSummarySimulation data={simulationSummary} />
+        <Visualizations simulationData={simulationData} />
+      </main>
     </div>
   );
 }

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import SidebarContentComponent from '@/components/sidebar-content';
-import SidebarContentUpload from '@/components/upload-sidebar-content';
-import MainContent from '@/components/main-content';
+import SidebarContentComponent from '@/components/oldv/sidebar-content';
+import SidebarContentUpload from '@/components/oldv/upload-sidebar-content';
+import MainContent from '@/components/oldv/main-content';
 import type { SimulationData } from '@/types/simulation';
 
 export default function AppLayout() {

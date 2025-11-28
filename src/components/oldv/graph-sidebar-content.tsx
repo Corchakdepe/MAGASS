@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import FileUpload from '@/components/file-upload';
-import StatisticsSimulationForm from '@/components/statistics-form';
+import FileUpload from '@/components/oldv/file-upload';
+import StatisticsSimulationForm from '@/components/oldv/statistics-form';
 import { Button } from '@/components/ui/button';
 import {
   SidebarHeader,

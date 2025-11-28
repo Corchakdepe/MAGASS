@@ -1,3 +1,4 @@
+// components/graph-analysis-sidebar.tsx
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -30,7 +31,7 @@ import {
 import FilterPanel, {
   FilterState,
   buildFilterString,
-} from '@/components/FilterPanel';
+} from '@/components/oldv/FilterPanel';
 
 const NULL_CHAR = '_';
 const API_BASE =
@@ -134,66 +135,71 @@ export default function GraphAnalysisSidebar() {
     setApiBusy(true);
     setApiError(null);
 
-    const nz = (s?: string) => (s && s.trim().length ? s.trim() : NULL_CHAR);
+    // delta_acumulada: number | null
+    const deltaAcumuladaNum =
+      effectiveDeltaAcum && effectiveDeltaAcum.length > 0
+        ? Number(effectiveDeltaAcum)
+        : null;
 
-    const deltaAcumuladaParam = nz(effectiveDeltaAcum);
-
-    let filtradoEstValor = NULL_CHAR;
+    // filtro opcional
+    let filtradoEstValor: string | null = null;
     if (filterEnabled) {
-      filtradoEstValor = buildFilterString(filter, NULL_CHAR);
+      const f = buildFilterString(filter, NULL_CHAR);
+      filtradoEstValor = f === NULL_CHAR ? null : f;
     }
 
-    const commonParams: Record<string, string> = {
-      inputFolder: entrada || '',
-      outputFolder: salida || '',
+    // cuerpo base común para AnalysisArgs
+    const baseBody: any = {
+      input_folder: entrada || '',
+      output_folder: salida || '',
       seleccion_agregacion: seleccionAgreg || '-1',
-      deltaMedia: '60',
-      deltaAcumulada: deltaAcumuladaParam,
 
-      graf_barras_est_med: NULL_CHAR,
-      graf_barras_est_acum: NULL_CHAR,
-      graf_barras_dia: NULL_CHAR,
-      graf_linea_comp_est: NULL_CHAR,
-      graf_linea_comp_mats: NULL_CHAR,
+      delta_media: 60,
+      delta_acumulada: deltaAcumuladaNum,
 
-      mapa_densidad: NULL_CHAR,
-      video_densidad: NULL_CHAR,
-      mapa_voronoi: NULL_CHAR,
-      mapa_circulo: NULL_CHAR,
-      mapa_desplazamientos: NULL_CHAR,
+      graf_barras_est_med: null,
+      graf_barras_est_acum: null,
+      graf_barras_dia: null,
+      graf_linea_comp_est: null,
+      graf_linea_comp_mats: null,
+
+      mapa_densidad: null,
+      video_densidad: null,
+      mapa_voronoi: null,
+      mapa_circulo: null,
+      mapa_desplazamientos: null,
 
       filtrado_EstValor: filtradoEstValor,
-      filtrado_EstValorDias: NULL_CHAR,
-      filtrado_Horas: NULL_CHAR,
-      filtrado_PorcentajeEstaciones: NULL_CHAR,
+      filtrado_EstValorDias: null,
+      filtrado_Horas: null,
+      filtrado_PorcentajeEstaciones: null,
     };
 
     const chartRequests = selectedCharts.map(async uiArg => {
       const def = GRAFICAS.find(d => d.arg === uiArg);
       const backendKey = def?.backendArg ?? uiArg;
 
-      const params = { ...commonParams };
+      const body = { ...baseBody };
 
       if (uiArg === 'graf_barras_dia') {
-        const val = instantesCharts[uiArg]?.trim() || 'all-M-Frec';
-        params['graf_barras_dia'] = val;
+        body.graf_barras_dia =
+          instantesCharts[uiArg]?.trim() || 'all-M-Frec';
       } else if (
         uiArg === 'graf_barras_est_med' ||
         uiArg === 'graf_barras_est_acum'
       ) {
         const station = (stationPerChart[uiArg] || '0').trim();
         const dias = instantesCharts[uiArg]?.trim() || 'all';
-        params[backendKey] = `${station}-${dias}`;
+        body[backendKey] = `${station}-${dias}`;
       } else {
-        params[backendKey] =
-          instantesCharts[uiArg]?.trim().length
-            ? instantesCharts[uiArg].trim()
-            : NULL_CHAR;
+        const raw = instantesCharts[uiArg]?.trim();
+        body[backendKey] = raw && raw.length > 0 ? raw : null;
       }
 
-      const search = new URLSearchParams(params).toString();
-      const res = await fetch(`${API_BASE}/exe/analizar?${search}`, {
-        cache: 'no-store',
+      const res = await fetch(`${API_BASE}/exe/analizar-json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         throw new Error(
@@ -208,6 +214,7 @@ export default function GraphAnalysisSidebar() {
     try {
       const results = await Promise.all(chartRequests);
       console.log('Resultados análisis gráficas (todas):', results);
+      // aquí podrías guardar results[].charts en algún estado global
     } catch (e: any) {
       setApiError(e?.message ?? 'Error inesperado');
     } finally {
