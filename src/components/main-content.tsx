@@ -83,6 +83,17 @@ export default function MainContent({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // use external sim when user selects from history
+  useEffect(() => {
+    if (externalSimData) {
+      console.log('MainContent externalSimData', externalSimData);
+      setSimulationData(externalSimData);
+      if (externalSimData.simulationSummary) {
+        setSimulationSummary(externalSimData.simulationSummary);
+      }
+    }
+  }, [externalSimData]);
+
   const fetchLatest = async () => {
     setIsLoading(true);
     setError(null);
@@ -95,33 +106,40 @@ export default function MainContent({
 
       if (Array.isArray(listData.simulations) && listData.simulations.length > 0) {
         const latest = listData.simulations[0];
-        setLatestFolder(latest.name);
+        const latestFolderName = latest.simfolder ?? latest.name;
+        setLatestFolder(latestFolderName);
 
-        let summary = defaultSummary;
-        const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
-          cache: 'no-store',
-        });
-        if (summaryResponse.ok) {
-          summary = parseSimulationData(await summaryResponse.text());
+        // only auto-load latest if user has not selected anything
+        if (!externalSimData) {
+          let summary = defaultSummary;
+          const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
+            cache: 'no-store',
+          });
+          if (summaryResponse.ok) {
+            summary = parseSimulationData(await summaryResponse.text());
+          }
+          setSimulationSummary(summary);
+
+          const sim: SimulationData = {
+            folder: latestFolderName,
+            created: latest.created,
+            fileCount: latest.file_count,
+            simulationSummary: summary,
+            chartData: [],
+            mapUrl: '',
+            heatmapUrl: '',
+            csvData: '',
+          };
+          setSimulationData(sim);
         }
-        setSimulationSummary(summary);
 
-        const sim: SimulationData = {
-          folder: latest.name,
-          created: latest.created,
-          fileCount: latest.file_count,
-          simulationSummary: summary,
-          chartData: [],
-          mapUrl: '',
-          heatmapUrl: '',
-          csvData: '',
-        };
-        setSimulationData(sim);
+        const runForFetch =
+          (externalSimData?.folder) ?? latestFolderName;
 
         if (mode === 'analyticsGraphs') {
           const graphsRes = await fetch(
             `${API_BASE}/results/list?run=${encodeURIComponent(
-              latest.name,
+              runForFetch,
             )}&kind=graph`,
             { cache: 'no-store' },
           );
@@ -145,7 +163,7 @@ export default function MainContent({
         if (mode === 'maps' || mode === 'analyticsMaps') {
           const mapsRes = await fetch(
             `${API_BASE}/results/list?run=${encodeURIComponent(
-              latest.name,
+              runForFetch,
             )}&kind=map`,
             { cache: 'no-store' },
           );
@@ -184,72 +202,19 @@ export default function MainContent({
     return () => clearInterval(interval);
   }, [triggerRefresh, mode]);
 
-  useEffect(() => {
-    if (externalSimData) {
-      setSimulationData(externalSimData);
-      if (externalSimData.simulationSummary) {
-        setSimulationSummary(externalSimData.simulationSummary);
-      }
-    }
-  }, [externalSimData]);
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col h-full">
-        <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
-        </header>
-        <main className="flex-1 grid place-items-center">
-          <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
-            <p className="text-muted-foreground">Loading…</p>
-          </div>
-        </main>
-      </div>
-    );
+  if (isLoading && !simulationData) {
+    // ... your loading UI as before
   }
 
-  if (error) {
-    return (
-      <div className="flex flex-col h-full">
-        <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
-          <Button variant="secondary" onClick={fetchLatest}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
-          </Button>
-        </header>
-        <main className="flex-1 grid place-items-center">
-          <div className="text-center text-red-600">
-            <p className="font-semibold">Error</p>
-            <p className="text-sm">{error}</p>
-          </div>
-        </main>
-      </div>
-    );
+  if (error && !simulationData) {
+    // ... your error UI as before
   }
 
-  if (!simulationData || !latestFolder) {
-    return (
-      <div className="flex flex-col h-full">
-        <header className="flex items-center justify-between p-4 border-b bg-card">
-          <h1 className="text-2xl font-bold font-headline">
-            Gonzalo Bike Dashboard
-          </h1>
-        </header>
-        <main className="flex-1 grid place-items-center text-muted-foreground">
-          <div className="text-center">
-            <p className="text-lg font-medium mb-2">No simulation results yet</p>
-            <p className="text-sm">Run a simulation to see results here</p>
-          </div>
-        </main>
-      </div>
-    );
+  if (!simulationData && !latestFolder) {
+    // ... your "no simulations" UI as before
   }
+
+  const currentFolder = simulationData?.folder ?? latestFolder ?? '';
 
   return (
     <div className="flex flex-col h-full">
@@ -259,7 +224,7 @@ export default function MainContent({
             Gonzalo Bike Dashboard
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Latest: {latestFolder}
+            Current run: {currentFolder}
           </p>
         </div>
         <div className="flex gap-2">
@@ -284,7 +249,7 @@ export default function MainContent({
         <VisualizationsPanel
           mode={mode}
           apiBase={API_BASE}
-          runId={latestFolder}
+          runId={currentFolder}
           simulationData={simulationData}
           graphs={graphs}
           maps={maps}

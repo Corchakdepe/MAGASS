@@ -26,7 +26,7 @@ export default function SidebarContentUploadSim({
 
     const [folderPath, setFolderPath] = useState('./Datos/Marzo_Reales');
     const [outputPath, setOutputPath] = useState(''); // ahora opcional
-
+    const [simName, setSimName] = useState('');
     const [stress, setStress] = useState(0);
     const [walkCost, setWalkCost] = useState(100);
     const [delta, setDelta] = useState(15);
@@ -133,6 +133,8 @@ export default function SidebarContentUploadSim({
                     setDelta={setDelta}
                     stressType={stressType}
                     setStressType={setStressType}
+                    setSimName={setSimName}
+                    simName={simName}
                 />
             </SidebarBody>
 

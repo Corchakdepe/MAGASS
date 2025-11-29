@@ -23,6 +23,7 @@ function getModeFromPath(pathname: string): MainContentMode {
   if (pathname.startsWith('/analyticsGraphCreator')) return 'analyticsGraphs';
   if (pathname.startsWith('/analyticsMapCreator')) return 'analyticsMaps';
   if (pathname.startsWith('/maps')) return 'maps';
+  if (pathname.startsWith('/history')) return 'dashboard'; // or 'simulations', as you prefer
   return 'dashboard';
 }
 
@@ -30,19 +31,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const mode = getModeFromPath(pathname);
 
-  const [simulationData, setSimulationData] = useState<SimulationData | null>(
-    null
-  );
+  const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleSimulationComplete = (data: SimulationData) => {
+    console.log('AppLayout received simData', data);
     setSimulationData(data);
     setRefreshTrigger(prev => prev + 1);
   };
 
   return (
     <div className="flex min-h-screen w-full">
-      {/* Sidebar izquierdo + contenido central */}
       <SidebarProvider defaultOpen>
         <Sidebar side="left">
           <SidebarContentComponent />
@@ -62,7 +61,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </SidebarInset>
       </SidebarProvider>
 
-      {/* Sidebar derecho independiente */}
       <SidebarProvider defaultOpen className="w-fit">
         <Sidebar side="right">
           <SidebarHistory onSimulationComplete={handleSimulationComplete} />
