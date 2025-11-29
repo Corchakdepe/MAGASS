@@ -7,7 +7,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, BarChart3, Settings, FolderOpen, ChartArea, Map, Play } from 'lucide-react';
+import {Home, BarChart3, Settings, FolderOpen, ChartArea, Map, Play, Filter} from 'lucide-react';
 import { TbMapCog } from 'react-icons/tb';
 
 export default function SidebarContentComponent() {
@@ -19,6 +19,7 @@ export default function SidebarContentComponent() {
     { id: 'simulations', label: 'Simulations', icon: Play, path: '/simulador' },
     { id: 'analyticsGraphCreator', label: 'Analytics graph creator', icon: ChartArea, path: '/analyticsGraphCreator' },
     { id: 'analyticsMapCreator', label: 'Analytics map creator', icon: TbMapCog, path: '/analyticsMapCreator' },
+    { id: 'filter', label: 'Filter', icon: Filter, path: '/filters' },
     { id: 'maps', label: 'Maps visualizations', icon: Map, path: '/maps' },
     { id: 'history', label: 'History', icon: FolderOpen, path: '/history' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },

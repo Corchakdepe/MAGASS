@@ -22,7 +22,7 @@ import {
 import {Checkbox} from '@/components/ui/checkbox';
 import {ChevronsUpDown} from 'lucide-react';
 
-const NULL_CHAR = '_';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
 const MATRICES = [

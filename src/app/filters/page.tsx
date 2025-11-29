@@ -1,40 +1,4 @@
-'use client';
-
-import { useState } from 'react';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import SidebarContentComponent from '@/components/oldv/sidebar-content';
-import SidebarContentUpload from '@/components/oldv/upload-sidebar-content';
-import MainContent from '@/components/oldv/main-content';
-import type { SimulationData } from '@/types/simulation';
-
-export default function AppLayout() {
-  const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [selectedPage, setSelectedPage] = useState('dashboard');
-
-  const handleSimulationComplete = (data: SimulationData) => {
-    setSimulationData(data);
-    setRefreshTrigger(prev => prev + 1);
-  };
-
-  return (
-    <SidebarProvider>
-      <Sidebar side="left">
-        <SidebarContentComponent
-          selectedPage={selectedPage}
-          onSelectPage={setSelectedPage}
-        />
-      </Sidebar>
-
-      <SidebarInset>
-          <h1>Hello Filters</h1>
-      </SidebarInset>
-
-        <Sidebar side="right">
-        <SidebarContentUpload
-          onSimulationComplete={handleSimulationComplete}
-        />
-      </Sidebar>
-    </SidebarProvider>
-  );
+// app/analyticsMapCreator/page.tsx
+export default function FiltersPage() {
+  return null; // right sidebar enseñará StatisticsForm (mapas)
 }

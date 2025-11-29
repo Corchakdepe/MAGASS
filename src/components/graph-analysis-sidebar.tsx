@@ -28,10 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import FilterPanel, {
-  FilterState,
-  buildFilterString,
-} from '@/components/oldv/FilterPanel';
+
 
 const NULL_CHAR = '_';
 const API_BASE =
@@ -118,13 +115,6 @@ export default function GraphAnalysisSidebar() {
     return selectedDeltaOption;
   }, [selectedDeltaOption, customDelta]);
 
-  const [filter, setFilter] = useState<FilterState>({
-    operator: '>=',
-    value: '',
-    stationsPct: '',
-    days: 'all',
-    minHours: '',
-  });
   const [filterEnabled, setFilterEnabled] = useState<boolean>(false);
 
   const [apiBusy, setApiBusy] = useState(false);
@@ -141,12 +131,6 @@ export default function GraphAnalysisSidebar() {
         ? Number(effectiveDeltaAcum)
         : null;
 
-    // filtro opcional
-    let filtradoEstValor: string | null = null;
-    if (filterEnabled) {
-      const f = buildFilterString(filter, NULL_CHAR);
-      filtradoEstValor = f === NULL_CHAR ? null : f;
-    }
 
     // cuerpo base común para AnalysisArgs
     const baseBody: any = {
@@ -169,7 +153,6 @@ export default function GraphAnalysisSidebar() {
       mapa_circulo: null,
       mapa_desplazamientos: null,
 
-      filtrado_EstValor: filtradoEstValor,
       filtrado_EstValorDias: null,
       filtrado_Horas: null,
       filtrado_PorcentajeEstaciones: null,
@@ -446,33 +429,6 @@ export default function GraphAnalysisSidebar() {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Filters area (optional) */}
-      <Card className="shadow-sm">
-        <CardHeader className="py-2">
-          <CardTitle className="text-sm font-semibold">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-1 space-y-2">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="enable-filter"
-              checked={filterEnabled}
-              onCheckedChange={v => setFilterEnabled(Boolean(v))}
-            />
-            <Label htmlFor="enable-filter" className="text-xs">
-              Activar filtro por valor
-            </Label>
-          </div>
-
-          {filterEnabled ? (
-            <FilterPanel value={filter} onChange={setFilter} compact />
-          ) : (
-            <p className="text-[10px] text-muted-foreground">
-              Sin filtro activo. Se enviará <code>_</code> al backend.
-            </p>
-          )}
         </CardContent>
       </Card>
 

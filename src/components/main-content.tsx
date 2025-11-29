@@ -9,6 +9,9 @@ import type { MainContentMode } from '@/types/view-mode';
 import SummaryPanel from '@/components/summary-panel';
 import VisualizationsPanel from '@/components/visualizations-panel';
 import type { GraphItem } from '@/components/visualizations-panel';
+import { FiltersPanel } from '@/components/sidebar-content-filters';
+
+
 
 export type RawResultItem = {
   id: string;
@@ -83,10 +86,9 @@ export default function MainContent({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // use external sim when user selects from history
+  // aplica selección desde fuera (history / simulador)
   useEffect(() => {
     if (externalSimData) {
-      console.log('MainContent externalSimData', externalSimData);
       setSimulationData(externalSimData);
       if (externalSimData.simulationSummary) {
         setSimulationSummary(externalSimData.simulationSummary);
@@ -109,7 +111,7 @@ export default function MainContent({
         const latestFolderName = latest.simfolder ?? latest.name;
         setLatestFolder(latestFolderName);
 
-        // only auto-load latest if user has not selected anything
+        // solo auto-carga resumen si no hay selección externa
         if (!externalSimData) {
           let summary = defaultSummary;
           const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
@@ -134,7 +136,7 @@ export default function MainContent({
         }
 
         const runForFetch =
-          (externalSimData?.folder) ?? latestFolderName;
+          externalSimData?.folder ?? latestFolderName;
 
         if (mode === 'analyticsGraphs') {
           const graphsRes = await fetch(
@@ -203,18 +205,64 @@ export default function MainContent({
   }, [triggerRefresh, mode]);
 
   if (isLoading && !simulationData) {
-    // ... your loading UI as before
+    return (
+      <div className="flex flex-col h-full">
+        <header className="flex items-center justify-between p-4 border-b bg-card">
+          <h1 className="text-2xl font-bold font-headline">
+            Gonzalo Bike Dashboard
+          </h1>
+        </header>
+        <main className="flex-1 grid place-items-center">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading…</p>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (error && !simulationData) {
-    // ... your error UI as before
-  }
-
-  if (!simulationData && !latestFolder) {
-    // ... your "no simulations" UI as before
+    return (
+      <div className="flex flex-col h-full">
+        <header className="flex items-center justify-between p-4 border-b bg-card">
+          <h1 className="text-2xl font-bold font-headline">
+            Gonzalo Bike Dashboard
+          </h1>
+          <Button variant="secondary" onClick={fetchLatest}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        </header>
+        <main className="flex-1 grid place-items-center">
+          <div className="text-center text-red-600">
+            <p className="font-semibold">Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   const currentFolder = simulationData?.folder ?? latestFolder ?? '';
+
+  if (!simulationData && !currentFolder) {
+    return (
+      <div className="flex flex-col h-full">
+        <header className="flex items-center justify-between p-4 border-b bg-card">
+          <h1 className="text-2xl font-bold font-headline">
+            Gonzalo Bike Dashboard
+          </h1>
+        </header>
+        <main className="flex-1 grid place-items-center text-muted-foreground">
+          <div className="text-center">
+            <p className="text-lg font-medium mb-2">No simulation results yet</p>
+            <p className="text-sm">Run a simulation to see results here</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -246,15 +294,21 @@ export default function MainContent({
           <SummaryPanel kind="simulation" summaryData={simulationSummary} />
         )}
 
-        <VisualizationsPanel
-          mode={mode}
-          apiBase={API_BASE}
-          runId={currentFolder}
-          simulationData={simulationData}
-          graphs={graphs}
-          maps={maps}
-          chartsFromApi={chartsFromApi}
-        />
+        {(mode === 'analyticsGraphs' || mode === 'analyticsMaps' || mode === 'maps') && (
+          <VisualizationsPanel
+            mode={mode}
+            apiBase={API_BASE}
+            runId={currentFolder}
+            simulationData={simulationData ?? null}
+            graphs={graphs}
+            maps={maps}
+            chartsFromApi={chartsFromApi}
+          />
+        )}
+
+        {mode === 'filters' && currentFolder && (
+          <FiltersPanel apiBase={API_BASE} runId={currentFolder} />
+        )}
       </main>
     </div>
   );

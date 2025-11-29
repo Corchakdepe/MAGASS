@@ -13,6 +13,7 @@ import SidebarContentUploadMaps from '@/components/sidebar-content-upload-maps';
 import GraphAnalysisSidebar from '@/components/graph-analysis-sidebar';
 import { Button } from '@/components/ui/button';
 import type { SimulationData } from '@/types/simulation';
+import SidebarContentFilters from './sidebar-content-filters';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
@@ -157,6 +158,10 @@ export default function SidebarHistory({ onSimulationComplete }: SidebarHistoryP
   } else if (pathname.startsWith('/analyticsGraphCreator')) {
     content = <GraphAnalysisSidebar />;
   }
+   else if (pathname.startsWith('/filters') && onSimulationComplete) {
+  content = <SidebarContentFilters onSimulationComplete={onSimulationComplete} />;
+  }
+
 
   return (
     <>
