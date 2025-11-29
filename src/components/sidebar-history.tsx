@@ -135,14 +135,15 @@ export default function SidebarHistory({ onSimulationComplete }: SidebarHistoryP
           {history.map(item => (
             <li key={item.simfolder}>
               <button
-                type="button"
-                onClick={() => handleSelectRun(item)}
-                className="w-full text-left px-2 py-1 rounded hover:bg-muted text-xs"
+                  type="button"
+                  onClick={() => handleSelectRun(item)}
+                  className="w-full text-left px-2 py-1 rounded hover:bg-muted text-xs"
               >
-                <div className="font-medium truncate">{item.name}</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {item.cityname ?? 'Unknown city'} · {item.created}
+                <div className="font-medium truncate">
+                  {item.cityname ?? 'Unknown city'}
                 </div>
+                <div className="text-[10px] text-muted-foreground">Date {item.created}</div>
+                <div className="text-[10px] text-muted-foreground">Simumation Folder {item.name}</div>
               </button>
             </li>
           ))}

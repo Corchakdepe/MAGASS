@@ -83,9 +83,10 @@ export default function StatisticsSimulationForm({
                 <Input
                     id="delta"
                     type="number"
-                    min={1}
+                    //min={1}
                     value={delta}
-                    onChange={(e) => setDelta(Number(e.target.value) || 1)}
+                    //required
+                    onChange={(e) => setDelta(Number(e.target.value))}
                 />
             </div>
 
