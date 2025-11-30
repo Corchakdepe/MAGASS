@@ -5,7 +5,6 @@ import {useState} from 'react';
 import {Label} from '@/components/ui/label';
 import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {
     Popover,
     PopoverTrigger,
@@ -21,7 +20,13 @@ import {
 } from '@/components/ui/command';
 import {Checkbox} from '@/components/ui/checkbox';
 import {ChevronsUpDown} from 'lucide-react';
-
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -60,6 +65,14 @@ export default function StatisticsForm() {
     const [apiBusy, setApiBusy] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
 
+    const [selectedMaps, setSelectedMaps] = useState<string[]>([]);
+    const [instantesMaps, setInstantesMaps] = useState<Record<string, string>>({});
+    const [stationsMaps, setStationsMaps] = useState<Record<string, string>>({});
+    const [labelsMaps, setLabelsMaps] = useState<Record<string, boolean>>({});
+
+    // -------------------------
+    // Selección matrices
+    // -------------------------
     const selectedIds = seleccionAgreg
         .split(';')
         .map(s => s.trim())
@@ -73,9 +86,9 @@ export default function StatisticsForm() {
         setSeleccionAgreg(next.join(';'));
     };
 
-    const [selectedMaps, setSelectedMaps] = useState<string[]>([]);
-    const [instantesMaps, setInstantesMaps] = useState<Record<string, string>>({});
-
+    // -------------------------
+    // Mapas helpers
+    // -------------------------
     const toggleMap = (apiKey: string) => {
         let next = [...selectedMaps];
         if (next.includes(apiKey)) next = next.filter(x => x !== apiKey);
@@ -83,30 +96,67 @@ export default function StatisticsForm() {
         setSelectedMaps(next);
     };
 
+    /**
+     * Construye la cadena que entiende el backend:
+     * - mapa_densidad: "i1;i2[+e1;e2]"
+     * - video_densidad: "inicio:fin[+e1;e2]"
+     * - mapa_voronoi: "i1;i2"
+     * - mapa_circulo: "i1;i2[+e1;e2][-L]"
+     * - mapa_desplazamientos: "inst;dOri;dDst;mov;tipo"
+     */
+    const buildMapArg = (apiKey: string): string | undefined => {
+        if (apiKey === 'mapa_desplazamientos') {
+            const inst = (instantesMaps['mapa_desplazamientos_inst'] || '').trim();
+            const dOri = (instantesMaps['mapa_desplazamientos_d_ori'] || '').trim();
+            const dDst = (instantesMaps['mapa_desplazamientos_d_dst'] || '').trim();
+            const mov = (instantesMaps['mapa_desplazamientos_mov'] || '').trim();
+            const tipo = (instantesMaps['mapa_desplazamientos_tipo'] || '').trim();
+            if (!inst || !dOri || !dDst || !mov || !tipo) return undefined;
+            return `${inst};${dOri};${dDst};${mov};${tipo}`;
+        }
+
+        const base = (instantesMaps[apiKey] || '').trim();
+        if (!base) return undefined;
+
+        const supportsStations =
+            apiKey === 'mapa_densidad' ||
+            apiKey === 'video_densidad' ||
+            apiKey === 'mapa_circulo';
+
+        let spec = base;
+
+        if (supportsStations) {
+            const stations = (stationsMaps[apiKey] || '').trim();
+            if (stations) spec += `+${stations}`;
+        }
+
+        if (apiKey === 'mapa_circulo') {
+            const labels = labelsMaps[apiKey] ?? false;
+            if (labels) spec += '-L';
+        }
+
+        return spec;
+    };
+
+    // -------------------------
+    // Lanzar análisis
+    // -------------------------
     const handleAnalyze = async () => {
         if (apiBusy) return;
         setApiBusy(true);
         setApiError(null);
 
-        // conv: empty -> undefined (so backend uses default), else trimmed string
-        const nzStr = (s?: string) =>
-            s && s.trim().length ? s.trim() : undefined;
-
-        // conv: empty -> undefined (so backend uses default), else number
         const nzInt = (s?: string) =>
             s && s.trim().length ? Number(s.trim()) : undefined;
 
         const commonPayload = {
-            // names in AnalysisArgs are snake_case and required
             input_folder: entrada || '',
             output_folder: salida || '',
             seleccion_agregacion: seleccionAgreg || '-1',
 
-            // ints or None
-            delta_media: nzInt(deltaMediaTxt),    // default 60 if undefined
-            delta_acumulada: nzInt(deltaAcumTxt), // None if undefined
+            delta_media: nzInt(deltaMediaTxt),
+            delta_acumulada: nzInt(deltaAcumTxt),
 
-            // optional str fields -> undefined if not used
             graf_barras_est_med: undefined,
             graf_barras_est_acum: undefined,
             graf_barras_dia: undefined,
@@ -125,12 +175,11 @@ export default function StatisticsForm() {
             filtrado_PorcentajeEstaciones: undefined,
         };
 
-        const mapRequests = selectedMaps.map(async (apiKey) => {
-            // instantes (e.g. "30;31") only for that map, or undefined
-            const instantes = instantesMaps[apiKey];
+        const mapRequests = selectedMaps.map(async apiKey => {
+            const arg = buildMapArg(apiKey);
             const payload = {
                 ...commonPayload,
-                [apiKey]: nzStr(instantes),
+                [apiKey]: arg,
             };
 
             console.log('sending payload', apiKey, payload);
@@ -163,176 +212,363 @@ export default function StatisticsForm() {
         }
     };
 
-
+    // -------------------------
+    // Render
+    // -------------------------
     return (
-        <div className="space-y-8">
-            <Card className="shadow-sm">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium">Entradas y opciones</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-4">
-                    {/* Entradas / Salidas */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <Label htmlFor="entrada">Entrada ficheros</Label>
-                            <Input
-                                id="entrada"
-                                value={entrada}
-                                onChange={e => setEntrada(e.target.value)}
-                                placeholder="./Resultados_Simulador"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="salida">Salida ficheros</Label>
-                            <Input
-                                id="salida"
-                                value={salida}
-                                onChange={e => setSalida(e.target.value)}
-                                placeholder="./Resultados_Analisis"
-                            />
-                        </div>
-                    </div>
+        <div className="space-y-6">
+            {/* Entradas y opciones */}
+            <div className="space-y-4">
+                <h3 className="text-base font-semibold">Entradas y opciones</h3>
 
-                    {/* Select de matrices */}
-                    <div className="space-y-2">
-                        <Label>Selección/agregación matrices</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className="w-full justify-between"
-                                >
-                                    {selectedIds.length > 0
-                                        ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(';')}`
-                                        : 'Selecciona matrices...'}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[400px] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Buscar matriz..."/>
-                                    <CommandEmpty>No encontrada</CommandEmpty>
-                                    <CommandList>
-                                        <CommandGroup>
-                                            {MATRICES.map(m => (
-                                                <CommandItem
-                                                    key={m.id}
-                                                    onSelect={() => toggleMatrix(m.id)}
-                                                    className="flex items-center space-x-2 cursor-pointer"
-                                                >
-                                                    <Checkbox
-                                                        checked={selectedIds.includes(String(m.id))}
-                                                        onCheckedChange={() => toggleMatrix(m.id)}
-                                                    />
-                                                    <span className="text-sm">
-                            {m.label} ({m.id})
-                          </span>
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                {/* Entradas / Salidas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <Label htmlFor="entrada">Entrada ficheros</Label>
                         <Input
-                            value={seleccionAgreg}
-                            onChange={e => setSeleccionAgreg(e.target.value)}
-                            placeholder="Ej: 1;2;3"
+                            id="entrada"
+                            value={entrada}
+                            onChange={e => setEntrada(e.target.value)}
+                            placeholder="./Resultados_Simulador"
                         />
                     </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="salida">Salida ficheros</Label>
+                        <Input
+                            id="salida"
+                            value={salida}
+                            onChange={e => setSalida(e.target.value)}
+                            placeholder="./Resultados_Analisis"
+                        />
+                    </div>
+                </div>
 
-                    {/* Deltas */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        <div className="space-y-1">
-                            <Label htmlFor="deltaMedia">Delta Media</Label>
-                            <Input
-                                id="deltaMedia"
-                                value={deltaMediaTxt}
-                                onChange={e => setDeltaMediaTxt(e.target.value)}
-                                placeholder="4, 60, 1440…"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="deltaAcum">Delta Acumulada</Label>
-                            <Input
-                                id="deltaAcum"
-                                value={deltaAcumTxt}
-                                onChange={e => setDeltaAcumTxt(e.target.value)}
-                                placeholder="4, 60, 1440…"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="newDelta">Nuevo Delta (simulación)</Label>
-                            <Input id="newDelta" type="number" value={60} disabled/>
-                        </div>
+                {/* Select de matrices */}
+                <div className="space-y-2">
+                    <Label>Selección/agregación matrices</Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                            >
+                                {selectedIds.length > 0
+                                    ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(';')}`
+                                    : 'Selecciona matrices...'}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                                <CommandInput placeholder="Buscar matriz..."/>
+                                <CommandEmpty>No encontrada</CommandEmpty>
+                                <CommandList>
+                                    <CommandGroup>
+                                        {MATRICES.map(m => (
+                                            <CommandItem
+                                                key={m.id}
+                                                onSelect={() => toggleMatrix(m.id)}
+                                                className="flex items-center space-x-2 cursor-pointer"
+                                            >
+                                                <Checkbox
+                                                    checked={selectedIds.includes(String(m.id))}
+                                                    onCheckedChange={() => toggleMatrix(m.id)}
+                                                />
+                                                <span className="text-sm">
+                          {m.label} ({m.id})
+                        </span>
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    <Input
+                        value={seleccionAgreg}
+                        onChange={e => setSeleccionAgreg(e.target.value)}
+                        placeholder="Ej: 1;2;3"
+                    />
+                </div>
+
+                {/* Deltas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-1">
+                        <Label htmlFor="deltaMedia">Delta Media</Label>
+                        <Input
+                            id="deltaMedia"
+                            value={deltaMediaTxt}
+                            onChange={e => setDeltaMediaTxt(e.target.value)}
+                            placeholder="4, 60, 1440…"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="deltaAcum">Delta Acumulada</Label>
+                        <Input
+                            id="deltaAcum"
+                            value={deltaAcumTxt}
+                            onChange={e => setDeltaAcumTxt(e.target.value)}
+                            placeholder="4, 60, 1440…"
+                        />
+                    </div>
+                </div>
+
+                {/* Mapas */}
+                <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-medium">Mapas a generar</Label>
+
+                    <div className="space-y-3">
+                        {MAPAS.map(m => {
+                            const selected = selectedMaps.includes(m.arg);
+
+                            return (
+                                <div
+                                    key={m.arg}
+                                    className="border border-muted rounded-md px-3 py-2 space-y-2"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id={`map-${m.arg}`}
+                                            checked={selected}
+                                            onCheckedChange={() => toggleMap(m.arg)}
+                                        />
+                                        <Label
+                                            htmlFor={`map-${m.arg}`}
+                                            className="text-xs font-medium cursor-pointer"
+                                        >
+                                            {m.label}
+                                        </Label>
+                                    </div>
+
+                                    {selected && (
+                                        <div className="space-y-2 pl-6">
+                                            {/* Instantes para densidad, voronoi, círculo */}
+                                            {(m.arg === 'mapa_densidad' ||
+                                                m.arg === 'mapa_voronoi' ||
+                                                m.arg === 'mapa_circulo') && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[11px] text-muted-foreground">
+                                                        Instantes (ej: 0;10;20)
+                                                    </Label>
+                                                    <Input
+                                                        className="h-8 text-xs w-full"
+                                                        value={instantesMaps[m.arg] || ''}
+                                                        onChange={e =>
+                                                            setInstantesMaps({
+                                                                ...instantesMaps,
+                                                                [m.arg]: e.target.value,
+                                                            })
+                                                        }
+                                                        placeholder="0;10;20"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Rango para video densidad */}
+                                            {m.arg === 'video_densidad' && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[11px] text-muted-foreground">
+                                                        Rango (ej: 0:1440 o 0:end)
+                                                    </Label>
+                                                    <Input
+                                                        className="h-8 text-xs w-full"
+                                                        value={instantesMaps[m.arg] || ''}
+                                                        onChange={e =>
+                                                            setInstantesMaps({
+                                                                ...instantesMaps,
+                                                                [m.arg]: e.target.value,
+                                                            })
+                                                        }
+                                                        placeholder="0:1440 o 0:end"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Estaciones opcionales para densidad, vídeo, círculo */}
+                                            {(m.arg === 'mapa_densidad' ||
+                                                m.arg === 'video_densidad' ||
+                                                m.arg === 'mapa_circulo') && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[11px] text-muted-foreground">
+                                                        Estaciones (IDs ;, opcional)
+                                                    </Label>
+                                                    <Input
+                                                        className="h-8 text-xs w-full"
+                                                        value={stationsMaps[m.arg] || ''}
+                                                        onChange={e =>
+                                                            setStationsMaps({
+                                                                ...stationsMaps,
+                                                                [m.arg]: e.target.value,
+                                                            })
+                                                        }
+                                                        placeholder="1;15;26;48;..."
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Checkbox -L solo para círculo */}
+                                            {m.arg === 'mapa_circulo' && (
+                                                <div className="flex items-center gap-2">
+                                                    <Checkbox
+                                                        id={`labels-${m.arg}`}
+                                                        checked={labelsMaps[m.arg] ?? false}
+                                                        onCheckedChange={checked =>
+                                                            setLabelsMaps({
+                                                                ...labelsMaps,
+                                                                [m.arg]: Boolean(checked),
+                                                            })
+                                                        }
+                                                    />
+                                                    <Label
+                                                        htmlFor={`labels-${m.arg}`}
+                                                        className="text-[11px] cursor-pointer"
+                                                    >
+                                                        Abrir labels (-L)
+                                                    </Label>
+                                                </div>
+                                            )}
+
+                                            {/* Parámetros mapa desplazamientos */}
+                                            {m.arg === 'mapa_desplazamientos' && (
+                                                <div className="space-y-3">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Instante
+                                                            </Label>
+                                                            <Input
+                                                                className="h-8 text-xs"
+                                                                value={
+                                                                    instantesMaps['mapa_desplazamientos_inst'] || ''
+                                                                }
+                                                                onChange={e =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_inst: e.target.value,
+                                                                    })
+                                                                }
+                                                                placeholder="10"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Δ origen
+                                                            </Label>
+                                                            <Input
+                                                                className="h-8 text-xs"
+                                                                value={
+                                                                    instantesMaps['mapa_desplazamientos_d_ori'] || ''
+                                                                }
+                                                                onChange={e =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_d_ori: e.target.value,
+                                                                    })
+                                                                }
+                                                                placeholder="15"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Δ destino
+                                                            </Label>
+                                                            <Input
+                                                                className="h-8 text-xs"
+                                                                value={
+                                                                    instantesMaps['mapa_desplazamientos_d_dst'] || ''
+                                                                }
+                                                                onChange={e =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_d_dst: e.target.value,
+                                                                    })
+                                                                }
+                                                                placeholder="720"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Movimiento
+                                                            </Label>
+                                                            <Select
+                                                                value={
+                                                                    instantesMaps['mapa_desplazamientos_mov'] || ''
+                                                                }
+                                                                onValueChange={v =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_mov: v,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs">
+                                                                    <SelectValue placeholder="Selecciona (1 / -1)"/>
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="1">1 (salidas)</SelectItem>
+                                                                    <SelectItem value="-1">-1 (entradas)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Tipo petición
+                                                            </Label>
+                                                            <Select
+                                                                value={
+                                                                    instantesMaps['mapa_desplazamientos_tipo'] || ''
+                                                                }
+                                                                onValueChange={v =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_tipo: v,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs">
+                                                                    <SelectValue
+                                                                        placeholder="Selecciona (real / fict.)"/>
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="1">1 (real)</SelectItem>
+                                                                    <SelectItem value="0">0 (ficticia)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
-                    {/* Mapas */}
-                    <div className="space-y-2 mt-4">
-                        <Label>Mapas a generar</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className="w-full justify-between"
-                                >
-                                    {selectedMaps.length > 0
-                                        ? `${selectedMaps.length} seleccionada(s): ${selectedMaps.join(';')}`
-                                        : 'Selecciona mapas...'}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[400px] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Buscar mapa..."/>
-                                    <CommandEmpty>No encontrado</CommandEmpty>
-                                    <CommandList>
-                                        <CommandGroup>
-                                            {MAPAS.map(m => (
-                                                <div key={m.arg} className="flex flex-col py-1">
-                                                    <div className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            checked={selectedMaps.includes(m.arg)}
-                                                            onCheckedChange={() => toggleMap(m.arg)}
-                                                        />
-                                                        <span className="text-sm">{m.label}</span>
-                                                    </div>
-                                                    {selectedMaps.includes(m.arg) && (
-                                                        <Input
-                                                            value={instantesMaps[m.arg] || ''}
-                                                            onChange={e =>
-                                                                setInstantesMaps({
-                                                                    ...instantesMaps,
-                                                                    [m.arg]: e.target.value,
-                                                                })
-                                                            }
-                                                            placeholder="Instantes ej: 30;31;32"
-                                                            className="ml-6 mt-1 w-[250px]"
-                                                        />
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
+                    {/* Resumen selección */}
+                    <div className="space-y-1">
+                        <Label className="text-[11px] text-muted-foreground">
+                            Resumen selección
+                        </Label>
                         <Input
                             value={selectedMaps
-                                .map(k =>
-                                    instantesMaps[k] ? `${k}(${instantesMaps[k]})` : k
-                                )
+                                .map(k => buildMapArg(k))
+                                .filter(Boolean)
                                 .join(';')}
                             readOnly
-                            placeholder="Ej: mapa_circulo(30;31;32)"
+                            className="h-8 text-xs"
+                            placeholder="Ej: mapa_circulo 0;10+1;15;26-L"
                         />
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-3 items-center pt-2 border-t">
                 <Button onClick={handleAnalyze} disabled={apiBusy}>
                     {apiBusy ? 'Analizando...' : 'Analizar'}
                 </Button>
