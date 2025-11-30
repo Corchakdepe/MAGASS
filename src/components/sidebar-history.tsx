@@ -171,9 +171,6 @@ export default function SidebarHistory({ onSimulationComplete }: SidebarHistoryP
       <SidebarBody className="p-4 space-y-4 overflow-y-auto">
         {content}
       </SidebarBody>
-      <SidebarFooter className="p-4 border-t">
-        <p className="text-[10px] text-muted-foreground">Right sidebar</p>
-      </SidebarFooter>
     </>
   );
 }

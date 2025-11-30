@@ -332,14 +332,6 @@ export default function SidebarContentFilters({
     }
 
     const filtro = buildFiltroFromUnified(filterKind, filterState, '_');
-    if (filtro === '_') {
-      toast({
-        variant: 'destructive',
-        title: 'Filtro incompleto',
-        description: 'Rellena los parámetros necesarios del filtro.',
-      });
-      return;
-    }
 
     setIsRunning(true);
     try {
@@ -576,8 +568,7 @@ export default function SidebarContentFilters({
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Según el tipo de filtro se usarán solo algunos campos
-            (por ejemplo, Horas críticas usa operador, valor y % estaciones).
+            Los campos son opcionales; si falta información crítica, el filtro se ignorará en el backend.
           </p>
         </div>
       </SidebarBody>
