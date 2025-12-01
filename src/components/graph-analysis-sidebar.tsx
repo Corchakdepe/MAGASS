@@ -5,7 +5,6 @@ import React, { useMemo, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Popover,
   PopoverTrigger,
@@ -29,8 +28,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-
-const NULL_CHAR = '_';
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -52,25 +49,63 @@ const MATRICES = [
   { label: 'Ficticias no resueltas dejar', id: 13 },
 ];
 
-type GraficaDef = { label: string; arg: string; backendArg?: string };
+type FilterKind = 'EstValor' | 'EstValorDias' | 'Horas' | 'Porcentaje';
+
+type UnifiedFilterState = {
+  operator: string;
+  value: string;
+  dayPct: string;
+  days: string;
+  allowedFailDays: string;
+  stationsPct: string;
+  stationsList: string;
+};
+
+function buildFiltroFromUnified(
+  kind: FilterKind,
+  f: UnifiedFilterState,
+  nullChar = '_',
+): string {
+  const v = f.value.trim();
+  const days = f.days.trim() || 'all';
+  const dayPct = f.dayPct.trim();
+  const fail = f.allowedFailDays.trim();
+  const pEst = f.stationsPct.trim();
+  const list = f.stationsList.trim();
+
+  if (kind === 'EstValor' || kind === 'EstValorDias') {
+    if (!v || !dayPct || !fail) return nullChar;
+    return `${f.operator}${v};${dayPct};${days};${fail}`;
+  }
+
+  if (kind === 'Horas') {
+    if (!v || !pEst) return nullChar;
+    return `${f.operator}${v};${pEst}`;
+  }
+
+  if (kind === 'Porcentaje') {
+    if (!v || !list) return nullChar;
+    return `${f.operator}${v}-${list}`;
+  }
+
+  return nullChar;
+}
+
+type GraficaKey =
+  | 'graf_barras_est_med'
+  | 'graf_barras_est_acum'
+  | 'graf_barras_dia'
+  | 'graf_linea_comp_est'
+  | 'graf_linea_comp_mats';
+
+type GraficaDef = { label: string; key: GraficaKey };
 
 const GRAFICAS: GraficaDef[] = [
-  { label: 'Gráfico de barra por estación (medio)', arg: 'graf_barras_est_med' },
-  { label: 'Frecuencia de valores (acumulado estación)', arg: 'graf_barras_est_acum' },
-  { label: 'Histograma del día (all-M-Frec)', arg: 'graf_barras_dia' },
-  { label: 'Líneas (comparación estaciones)', arg: 'graf_linea', backendArg: 'graf_linea_comp_est' },
-  { label: 'Gráfica de estaciones (barras día)', arg: 'graf_estaciones', backendArg: 'graf_barras_dia' },
-  { label: 'Líneas comparación de estaciones', arg: 'graf_linea_comp_est' },
-  { label: 'Líneas comparación de matrices', arg: 'graf_linea_comp_mats' },
-];
-
-const DELTA_OPTIONS = [
-  { label: '15 min', value: '15' },
-  { label: '30 min', value: '30' },
-  { label: '60 min (1h)', value: '60' },
-  { label: '120 min (2h)', value: '120' },
-  { label: '1440 min (1 día)', value: '1440' },
-  { label: 'Otro…', value: 'custom' },
+  { label: 'Barras por estación (media)', key: 'graf_barras_est_med' },
+  { label: 'Barras por estación (acumulado)', key: 'graf_barras_est_acum' },
+  { label: 'Histograma días (M/A + Frec)', key: 'graf_barras_dia' },
+  { label: 'Líneas comparar estaciones', key: 'graf_linea_comp_est' },
+  { label: 'Líneas comparar matrices', key: 'graf_linea_comp_mats' },
 ];
 
 export default function GraphAnalysisSidebar() {
@@ -78,10 +113,14 @@ export default function GraphAnalysisSidebar() {
   const [salida, setSalida] = useState('');
   const [seleccionAgreg, setSeleccionAgreg] = useState('');
 
-  const selectedIds = seleccionAgreg
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s !== '');
+  const selectedIds = useMemo(
+    () =>
+      seleccionAgreg
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s !== ''),
+    [seleccionAgreg],
+  );
 
   const toggleMatrix = (id: number) => {
     const idStr = String(id);
@@ -91,113 +130,181 @@ export default function GraphAnalysisSidebar() {
     setSeleccionAgreg(next.join(';'));
   };
 
-  const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [instantesCharts, setInstantesCharts] = useState<
-    Record<string, string>
-  >({});
-  const [stationPerChart, setStationPerChart] = useState<
-    Record<string, string>
-  >({});
-
-  const toggleChart = (arg: string) => {
+  const [selectedCharts, setSelectedCharts] = useState<GraficaKey[]>([]);
+  const toggleChart = (key: GraficaKey) => {
     let next = [...selectedCharts];
-    if (next.includes(arg)) next = next.filter(x => x !== arg);
-    else next.push(arg);
+    if (next.includes(key)) next = next.filter(x => x !== key);
+    else next.push(key);
     setSelectedCharts(next);
   };
 
-  const [selectedDeltaOption, setSelectedDeltaOption] = useState<string>('');
-  const [customDelta, setCustomDelta] = useState<string>('');
+  const [deltaMediaTxt, setDeltaMediaTxt] = useState('');
+  const [deltaAcumTxt, setDeltaAcumTxt] = useState('');
 
-  const effectiveDeltaAcum = useMemo(() => {
-    if (!selectedDeltaOption) return '';
-    if (selectedDeltaOption === 'custom') return customDelta.trim();
-    return selectedDeltaOption;
-  }, [selectedDeltaOption, customDelta]);
-
-  const [filterEnabled, setFilterEnabled] = useState<boolean>(false);
+  const nzInt = (s?: string) =>
+    s && s.trim().length ? Number(s.trim()) : undefined;
 
   const [apiBusy, setApiBusy] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // Filtro unificado (igual que en StatisticsForm de mapas)
+  const [filterKind, setFilterKind] = useState<FilterKind>('EstValorDias');
+  const [filterState, setFilterState] = useState<UnifiedFilterState>({
+    operator: '>=',
+    value: '65',
+    dayPct: '0',
+    days: 'all',
+    allowedFailDays: '5',
+    stationsPct: '0',
+    stationsList: '',
+  });
+  const [useFilter, setUseFilter] = useState(false);
+
+  // Parámetros específicos de cada tipo de gráfica (más friendly)
+
+  // Barras por estación (media / acumulado)
+  const [barStation, setBarStation] = useState<string>('87');
+  const [barDays, setBarDays] = useState<string>('all');
+
+  // Histograma días
+  const [dayDays, setDayDays] = useState<string>('all');
+  const [dayMode, setDayMode] = useState<'M' | 'A'>('M');
+  const [dayFreq, setDayFreq] = useState<boolean>(true);
+
+  // Líneas comparar estaciones
+  const [lineStations, setLineStations] = useState<string>('87;212');
+  const [lineDays, setLineDays] = useState<string>('all;all'); // versión simple
+
+  // Líneas comparar matrices
+  const [matsDelta, setMatsDelta] = useState<string>('60');
+  const [matsStations1, setMatsStations1] = useState<string>('87;212');
+  const [matsStations2, setMatsStations2] = useState<string>('0;1');
+  const [matsMode, setMatsMode] = useState<'M' | 'A'>('M');
+
+  const buildGraficaArg = (key: GraficaKey): string | null => {
+    if (key === 'graf_barras_est_med' || key === 'graf_barras_est_acum') {
+      const est = barStation.trim();
+      const dias = barDays.trim() || 'all';
+      if (!est) return null;
+      // "estacion-dias"
+      return `${est}-${dias}`;
+    }
+
+    if (key === 'graf_barras_dia') {
+      // "dias-M" / "dias-A" + "-Frec"
+      const dias = dayDays.trim() || 'all';
+      const mode = dayMode; // 'M' o 'A'
+      const freqPart = dayFreq ? '-Frec' : '';
+      return `${dias}-${mode}${freqPart}`;
+    }
+
+    if (key === 'graf_linea_comp_est') {
+  // Entradas amigables:
+  // lineStations: "87;212"
+  // lineDays:     "all;all"  -> queremos "all#all"
+  const ests = lineStations.trim();
+  const diasCad = lineDays.trim();
+  if (!ests || !diasCad) return null;
+
+  const estList = ests.split(';').filter(Boolean);        // ["87","212"]
+  const diasList = diasCad.split(';').filter(Boolean);    // ["all","all"]
+
+  // Si el usuario dio tantos elementos como estaciones, usamos '#' entre ellos
+  if (diasList.length === estList.length) {
+    const diasJoined = diasList.join('#');                // "all#all"
+    return `${ests}-${diasJoined}`;                       // "87;212-all#all"
+  }
+
+  // Si solo dio una palabra (all), la repetimos para todas
+  if (diasList.length === 1 && diasList[0] === 'all') {
+    const diasJoined = new Array(estList.length).fill('all').join('#');
+    return `${ests}-${diasJoined}`;
+  }
+
+  // En caso raro, dejamos que el usuario meta advanced "0;1;2#all" entero
+  return `${ests}-${diasCad}`;
+}
+
+
+    if (key === 'graf_linea_comp_mats') {
+      // "deltaMatriz-est1;est2-est1custom;est2custom-M|A"
+      const d = matsDelta.trim();
+      const e1 = matsStations1.trim();
+      const e2 = matsStations2.trim();
+      const mode = matsMode; // 'M' o 'A'
+      if (!d || !e1 || !e2) return null;
+      return `${d}-${e1}-${e2}-${mode}`;
+    }
+
+    return null;
+  };
+
   const handleAnalyze = async () => {
-    if (apiBusy) return;
+    if (apiBusy || selectedCharts.length === 0) return;
     setApiBusy(true);
     setApiError(null);
 
-    // delta_acumulada: number | null
-    const deltaAcumuladaNum =
-      effectiveDeltaAcum && effectiveDeltaAcum.length > 0
-        ? Number(effectiveDeltaAcum)
-        : null;
+    const filtroStr = useFilter
+      ? buildFiltroFromUnified(filterKind, filterState, '_')
+      : undefined;
 
-
-    // cuerpo base común para AnalysisArgs
-    const baseBody: any = {
+    const commonPayload: any = {
       input_folder: entrada || '',
       output_folder: salida || '',
       seleccion_agregacion: seleccionAgreg || '-1',
 
-      delta_media: 60,
-      delta_acumulada: deltaAcumuladaNum,
+      delta_media: nzInt(deltaMediaTxt),
+      delta_acumulada: nzInt(deltaAcumTxt),
 
-      graf_barras_est_med: null,
-      graf_barras_est_acum: null,
-      graf_barras_dia: null,
-      graf_linea_comp_est: null,
-      graf_linea_comp_mats: null,
+      graf_barras_est_med: undefined,
+      graf_barras_est_acum: undefined,
+      graf_barras_dia: undefined,
+      graf_linea_comp_est: undefined,
+      graf_linea_comp_mats: undefined,
 
-      mapa_densidad: null,
-      video_densidad: null,
-      mapa_voronoi: null,
-      mapa_circulo: null,
-      mapa_desplazamientos: null,
+      mapa_densidad: undefined,
+      video_densidad: undefined,
+      mapa_voronoi: undefined,
+      mapa_circulo: undefined,
+      mapa_desplazamientos: undefined,
 
-      filtrado_EstValorDias: null,
-      filtrado_Horas: null,
-      filtrado_PorcentajeEstaciones: null,
+      filtro: filtroStr,
+      tipo_filtro: useFilter ? filterKind : undefined,
+      use_filter_for_maps: false,
+
+      filtrado_EstValor: undefined,
+      filtrado_EstValorDias: undefined,
+      filtrado_Horas: undefined,
+      filtrado_PorcentajeEstaciones: undefined,
     };
 
-    const chartRequests = selectedCharts.map(async uiArg => {
-      const def = GRAFICAS.find(d => d.arg === uiArg);
-      const backendKey = def?.backendArg ?? uiArg;
-
-      const body = { ...baseBody };
-
-      if (uiArg === 'graf_barras_dia') {
-        body.graf_barras_dia =
-          instantesCharts[uiArg]?.trim() || 'all-M-Frec';
-      } else if (
-        uiArg === 'graf_barras_est_med' ||
-        uiArg === 'graf_barras_est_acum'
-      ) {
-        const station = (stationPerChart[uiArg] || '0').trim();
-        const dias = instantesCharts[uiArg]?.trim() || 'all';
-        body[backendKey] = `${station}-${dias}`;
-      } else {
-        const raw = instantesCharts[uiArg]?.trim();
-        body[backendKey] = raw && raw.length > 0 ? raw : null;
-      }
+    const requests = selectedCharts.map(async key => {
+      const arg = buildGraficaArg(key);
+      const payload = {
+        ...commonPayload,
+        [key]: arg,
+      };
 
       const res = await fetch(`${API_BASE}/exe/analizar-json`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       });
+
+      const json = await res.json().catch(() => null);
       if (!res.ok) {
         throw new Error(
-          `Error analizando gráfica ${uiArg}: ${res.status} ${res.statusText}`
+          `Error analizando gráfica ${key}: ${res.status} ${
+            (json as any)?.detail ?? ''
+          }`,
         );
       }
-      const json = await res.json();
-      console.log('Backend JSON for', uiArg, json);
       return json;
     });
 
     try {
-      const results = await Promise.all(chartRequests);
-      console.log('Resultados análisis gráficas (todas):', results);
-      // aquí podrías guardar results[].charts en algún estado global
+      const results = await Promise.all(requests);
+      console.log('Resultados análisis gráficas:', results);
     } catch (e: any) {
       setApiError(e?.message ?? 'Error inesperado');
     } finally {
@@ -208,232 +315,429 @@ export default function GraphAnalysisSidebar() {
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Paths */}
-      <Card className="shadow-sm">
-        <CardContent className="pt-4 space-y-2">
-          <div className="space-y-1">
-            <Label htmlFor="entrada" className="text-xs">
-              Entrada
-            </Label>
-            <Input
-              id="entrada"
-              value={entrada}
-              onChange={e => setEntrada(e.target.value)}
-              placeholder="results/20251124_...sim..."
-              className="h-8 text-xs"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="salida" className="text-xs">
-              Salida
-            </Label>
-            <Input
-              id="salida"
-              value={salida}
-              onChange={e => setSalida(e.target.value)}
-              placeholder="results/20251124_...sim..."
-              className="h-8 text-xs"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <Label className="text-xs">Entrada</Label>
+        <Input
+          value={entrada}
+          onChange={e => setEntrada(e.target.value)}
+          placeholder="results/2025..._sim_..."
+          className="h-8 text-xs"
+        />
+        <Label className="text-xs mt-2">Salida</Label>
+        <Input
+          value={salida}
+          onChange={e => setSalida(e.target.value)}
+          placeholder="results/2025..._sim_..."
+          className="h-8 text-xs"
+        />
+      </div>
 
-      {/* Analysis area */}
-      <Card className="shadow-sm flex-1 min-h-0">
-        <CardHeader className="py-2">
-          <CardTitle className="text-sm font-semibold">Análisis</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0 space-y-3 h-[calc(100vh-18rem)] overflow-y-auto">
-          {/* Matrices */}
-          <div className="space-y-1">
-            <Label className="text-xs">Matriz / combinación</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  size="sm"
-                  className="w-full justify-between"
-                >
-                  {selectedIds.length > 0
-                    ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(
-                        ';'
-                      )}`
-                    : 'Selecciona matrices...'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[320px] p-0 max-h-72 overflow-y-auto">
-                <Command>
-                  <CommandInput placeholder="Buscar matriz..." />
-                  <CommandEmpty>No encontrada</CommandEmpty>
-                  <CommandList>
-                    <CommandGroup>
-                      {MATRICES.map(m => (
-                        <CommandItem
-                          key={m.id}
-                          onSelect={() => toggleMatrix(m.id)}
-                          className="flex items-center space-x-2 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={selectedIds.includes(String(m.id))}
-                            onCheckedChange={() => toggleMatrix(m.id)}
-                          />
-                          <span className="text-xs">
-                            {m.label} ({m.id})
-                          </span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            <Input
-              value={seleccionAgreg}
-              onChange={e => setSeleccionAgreg(e.target.value)}
-              placeholder="Ej: 1;2;3"
-              className="h-8 text-xs"
-            />
-          </div>
-
-          {/* Graph selection */}
-          <div className="space-y-1">
-            <Label className="text-xs">Tipo de gráfica</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  size="sm"
-                  className="w-full justify-between"
-                >
-                  {selectedCharts.length > 0
-                    ? `${selectedCharts.length} seleccionada(s)`
-                    : 'Selecciona gráficas...'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[340px] p-0 max-h-80 overflow-y-auto">
-                <Command>
-                  <CommandInput placeholder="Buscar gráfica..." />
-                  <CommandEmpty>No encontrada</CommandEmpty>
-                  <CommandList>
-                    <CommandGroup>
-                      {GRAFICAS.map(g => (
-                        <div key={g.arg} className="flex flex-col py-1 px-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              checked={selectedCharts.includes(g.arg)}
-                              onCheckedChange={() => toggleChart(g.arg)}
-                            />
-                            <span className="text-xs">{g.label}</span>
-                          </div>
-
-                          {selectedCharts.includes(g.arg) &&
-                            (g.arg === 'graf_barras_est_med' ||
-                              g.arg === 'graf_barras_est_acum') && (
-                              <div className="ml-6 mt-1 flex gap-2">
-                                <Input
-                                  className="w-16 h-7 text-xs"
-                                  placeholder="Est."
-                                  value={stationPerChart[g.arg] ?? '0'}
-                                  onChange={e =>
-                                    setStationPerChart({
-                                      ...stationPerChart,
-                                      [g.arg]: e.target.value,
-                                    })
-                                  }
-                                />
-                                <Input
-                                  className="w-32 h-7 text-xs"
-                                  placeholder="Días ej: all o 10;20"
-                                  value={instantesCharts[g.arg] || ''}
-                                  onChange={e =>
-                                    setInstantesCharts({
-                                      ...instantesCharts,
-                                      [g.arg]: e.target.value,
-                                    })
-                                  }
-                                />
-                              </div>
-                            )}
-
-                          {selectedCharts.includes(g.arg) &&
-                            g.arg === 'graf_barras_dia' && (
-                              <Input
-                                className="ml-6 mt-1 w-[260px] h-7 text-xs"
-                                value={
-                                  instantesCharts[g.arg] || 'all-M-Frec'
-                                }
-                                onChange={e =>
-                                  setInstantesCharts({
-                                    ...instantesCharts,
-                                    [g.arg]: e.target.value,
-                                  })
-                                }
-                              />
-                            )}
-
-                          {selectedCharts.includes(g.arg) &&
-                            ![
-                              'graf_barras_est_med',
-                              'graf_barras_est_acum',
-                              'graf_barras_dia',
-                            ].includes(g.arg) && (
-                              <Input
-                                className="ml-6 mt-1 w-[260px] h-7 text-xs"
-                                value={instantesCharts[g.arg] || ''}
-                                onChange={e =>
-                                  setInstantesCharts({
-                                    ...instantesCharts,
-                                    [g.arg]: e.target.value,
-                                  })
-                                }
-                                placeholder="Parámetro / días / instantes…"
-                              />
-                            )}
-                        </div>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Delta transform */}
-          <div className="space-y-1">
-            <Label className="text-xs">Transformación de delta</Label>
-            <div className="grid grid-cols-[1.1fr,0.9fr] gap-2 items-center">
-              <Select
-                value={selectedDeltaOption}
-                onValueChange={setSelectedDeltaOption}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Sin cambio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DELTA_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
+      {/* Matrices */}
+      <div className="space-y-1">
+        <Label className="text-xs">Matriz / combinación</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              size="sm"
+              className="w-full justify-between"
+            >
+              {selectedIds.length > 0
+                ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(
+                    ';',
+                  )}`
+                : 'Selecciona matrices...'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[320px] p-0 max-h-72 overflow-y-auto">
+            <Command>
+              <CommandInput placeholder="Buscar matriz..." />
+              <CommandEmpty>No encontrada</CommandEmpty>
+              <CommandList>
+                <CommandGroup>
+                  {MATRICES.map(m => (
+                    <CommandItem
+                      key={m.id}
+                      onSelect={() => toggleMatrix(m.id)}
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedIds.includes(String(m.id))}
+                        onCheckedChange={() => toggleMatrix(m.id)}
+                      />
+                      <span className="text-xs">
+                        {m.label} ({m.id})
+                      </span>
+                    </CommandItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <Input
+          value={seleccionAgreg}
+          onChange={e => setSeleccionAgreg(e.target.value)}
+          placeholder="Ej: 1;2;3"
+          className="h-8 text-xs"
+        />
+      </div>
+
+      {/* Deltas */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">Delta Media</Label>
+          <Input
+            value={deltaMediaTxt}
+            onChange={e => setDeltaMediaTxt(e.target.value)}
+            placeholder="60, 1440…"
+            className="h-8 text-xs"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Delta Acumulada</Label>
+          <Input
+            value={deltaAcumTxt}
+            onChange={e => setDeltaAcumTxt(e.target.value)}
+            placeholder="60, 1440…"
+            className="h-8 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Filtro unificado (igual que mapas) */}
+      <div className="space-y-3 mt-2">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="use-filter-graphs"
+            checked={useFilter}
+            onCheckedChange={v => setUseFilter(Boolean(v))}
+          />
+          <Label htmlFor="use-filter-graphs" className="text-xs">
+            Aplicar filtro (filtros backend)
+          </Label>
+        </div>
+
+        {useFilter && (
+          <>
+            <div className="space-y-1">
+              <Label className="text-xs">Tipo de filtro</Label>
+              <select
+                className="w-full border rounded px-2 py-1 text-xs bg-background"
+                value={filterKind}
+                onChange={e =>
+                  setFilterKind(e.target.value as FilterKind)
+                }
+              >
+                <option value="EstValor">Estación valor (día)</option>
+                <option value="EstValorDias">Estación valor (mes)</option>
+                <option value="Horas">Horas críticas</option>
+                <option value="Porcentaje">Porcentaje estaciones</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Operador</Label>
+                <Select
+                  value={filterState.operator}
+                  onValueChange={operator =>
+                    setFilterState(s => ({ ...s, operator }))
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value=">=">{'>='}</SelectItem>
+                    <SelectItem value="<=">{'<='}</SelectItem>
+                    <SelectItem value=">">{'>'}</SelectItem>
+                    <SelectItem value="<">{'<'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Valor</Label>
+                <Input
+                  className="h-8 text-xs w-full"
+                  value={filterState.value}
+                  onChange={e =>
+                    setFilterState(s => ({
+                      ...s,
+                      value: e.target.value,
+                    }))
+                  }
+                  placeholder="65"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="dayPct" className="text-xs">
+                % del día
+              </Label>
+              <div className="flex items-center gap-3">
+                <input
+                  id="dayPct"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Number(filterState.dayPct || 0)}
+                  onChange={e =>
+                    setFilterState(s => ({
+                      ...s,
+                      dayPct: e.target.value,
+                    }))
+                  }
+                  className="flex-1"
+                />
+                <span className="w-12 text-right text-sm">
+                  {filterState.dayPct || 0}%
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Días</Label>
               <Input
-                className="h-8 text-xs"
-                placeholder="Custom min. (opcional)"
-                value={customDelta}
-                onChange={e => setCustomDelta(e.target.value)}
-                disabled={selectedDeltaOption !== 'custom'}
+                className="h-8 text-xs w-full"
+                value={filterState.days}
+                onChange={e =>
+                  setFilterState(s => ({ ...s, days: e.target.value }))
+                }
+                placeholder="all o 0;1;2"
               />
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Action */}
-      <div className="flex items-center gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Días excepción</Label>
+              <Input
+                className="h-8 text-xs w-full"
+                value={filterState.allowedFailDays}
+                onChange={e =>
+                  setFilterState(s => ({
+                    ...s,
+                    allowedFailDays: e.target.value,
+                  }))
+                }
+                placeholder="5"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="stationsPct" className="text-xs">
+                % estaciones
+              </Label>
+              <div className="flex items-center gap-3">
+                <input
+                  id="stationsPct"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Number(filterState.stationsPct || 0)}
+                  onChange={e =>
+                    setFilterState(s => ({
+                      ...s,
+                      stationsPct: e.target.value,
+                    }))
+                  }
+                  className="flex-1"
+                />
+                <span className="w-12 text-right text-sm">
+                  {filterState.stationsPct || 0}%
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Estaciones (IDs ;)</Label>
+              <Input
+                className="h-8 text-xs w-full"
+                value={filterState.stationsList}
+                onChange={e =>
+                  setFilterState(s => ({
+                    ...s,
+                    stationsList: e.target.value,
+                  }))
+                }
+                placeholder="1;15;26;48;..."
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Selección de gráficas + parámetros amigables */}
+      <div className="space-y-2">
+        <Label className="text-xs">Gráficas</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              size="sm"
+              className="w-full justify-between"
+            >
+              {selectedCharts.length > 0
+                ? `${selectedCharts.length} seleccionada(s)`
+                : 'Selecciona gráficas...'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[340px] p-0 max-h-80 overflow-y-auto">
+            <Command>
+              <CommandInput placeholder="Buscar gráfica..." />
+              <CommandEmpty>No encontrada</CommandEmpty>
+              <CommandList>
+                <CommandGroup>
+                  {GRAFICAS.map(g => (
+                    <div key={g.key} className="flex flex-col py-1 px-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedCharts.includes(g.key)}
+                          onCheckedChange={() => toggleChart(g.key)}
+                        />
+                        <span className="text-xs">{g.label}</span>
+                      </div>
+
+                      {selectedCharts.includes(g.key) &&
+                        (g.key === 'graf_barras_est_med' ||
+                          g.key === 'graf_barras_est_acum') && (
+                          <div className="ml-6 mt-1 flex gap-2">
+                            <Input
+                              className="w-16 h-7 text-xs"
+                              placeholder="Est."
+                              value={barStation}
+                              onChange={e => setBarStation(e.target.value)}
+                              disabled={useFilter}
+                            />
+                            <Input
+                              className="w-32 h-7 text-xs"
+                              placeholder="Días: all o 0;1;2"
+                              value={barDays}
+                              onChange={e => setBarDays(e.target.value)}
+                            />
+                          </div>
+                        )}
+
+                      {selectedCharts.includes(g.key) &&
+                        g.key === 'graf_barras_dia' && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            <Input
+                              className="w-40 h-7 text-xs"
+                              placeholder="Días: all o 0;1;2"
+                              value={dayDays}
+                              onChange={e => setDayDays(e.target.value)}
+                            />
+                            <div className="flex items-center gap-2">
+                              <Label className="text-[11px]">Modo</Label>
+                              <Select
+                                value={dayMode}
+                                onValueChange={v =>
+                                  setDayMode(v as 'M' | 'A')
+                                }
+                              >
+                                <SelectTrigger className="h-7 text-xs w-20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="M">Media (M)</SelectItem>
+                                  <SelectItem value="A">Acum. (A)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Checkbox
+                                checked={dayFreq}
+                                onCheckedChange={v =>
+                                  setDayFreq(Boolean(v))
+                                }
+                              />
+                              <span className="text-[11px]">
+                                Frecuencia (-Frec)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                      {selectedCharts.includes(g.key) &&
+                        g.key === 'graf_linea_comp_est' && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            <Input
+                              className="w-[260px] h-7 text-xs"
+                              placeholder="Estaciones (ej: 87;212)"
+                              value={lineStations}
+                              onChange={e =>
+                                setLineStations(e.target.value)
+                              }
+                              disabled={useFilter}
+                            />
+                            <Input
+                              className="w-[260px] h-7 text-xs"
+                              placeholder="Cadenas días (ej: all;all o 0;1#all)"
+                              value={lineDays}
+                              onChange={e => setLineDays(e.target.value)}
+                            />
+                          </div>
+                        )}
+
+                      {selectedCharts.includes(g.key) &&
+                        g.key === 'graf_linea_comp_mats' && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            <div className="flex gap-2">
+                              <Input
+                                className="w-16 h-7 text-xs"
+                                placeholder="Δ"
+                                value={matsDelta}
+                                onChange={e =>
+                                  setMatsDelta(e.target.value)
+                                }
+                              />
+                              <Select
+                                value={matsMode}
+                                onValueChange={v =>
+                                  setMatsMode(v as 'M' | 'A')
+                                }
+                              >
+                                <SelectTrigger className="h-7 text-xs w-20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="M">Media</SelectItem>
+                                  <SelectItem value="A">Acum.</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Input
+                              className="w-[260px] h-7 text-xs"
+                              placeholder="Est. matriz base (ej: 87;212)"
+                              value={matsStations1}
+                              onChange={e =>
+                                setMatsStations1(e.target.value)
+                              }
+                              disabled={useFilter}
+                            />
+                            <Input
+                              className="w-[260px] h-7 text-xs"
+                              placeholder="Est. matriz custom (ej: 0;1)"
+                              value={matsStations2}
+                              onChange={e =>
+                                setMatsStations2(e.target.value)
+                              }
+                            />
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Acción */}
+      <div className="flex items-center gap-2 mt-auto">
         <Button
           size="sm"
           onClick={handleAnalyze}
