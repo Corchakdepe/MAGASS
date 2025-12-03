@@ -31,6 +31,13 @@ import {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
+type DaysSpec = 'all' | number[];
+
+interface StationDays {
+  station_id: number;
+  days: DaysSpec;
+}
+
 const MATRICES = [
   { label: 'Matriz externa (usuario)', id: -1 },
   { label: 'Ocupación', id: 0 },
@@ -147,7 +154,7 @@ export default function GraphAnalysisSidebar() {
   const [apiBusy, setApiBusy] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Filtro unificado (igual que en StatisticsForm de mapas)
+  // Filtro unificado
   const [filterKind, setFilterKind] = useState<FilterKind>('EstValorDias');
   const [filterState, setFilterState] = useState<UnifiedFilterState>({
     operator: '>=',
@@ -160,7 +167,7 @@ export default function GraphAnalysisSidebar() {
   });
   const [useFilter, setUseFilter] = useState(false);
 
-  // Parámetros específicos de cada tipo de gráfica (más friendly)
+  // Parámetros específicos
 
   // Barras por estación (media / acumulado)
   const [barStation, setBarStation] = useState<string>('87');
@@ -171,9 +178,9 @@ export default function GraphAnalysisSidebar() {
   const [dayMode, setDayMode] = useState<'M' | 'A'>('M');
   const [dayFreq, setDayFreq] = useState<boolean>(true);
 
-  // Líneas comparar estaciones
+  // Líneas comparar estaciones (nuevo input)
   const [lineStations, setLineStations] = useState<string>('87;212');
-  const [lineDays, setLineDays] = useState<string>('all;all'); // versión simple
+  const [lineDays, setLineDays] = useState<string>('all'); // "all" o "0;1#2;3"
 
   // Líneas comparar matrices
   const [matsDelta, setMatsDelta] = useState<string>('60');
@@ -181,17 +188,66 @@ export default function GraphAnalysisSidebar() {
   const [matsStations2, setMatsStations2] = useState<string>('0;1');
   const [matsMode, setMatsMode] = useState<'M' | 'A'>('M');
 
-  const buildGraficaArg = (key: GraficaKey): string | null => {
+  const buildStationDays = (): StationDays[] | undefined => {
+    const estsStr = lineStations.trim();
+    const daysStr = lineDays.trim();
+    if (!estsStr || !daysStr) return undefined;
+
+    const stations = estsStr
+      .split(';')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(Number)
+      .filter(n => !Number.isNaN(n));
+
+    if (!stations.length) return undefined;
+
+    if (daysStr === 'all') {
+      return stations.map(st => ({ station_id: st, days: 'all' as const }));
+    }
+
+    const parts = daysStr
+      .split('#')
+      .map(p => p.trim())
+      .filter(Boolean);
+
+    let patterns = parts;
+    if (parts.length === 1 && stations.length > 1) {
+      patterns = Array(stations.length).fill(parts[0]);
+    } else if (parts.length !== stations.length) {
+      return undefined;
+    }
+
+    const specs: StationDays[] = [];
+
+    stations.forEach((st, i) => {
+      const p = patterns[i];
+      if (p === 'all') {
+        specs.push({ station_id: st, days: 'all' });
+      } else {
+        const dayNums = p
+          .split(';')
+          .map(d => d.trim())
+          .filter(Boolean)
+          .map(Number)
+          .filter(n => !Number.isNaN(n));
+        if (!dayNums.length) return;
+        specs.push({ station_id: st, days: dayNums });
+      }
+    });
+
+    return specs.length ? specs : undefined;
+  };
+
+  const buildGraficaArg = (key: GraficaKey): any | null => {
     if (key === 'graf_barras_est_med' || key === 'graf_barras_est_acum') {
       const est = barStation.trim();
       const dias = barDays.trim() || 'all';
       if (!est) return null;
-      // "estacion-dias"
       return `${est}-${dias}`;
     }
 
     if (key === 'graf_barras_dia') {
-      // "dias-M" / "dias-A" + "-Frec"
       const dias = dayDays.trim() || 'all';
       const mode = dayMode; // 'M' o 'A'
       const freqPart = dayFreq ? '-Frec' : '';
@@ -199,35 +255,11 @@ export default function GraphAnalysisSidebar() {
     }
 
     if (key === 'graf_linea_comp_est') {
-  // Entradas amigables:
-  // lineStations: "87;212"
-  // lineDays:     "all;all"  -> queremos "all#all"
-  const ests = lineStations.trim();
-  const diasCad = lineDays.trim();
-  if (!ests || !diasCad) return null;
-
-  const estList = ests.split(';').filter(Boolean);        // ["87","212"]
-  const diasList = diasCad.split(';').filter(Boolean);    // ["all","all"]
-
-  // Si el usuario dio tantos elementos como estaciones, usamos '#' entre ellos
-  if (diasList.length === estList.length) {
-    const diasJoined = diasList.join('#');                // "all#all"
-    return `${ests}-${diasJoined}`;                       // "87;212-all#all"
-  }
-
-  // Si solo dio una palabra (all), la repetimos para todas
-  if (diasList.length === 1 && diasList[0] === 'all') {
-    const diasJoined = new Array(estList.length).fill('all').join('#');
-    return `${ests}-${diasJoined}`;
-  }
-
-  // En caso raro, dejamos que el usuario meta advanced "0;1;2#all" entero
-  return `${ests}-${diasCad}`;
-}
-
+      const specs = buildStationDays();
+      return specs ?? null;
+    }
 
     if (key === 'graf_linea_comp_mats') {
-      // "deltaMatriz-est1;est2-est1custom;est2custom-M|A"
       const d = matsDelta.trim();
       const e1 = matsStations1.trim();
       const e2 = matsStations2.trim();
@@ -407,7 +439,7 @@ export default function GraphAnalysisSidebar() {
         </div>
       </div>
 
-      {/* Filtro unificado (igual que mapas) */}
+      {/* Filtro unificado */}
       <div className="space-y-3 mt-2">
         <div className="flex items-center gap-2">
           <Checkbox
@@ -569,7 +601,7 @@ export default function GraphAnalysisSidebar() {
         )}
       </div>
 
-      {/* Selección de gráficas + parámetros amigables */}
+      {/* Selección de gráficas + parámetros */}
       <div className="space-y-2">
         <Label className="text-xs">Gráficas</Label>
         <Popover>
@@ -674,10 +706,15 @@ export default function GraphAnalysisSidebar() {
                             />
                             <Input
                               className="w-[260px] h-7 text-xs"
-                              placeholder="Cadenas días (ej: all;all o 0;1#all)"
+                              placeholder='Días por estación (ej: all o "0;1#2;3")'
                               value={lineDays}
                               onChange={e => setLineDays(e.target.value)}
                             />
+                            <p className="text-[10px] text-muted-foreground">
+                              Usa "all" para todos los días; o cadenas
+                              separadas por "#" para cada estación (ej:
+                              0;1#2;3).
+                            </p>
                           </div>
                         )}
 

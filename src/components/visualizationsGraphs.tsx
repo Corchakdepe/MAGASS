@@ -47,10 +47,10 @@ type ChartDataState = {
 } | null;
 
 type VisualizationGraphsProps = {
-runId: string;
-apiBase: string;
-graphs?: GraphItem[];
-chartsFromApi?: BackendChart[];
+    runId: string;
+    apiBase: string;
+    graphs?: GraphItem[];
+    chartsFromApi?: BackendChart[];
 };
 
 // round helper for nicer x labels
@@ -196,12 +196,36 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
 
                 const cd = parseXYCsv(text, item.name);
                 setChartData(cd);
+
+                // Buscar JSON hermano
+                const graphs = (props as any).graphs as GraphItem[];
+                const baseName = item.name.replace(/\.csv$/i, '');
+                const metaItem = graphs.find(
+                    g =>
+                        g.format === 'json' &&
+                        (g.name || g.id || '').toString().replace(/\.json$/i, '') === baseName,
+                );
+
+                if (metaItem) {
+                    const metaUrl = metaItem.api_full_url || `${apiBase}${metaItem.url}`;
+                    try {
+                        const metaRes = await fetch(metaUrl, {cache: 'no-store'});
+                        const metaJson = await metaRes.json();
+                        // metaJson ya tiene x, series, meta
+                        if (metaJson?.meta) {
+                            // Guardar meta dentro de selectedItem “virtual”
+                            (item as any).meta = metaJson.meta;
+                        }
+                    } catch {
+                        // meta opcional, si falla seguimos con defaults
+                    }
+                }
             } else if (item.format === 'json') {
                 const res = await fetch(url, {cache: 'no-store'});
                 const json = await res.json();
                 setContent(json);
 
-                // if JSON is already BackendChart-shaped, plot it directly
+                // si el JSON tiene meta.type, úsalo también aquí
                 if (json && json.x && json.series) {
                     const cd = backendChartToChartJs(json as BackendChart);
                     setChartData(cd);
@@ -232,7 +256,7 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
                 )
                 : null;
 
-    // Decide chart type: JSON → meta.type, CSV → filename heuristic
+// Decide chart type: JSON → meta.type, CSV → filename heuristic
     let chartType: 'bar' | 'line' = 'bar';
 
     if (jsonMode && (props as any).chartsFromApi && selectedId) {
@@ -244,11 +268,30 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
             chartType = 'bar';
         }
     } else if (fileMode && selectedItem) {
-        const name = ((selectedItem as any).name || (selectedItem as any).id || '')
-            .toString()
-            .toLowerCase();
-        if (name.includes('acumulado') || name.includes('acumulad')) {
+        const metaType = (selectedItem as any).meta?.type;
+
+        // 1) Si ya hemos inyectado meta (CSV+JSON emparejados)
+        if (metaType === 'line') {
             chartType = 'line';
+        } else if (metaType === 'bar') {
+            chartType = 'bar';
+        } else if ((selectedItem as any).format === 'json') {
+            // 2) Para JSON, usa el propio contenido como BackendChart
+            const json = content as any;
+            const t = json?.meta?.type;
+            if (t === 'line') {
+                chartType = 'line';
+            } else if (t === 'bar') {
+                chartType = 'bar';
+            }
+        } else {
+            // 3) Fallback por nombre de fichero
+            const name = ((selectedItem as any).name || (selectedItem as any).id || '')
+                .toString()
+                .toLowerCase();
+            if (name.includes('acumulado') || name.includes('acumulad')) {
+                chartType = 'line';
+            }
         }
     }
 
@@ -417,4 +460,5 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
             )}
         </section>
     );
-};
+}
+;
