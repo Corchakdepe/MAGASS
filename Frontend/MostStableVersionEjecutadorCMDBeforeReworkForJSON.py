@@ -1,0 +1,1467 @@
+from __future__ import annotations
+import hashlib
+import operator
+from glob import glob
+import os
+import shutil
+from pathlib import Path
+import json
+from fastapi import FastAPI, HTTPException
+from os.path import join
+from typing import Optional, List, Union
+import numpy as np
+import pandas
+import pandas as pd
+from pydantic import BaseModel
+from Backend import Constantes
+from Backend.Auxiliares import auxiliar_ficheros, Extractor, auxiliaresCalculos
+from Backend.GuardarCargarDatos import GuardarCargarMatrices
+from Backend.OperacionesDeltas.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
+from Backend.Manipuladores import Agrupador
+from Backend.Manipuladores.Filtrador import Filtrador
+from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
+from Backend.Representacion.Mapas.MapaDensidad import MapaDensidad2
+from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
+from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
+from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
+from bike_simulator5 import bike_simulator5
+
+
+def parse_mapa_spec(spec: str) -> tuple[list[int], list[int] | None, bool]:
+    """
+    spec: "0;10;20+1;15;26-L" o "0;1;2" o "0;1;2-L" o "0;1;2+3;4"
+    return: (instantes, estaciones or None, labels_abiertos)
+    """
+    if not spec:
+        return [], None, False
+
+    labels = False
+    if spec.endswith("-L"):
+        labels = True
+        spec = spec[:-2]
+
+    if "+" in spec:
+        inst_str, est_str = spec.split("+", 1)
+        estaciones = [int(x) for x in est_str.split(";") if x.strip()]
+    else:
+        inst_str = spec
+        estaciones = None
+
+    instantes = [int(x) for x in inst_str.split(";") if x.strip()]
+
+    return instantes, estaciones, labels
+
+
+def _ensure_dir(path: str):
+    os.makedirs(path, exist_ok=True)
+
+
+def _basename_no_ext(path_png: str) -> str:
+    root, _ = os.path.splitext(path_png)
+    return root
+
+
+def write_series_csv(base: str, x, ys: dict, meta: dict):
+    base_path = Path(base)
+    parent = base_path.parent
+    original_name = base_path.name
+
+    short_root = "Grafica"
+    if "Grafica" in original_name:
+        prefix = original_name.split("Grafica", 1)[0] + "Grafica"
+    else:
+        prefix = original_name[:40]
+
+    h = hashlib.sha1(original_name.encode("utf-8")).hexdigest()[:8]
+    safe_name = f"{prefix}_{h}.csv"
+    out_path = parent / safe_name
+
+    data = {"x": x}
+    for name, values in ys.items():
+        data[name] = values
+    df = pd.DataFrame(data)
+
+    df.to_csv(out_path, index=False)
+
+
+def _hour_index(n_cols: int):
+    return list(range(n_cols))
+
+
+def __obtenerOperador(string: str):
+    if ">=" in string:
+        return operator.ge, string.replace(">=", ""), "MAYIGUAL"
+    if "<=" in string:
+        return operator.le, string.replace("<=", ""), "MENIGUAL"
+    if ">" in string:
+        return operator.gt, string.replace(">", ""), "MAY"
+    if "<" in string:
+        return operator.lt, string.replace("<", ""), "MAY"
+    return operator.ge, string.replace(">=", ""), "MAYIGUAL"
+
+# Para el grafico de lineas, hay que definir los dias para cada estacion, 87;212;all#all todos los dias para ambas estaciones
+class StationDays(BaseModel):
+    station_id: int
+    days: Union[str, List[int]]
+
+# Modelo del analysis con lo que pide sea para mapa, graph o filtro
+class AnalysisArgs(BaseModel):
+    input_folder: str
+    output_folder: str
+    seleccion_agregacion: str
+    use_filter_for_graphs: bool = False
+    delta_media: Optional[int] = 60
+    delta_acumulada: Optional[int] = None
+
+    graf_barras_est_med: Optional[str] = None
+    graf_barras_est_acum: Optional[str] = None
+    graf_barras_dia: Optional[str] = None
+    graf_linea_comp_est: Optional[List[StationDays]] = None
+    graf_linea_comp_mats: Optional[str] = None
+
+    mapa_densidad: Optional[str] = None
+    video_densidad: Optional[str] = None
+    mapa_voronoi: Optional[str] = None
+    mapa_circulo: Optional[str] = None
+    mapa_desplazamientos: Optional[str] = None
+
+    filtrado_EstValor: Optional[str] = None
+    filtrado_EstValorDias: Optional[str] = None
+    filtrado_Horas: Optional[str] = None
+    filtrado_PorcentajeEstaciones: Optional[str] = None
+
+    filtro: Optional[str] = None
+    tipo_filtro: Optional[str] = None
+
+    use_filter_for_maps: bool = False
+    filter_result_filename: Optional[str] = None
+
+
+
+
+
+class SimulateArgs(BaseModel):
+    ruta_entrada: str
+    ruta_salida: Optional[str] = None
+    stress_type: int
+    stress: float
+    walk_cost: float
+    delta: int
+    dias: Optional[List[int]] = None
+    simname: Optional[str] = None
+
+
+def run_filter_only(
+        input_folder: str,
+        output_folder: str,
+        filtro: str,
+        tipo_filtro: str,
+        seleccion: str,
+) -> Path:
+    args = AnalysisArgs(
+        input_folder=input_folder,
+        output_folder=output_folder,
+        seleccion_agregacion=seleccion,
+        delta_media=None,
+        delta_acumulada=None,
+        graf_barras_est_med=None,
+        graf_barras_est_acum=None,
+        graf_barras_dia=None,
+        graf_linea_comp_est=None,
+        graf_linea_comp_mats=None,
+        mapa_densidad=None,
+        video_densidad=None,
+        mapa_voronoi=None,
+        mapa_circulo=None,
+        mapa_desplazamientos=None,
+        filtrado_EstValor=None,
+        filtrado_EstValorDias=None,
+        filtrado_Horas=None,
+        filtrado_PorcentajeEstaciones=None,
+        filtro=filtro,
+        tipo_filtro=tipo_filtro,
+        use_filter_for_maps=False,
+        filter_result_filename=None,
+    )
+
+    run_analysis(args)
+
+    out_dir = Path(output_folder)
+    pattern = "Filtrado_Estaciones"
+    candidates = sorted(out_dir.glob(f"*{pattern}*.csv"))
+    if not candidates:
+        candidates = sorted(out_dir.glob(f"*{pattern}*.txt"))
+    if not candidates:
+        raise HTTPException(
+            status_code=400,
+            detail="No se ha encontrado el fichero de estaciones filtradas",
+        )
+    return candidates[-1]
+
+
+def load_stations_from_file(path: Path) -> List[int]:
+    """
+    Lee un fichero de estaciones filtradas y devuelve lista de IDs (int).
+    """
+    text = path.read_text(encoding="utf-8")
+    text = text.replace(",", ";")
+    tokens = [t.strip() for t in text.split(";") if t.strip()]
+    stations: List[int] = []
+    for t in tokens:
+        try:
+            stations.append(int(t))
+        except ValueError:
+            continue
+    return stations
+
+
+def run_full_analysis(
+        *,
+        input_folder: str,
+        output_folder: str,
+        seleccion_agregacion: str,
+        delta_media: Optional[int],
+        delta_acumulada: Optional[int],
+        mapa_densidad: Optional[str],
+        video_densidad: Optional[str],
+        mapa_voronoi: Optional[str],
+        mapa_circulo: Optional[str],
+        mapa_desplazamientos: Optional[str],
+        filtro: Optional[str],
+        tipo_filtro: Optional[str],
+        filtrado_EstValor: Optional[str],
+        filtrado_EstValorDias: Optional[str],
+        filtrado_Horas: Optional[str],
+        filtrado_PorcentajeEstaciones: Optional[str],
+) -> dict:
+    args = AnalysisArgs(
+        input_folder=input_folder,
+        output_folder=output_folder,
+        seleccion_agregacion=seleccion_agregacion,
+        delta_media=delta_media,
+        delta_acumulada=delta_acumulada,
+        graf_barras_est_med=None,
+        graf_barras_est_acum=None,
+        graf_barras_dia=None,
+        graf_linea_comp_est=None,
+        graf_linea_comp_mats=None,
+        mapa_densidad=mapa_densidad,
+        video_densidad=video_densidad,
+        mapa_voronoi=mapa_voronoi,
+        mapa_circulo=mapa_circulo,
+        mapa_desplazamientos=mapa_desplazamientos,
+        filtrado_EstValor=filtrado_EstValor,
+        filtrado_EstValorDias=filtrado_EstValorDias,
+        filtrado_Horas=filtrado_Horas,
+        filtrado_PorcentajeEstaciones=filtrado_PorcentajeEstaciones,
+        filtro=filtro,
+        tipo_filtro=tipo_filtro,
+        use_filter_for_maps=False,
+        filter_result_filename=None,
+    )
+    return run_analysis(args)
+
+
+def run_simulation(
+        ruta_entrada: str,
+        ruta_salida: str,
+        stress_type: int,
+        stress: float,
+        walk_cost: float,
+        delta: int,
+        dias: Optional[List[int]] = None,
+):
+    """
+    High-level simulation used by API.
+    """
+    Constantes.DELTA_TIME = delta
+    Constantes.COSTE_ANDAR = walk_cost
+    Constantes.PORCENTAJE_ESTRES = stress
+    Constantes.RUTA_SALIDA = ruta_salida
+
+    ficheros, ficheros_distancia = GuardarCargarMatrices.cargarDatosParaSimular(ruta_entrada)
+    archivoCapacidad = auxiliar_ficheros.buscar_archivosEntrada(ruta_entrada, ["capacidades"])[0]
+    pd.read_csv(archivoCapacidad).to_csv("capacidades.csv", index=False)
+
+    if dias is not None and len(dias) > 0:
+        path_fichero = join(
+            ruta_salida,
+            auxiliar_ficheros.formatoArchivo(f"Extraccion_{dias}", "csv"),
+        )
+        Extractor.extraerDias(
+            ficheros[0],
+            delta,
+            dias,
+            path_fichero,
+            mantenerPrimeraFila=True,
+        )
+        ficheros[0] = path_fichero
+
+    if stress > 0:
+        ficheroDelta_salidaStress = join(
+            ruta_salida, auxiliar_ficheros.formatoArchivo("Dstress", "csv")
+        )
+        Extractor.extraerStressAplicado(
+            ficheros[0],
+            ficheroDelta_salidaStress,
+            stress,
+            tipoStress=stress_type,
+            listaEstaciones="All",
+        )
+
+        ficheroTendencias_salidaStress = join(
+            ruta_salida, auxiliar_ficheros.formatoArchivo("Tendencias_stress", "csv")
+        )
+        Extractor.extraerStressAplicado(
+            ficheros[5],
+            ficheroTendencias_salidaStress,
+            stress,
+            tipoStress=stress_type,
+            listaEstaciones="All",
+        )
+
+        ficheros[0] = ficheroDelta_salidaStress
+        ficheros[5] = ficheroTendencias_salidaStress
+
+    bs = bike_simulator5()
+    nearest_stations_idx, nearest_stations_distance, initial_movements, real_movements, capacidadInicial, coordenadas = bs.load_data(
+        directorios=ficheros,
+        directorios_DiastanciasAndarBicicleta=ficheros_distancia,
+    )
+    coste, matricesSalida = bs.evaluate_solution(
+        capacidadInicial,
+        initial_movements,
+        real_movements,
+        nearest_stations_idx,
+        nearest_stations_distance,
+    )
+    resumen = auxiliar_ficheros.hacerResumenMatricesSalida(matricesSalida)
+
+    auxiliar_ficheros.guardarMatricesEnFicheros(matricesSalida, resumen, Constantes.RUTA_SALIDA)
+    pd.DataFrame(Constantes.COORDENADAS).to_csv(
+        join(Constantes.RUTA_SALIDA, "coordenadas.csv"), index=False
+    )
+    pd.read_csv(archivoCapacidad).to_csv(join(ruta_salida, "capacidades.csv"), index=False)
+
+
+def run_simulador_estadistico(
+        ruta_deltas: str,
+        ruta_salida: str,
+        delta_actual: int,
+        dias_a_simular: int,
+        ruleta: int,
+):
+    Constantes.RUTA_SALIDA = ruta_salida
+    Constantes.DELTA_TIME = delta_actual
+    rutaDeltas = auxiliar_ficheros.buscar_archivosEntrada(ruta_deltas, ['deltas'])
+
+    matrizDeltas = pd.read_csv(rutaDeltas[0])
+    simuladorDE = SimuladorDeltasEstadistico(matrizDeltas, int(delta_actual))
+
+    if int(ruleta) == 1:
+        nuevoFicheroDeltas = simuladorDE.simularDatosEstadisticos_PeriodoTotal(int(dias_a_simular))
+    else:
+        dias = list(range(0, int(dias_a_simular)))
+        nuevoFicheroDeltas = simuladorDE.simularDatosEstadisticos_Horas(dias)
+
+    nombre = auxiliar_ficheros.formatoArchivo("deltasGeneradosEstadistica", "csv")
+    nuevoFicheroDeltas.to_csv(join(ruta_salida, nombre), index=False)
+
+
+def run_restar_directorios(
+        ruta_directorio1: str,
+        ruta_directorio2: str,
+        ruta_directorio_salida: str,
+):
+    print(
+        "Restando las matrices del directorio "
+        + str(ruta_directorio1)
+        + " menos las matrices del directorio "
+        + str(ruta_directorio2)
+    )
+
+    directorios_resta = [
+        Constantes.OCUPACION,
+        Constantes.OCUPACION_RELATIVA,
+        Constantes.PETICIONES_RESUELTAS_COGER_BICI,
+        Constantes.PETICIONES_RESUELTAS_SOLTAR_BICI,
+        Constantes.PETICIONES_RESUELTAS_FICTICIAS_COGER_BICI,
+        Constantes.PETICIONES_RESUELTAS_FICTICIAS_DEJAR_BICI,
+        Constantes.PETICIONES_NORESUELTAS_COGER_BICI,
+        Constantes.PETICIONES_NORESUELTAS_SOLTAR_BICI,
+        Constantes.PETICIONES_NORESUELTAS_FICTICIAS_COGER_BICI,
+        Constantes.PETICIONES_NORESUELTAS_FICTICIAS_DEJAR_BICI,
+        Constantes.KMS_COGER_BICI,
+        Constantes.KMS_DEJAR_BICI,
+        Constantes.KMS_FICTICIOS_COGER,
+        Constantes.KMS_FICTICIOS_DEJAR,
+    ]
+
+    restoFicheros = auxiliar_ficheros.buscar_archivosEntrada(
+        ruta_directorio1, ['Desplazamientos', 'coordenadas']
+    )
+    resumen1 = auxiliar_ficheros.buscar_archivosEntrada(ruta_directorio1, ['ResumenEjecucion'])
+    resumen2 = auxiliar_ficheros.buscar_archivosEntrada(ruta_directorio2, ['ResumenEjecucion'])
+    shutil.copy(restoFicheros[0], join(ruta_directorio_salida, 'Desplazamientos.csv'))
+    shutil.copy(restoFicheros[1], join(ruta_directorio_salida, 'coordenadas.csv'))
+
+    with open(resumen1[0], "r") as archivo:
+        contenido1 = archivo.read()
+    contenido_archivoResumen1 = contenido1.split(",")
+
+    with open(resumen2[0], "r") as archivo:
+        contenido2 = archivo.read()
+    contenido_archivoResumen2 = contenido2.split(",")
+
+    diferenciaResumenes = (
+            np.array(list(map(float, contenido_archivoResumen1)))[2:]
+            - np.array(list(map(float, contenido_archivoResumen2)))[2:]
+    ).tolist()
+    resumenDiferencia = str((list(map(float, contenido_archivoResumen1)))[:2] + diferenciaResumenes)[1:-1]
+
+    with open(join(ruta_directorio_salida, 'DIFERENCIA_ResumenEjecucion.txt'), "w") as archivo:
+        archivo.write(resumenDiferencia)
+
+    capacidades1 = auxiliar_ficheros.buscar_archivosEntrada(ruta_directorio1, ['capacidades'])
+    capacidades2 = auxiliar_ficheros.buscar_archivosEntrada(ruta_directorio2, ['capacidades'])
+
+    if capacidades1 != [] and capacidades2 != []:
+        nombre = auxiliar_ficheros.formatoArchivo("DIFERENCIA_CAPACIDADES", "csv")
+        (pd.read_csv(capacidades1[0]) - pd.read_csv(capacidades2[0])).transpose().to_csv(
+            join(ruta_directorio_salida, nombre), index=False
+        )
+
+    for archivo in directorios_resta:
+        fichero1 = auxiliar_ficheros.buscar_archivosEntrada(ruta_directorio1, [archivo])
+        fichero2 = auxiliar_ficheros.buscar_archivosEntrada(ruta_directorio2, [archivo])
+        matriz1 = pd.read_csv(fichero1[0])
+        matriz2 = pd.read_csv(fichero2[0])
+        archivoResultante = Agrupador.sustraerMatrices(matriz1, matriz2)
+        nombre = auxiliar_ficheros.formatoArchivo("DIFERENCIA " + archivo, "csv")
+        archivoResultante.to_csv(join(ruta_directorio_salida, nombre), index=False)
+
+
+def run_analysis(args: AnalysisArgs) -> dict:
+    charts: list[dict] = []
+
+    if getattr(args, "filtro", None) and getattr(args, "tipo_filtro", None) and args.filtro != "_":
+        tf = args.tipo_filtro
+        if tf in ("EstValor", "EstValorDias"):
+            args.filtrado_EstValorDias = args.filtro
+        elif tf == "Horas":
+            args.filtrado_Horas = args.filtro
+        elif tf == "Porcentaje":
+            args.filtrado_PorcentajeEstaciones = args.filtro
+
+    pathEntrada = args.input_folder
+    pathSalida = args.output_folder
+    seleccionAgregacion_matriz = args.seleccion_agregacion
+
+    deltaDeseado_media = args.delta_media
+    deltaDeseado_acumulado = args.delta_acumulada
+
+    histograma_medio_estacion = args.graf_barras_est_med
+    histograma_acumulado_estacion = args.graf_barras_est_acum
+    histograma_dia = args.graf_barras_dia
+    histograma_comparar_estaciones = args.graf_linea_comp_est
+    histograma_comparar_matrices = args.graf_linea_comp_mats
+
+    mapa_densidad = args.mapa_densidad
+    mapa_densidad_video = args.video_densidad
+    mapa_voronoi = args.mapa_voronoi
+    mapa_circulo = args.mapa_circulo
+    mapa_desplazamientos = args.mapa_desplazamientos
+
+    filtrado_EstSuperiorValor = args.filtrado_EstValor
+    filtrado_EstSuperiorValorDias = args.filtrado_EstValorDias
+    filtrado_HorasSuperiorValor = args.filtrado_Horas
+    filtrado_PorcentajeHoraEstacionMasValor = args.filtrado_PorcentajeEstaciones
+
+    # ===========================
+    # Cargar simulaciones
+    # ===========================
+    matrices, resumentxt = GuardarCargarMatrices.cargarSimulacionesParaAnalisis(pathEntrada)
+
+    Constantes.DELTA_TIME = float(resumentxt[0])
+    Constantes.PORCENTAJE_ESTRES = float(resumentxt[1])
+    Constantes.COSTE_ANDAR = float(resumentxt[2])
+    Constantes.RUTA_SALIDA = pathSalida
+
+    # ---------------------------
+    # Selección / agregación
+    # ---------------------------
+    operacion = 1
+    if seleccionAgregacion_matriz and "(-)" in seleccionAgregacion_matriz:
+        seleccionAgregacion_matriz = seleccionAgregacion_matriz.split(")")[1]
+        operacion = -1
+
+    id_matrices = list(map(int, seleccionAgregacion_matriz.split(";")))
+    listaMatrices = Constantes.LISTA_MATRICES
+
+    if Constantes.MATRIZ_CUSTOM is None or -1 not in id_matrices:
+        matrizDeseada = matrices[listaMatrices[id_matrices[0]]].matrix
+        inicio = 1
+    else:
+        matrizDeseada = Constantes.MATRIZ_CUSTOM.matrix
+        inicio = 0
+
+    if len(id_matrices) > 1:
+        for i in range(inicio, len(id_matrices)):
+            if id_matrices[i] != -1:
+                matrizAsumar = matrices[listaMatrices[id_matrices[i]]].matrix
+                if operacion == 1:
+                    matrizDeseada = Agrupador.agruparMatrices(matrizDeseada, matrizAsumar)
+                else:
+                    matrizDeseada = Agrupador.sustraerMatrices(matrizDeseada, matrizAsumar)
+
+    matrizDeseada = auxiliaresCalculos.rellenarFilasMatrizDeseada(
+        matrizDeseada,
+        matrices[Constantes.OCUPACION].matrix.shape[0] - 1,
+    )
+    maps_json: list[dict] = []
+    # ---------------------------
+    # Conversión de deltas
+    # ---------------------------
+    if deltaDeseado_media is not None:
+        matrizDeseada = Agrupador.colapsarDeltasMedia(
+            matrizDeseada, Constantes.DELTA_TIME, deltaDeseado_media
+        )
+        Constantes.DELTA_TIME = int(deltaDeseado_media)
+
+    if deltaDeseado_acumulado is not None:
+        matrizDeseada = Agrupador.colapsarDeltasAcumulacion(
+            matrizDeseada, Constantes.DELTA_TIME, deltaDeseado_acumulado
+        )
+        Constantes.DELTA_TIME = int(deltaDeseado_acumulado)
+
+    diasMatrizDeseada = int(matrizDeseada.shape[0] / 24)
+    nombre = auxiliar_ficheros.formatoArchivo("ficheroMatrizDeseada", "csv")
+    matrizDeseada.to_csv(join(Constantes.RUTA_SALIDA, nombre), index=False)
+
+    filtrador = Filtrador(matrizDeseada, Constantes.DELTA_TIME)
+    Constantes.DELTA_TIME = int(Constantes.DELTA_TIME)
+    eoc = estadisticasOcupacionHorarias(matrizDeseada, Constantes.DELTA_TIME)
+
+    # ===========================
+    # 1) Histogramas por estación
+    # ===========================
+    # <GraficobarrasEstacionMedio>
+    if histograma_medio_estacion:
+        aux_cadena = histograma_medio_estacion.split("-")
+        est_id = int(aux_cadena[0])
+
+        if aux_cadena[1] == "all":
+            dias = list(range(diasMatrizDeseada))
+        else:
+            dias = list(map(int, aux_cadena[1].split(";")))
+
+        titulo = auxiliar_ficheros.formatoArchivo(
+            f"GraficaMedia_Estacion{est_id}", "png"
+        )
+        eoc.HistogramaPorEstacion(est_id, dias, nombreGrafica=titulo)
+
+        # horas 0..23
+        x = list(range(24))
+        idx = [h + d * 24 for d in dias for h in range(24)]
+        hora_index = [h for d in dias for h in range(24)]
+
+        # media por HORA en esa estación
+        serie = (
+            pandas.Series(matrizDeseada.iloc[idx, est_id].values)
+            .groupby(hora_index)
+            .mean()
+            .reindex(x)
+            .tolist()
+        )
+
+        meta = {
+            "type": "bar",
+            "title": f"Media Estación {est_id}",
+            "xLabel": "Hora",
+            "yLabel": "Media",
+        }
+
+        write_series_csv(
+            join(Constantes.RUTA_SALIDA, titulo),
+            x=x,
+            ys={"mean": serie},
+            meta=meta,
+        )
+        charts.append({
+            "id": f"GraficaMedia_Estacion{est_id}",
+            "kind": "graph",
+            "format": "json",
+            "x": x,
+            "series": {"mean": serie},
+            "meta": meta,
+        })
+
+        base_path = Path(Constantes.RUTA_SALIDA) / titulo
+        if "Grafica" in base_path.name:
+            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
+        else:
+            prefix = base_path.name[:40]
+        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
+        json_name = f"{prefix}_{h}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_name
+
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "id": f"GraficaMedia_Estacion{est_id}",
+                    "kind": "graph",
+                    "format": "json",
+                    "x": x,
+                    "series": {"mean": serie},
+                    "meta": meta,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+    # <GraficobarrasEstacionAcumulado>
+    if histograma_acumulado_estacion:
+        aux_cadena = histograma_acumulado_estacion.split("-")
+        est_id = int(aux_cadena[0])
+
+        if aux_cadena[1] == "all":
+            dias = list(range(diasMatrizDeseada))
+        else:
+            dias = list(map(int, aux_cadena[1].split(";")))
+
+        titulo = auxiliar_ficheros.formatoArchivo(
+            f"GraficaAcumulado_Estacion{est_id}", "png"
+        )
+        eoc.HistogramaAcumulacion(est_id, dias, titulo)
+
+        x = list(range(24))
+        idx = [h + d * 24 for d in dias for h in range(24)]
+        hora_index = [h for d in dias for h in range(24)]
+
+        # suma por hora y acumulado
+        values = (
+            pandas.Series(matrizDeseada.iloc[idx, est_id].values)
+            .groupby(hora_index)
+            .sum()
+            .reindex(x)
+            .cumsum()
+            .tolist()
+        )
+
+        meta = {
+            "type": "line",
+            "title": f"Acumulado Estación {est_id}",
+            "xLabel": "Hora",
+            "yLabel": "Acumulado",
+        }
+
+        write_series_csv(
+            join(Constantes.RUTA_SALIDA, titulo),
+            x=x,
+            ys={"cum": values},
+            meta=meta,
+        )
+        charts.append({
+            "id": f"GraficaAcumulado_Estacion{est_id}",
+            "kind": "graph",
+            "format": "json",
+            "x": x,
+            "series": {"cum": values},
+            "meta": meta,
+        })
+
+        base_path = Path(Constantes.RUTA_SALIDA) / titulo
+        if "Grafica" in base_path.name:
+            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
+        else:
+            prefix = base_path.name[:40]
+        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
+        json_name = f"{prefix}_{h}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_name
+
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "id": f"GraficaAcumulado_Estacion{est_id}",
+                    "kind": "graph",
+                    "format": "json",
+                    "x": x,
+                    "series": {"cum": values},
+                    "meta": meta,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+    # ===========================
+    # 2) Gráfica Días (media/acum, opcional frecuencia)
+    # ===========================
+    if histograma_dia:
+        # "dias-M", "dias-A", "dias-M-Frec", "dias-A-Frec"
+        partes = histograma_dia.split("-")
+
+        if len(partes) < 2:
+            raise ValueError(f"Cadena graf_barras_dia inválida: {histograma_dia}")
+
+        dias_str = partes[0]
+        caracter_media = partes[1]  # "M" o "A"
+        frecuencia = len(partes) >= 3 and partes[2] == "Frec"
+        media_flag = caracter_media == "M"
+
+        if dias_str == "all":
+            dias = list(range(diasMatrizDeseada))
+        else:
+            dias = list(map(int, dias_str.split(";")))
+
+        titulo = auxiliar_ficheros.formatoArchivo(
+            f"GraficaDias_{dias}", "png"
+        )
+        eoc.HistogramaOcupacionMedia(dias, frecuencia=frecuencia, media=media_flag)
+
+        idx = [h + d * 24 for d in dias for h in range(24)]
+
+        base_vals = (
+            matrizDeseada.iloc[idx, :].mean(axis=0).to_numpy()
+            if media_flag
+            else matrizDeseada.iloc[idx, :].sum(axis=0).to_numpy()
+        )
+
+        if frecuencia:
+            # histograma de frecuencias sobre valores
+            bin_count = 20
+            vmin, vmax = float(base_vals.min()), float(base_vals.max())
+            bins = np.linspace(vmin, vmax, bin_count + 1)
+            counts, edges = np.histogram(base_vals, bins=bins)
+            centers = (edges[:-1] + edges[1:]) / 2.0
+            x = centers.tolist()
+            vals = counts.tolist()
+            meta = {
+                "type": "bar",
+                "title": f"Días {dias}",
+                "xLabel": "Valor",
+                "yLabel": "Frecuencia",
+                "freq": True,
+                "media": media_flag,
+            }
+        else:
+            # Valores medios/acumulados POR ESTACIÓN (no por hora)
+            # opcional: ordenar para curva ascendente tipo entropía
+            # base_vals = np.sort(base_vals)
+            x = list(range(len(base_vals)))  # índice de estación
+            vals = base_vals.tolist()
+            meta = {
+                "type": "line",
+                "title": f"Días {dias}",
+                "xLabel": "Estación",
+                "yLabel": "Valor",
+                "freq": False,
+                "media": media_flag,
+            }
+
+        write_series_csv(
+            join(Constantes.RUTA_SALIDA, titulo),
+            x=x,
+            ys={"value": vals},
+            meta=meta,
+        )
+        charts.append({
+            "id": f"GraficaDias_{dias}",
+            "kind": "graph",
+            "format": "json",
+            "x": x,
+            "series": {"value": vals},
+            "meta": meta,
+        })
+
+        base_path = Path(Constantes.RUTA_SALIDA) / titulo
+        if "Grafica" in base_path.name:
+            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
+        else:
+            prefix = base_path.name[:40]
+        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
+        json_name = f"{prefix}_{h}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_name
+
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "id": f"GraficaDias_{dias}",
+                    "kind": "graph",
+                    "format": "json",
+                    "x": x,
+                    "series": {"value": vals},
+                    "meta": meta,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+    # ===========================
+    # 3) Gráfica línea comparar estaciones
+    # ===========================
+    histograma_comparar_estaciones = args.graf_linea_comp_est
+
+    if histograma_comparar_estaciones:
+        estaciones = [spec.station_id for spec in histograma_comparar_estaciones]
+
+        x = list(range(24))
+        series = {}
+        dias_repr = []
+
+        for spec in histograma_comparar_estaciones:
+            if spec.days == "all":
+                dias = list(range(diasMatrizDeseada))
+                dias_repr.append("all")
+            else:
+                dias = list(spec.days)
+                dias_repr.append(";".join(map(str, dias)))
+
+            idx = [h + d * 24 for d in dias for h in range(24)]
+            hora_index = [h for d in dias for h in range(24)]
+
+            if not idx:
+                serie = [None] * 24
+            else:
+                s = (
+                    pandas.Series(matrizDeseada.iloc[idx, spec.station_id].values)
+                    .groupby(hora_index)
+                    .mean()
+                )
+                s = s.reindex(x)
+                serie = s.tolist()
+
+            series[f"est_{spec.station_id}"] = serie
+
+        meta = {
+            "type": "line",
+            "title": f"Comparar estaciones {estaciones}",
+            "xLabel": "Hora",
+            "yLabel": "Valor medio",
+            "stations": estaciones,
+            "dias": dias_repr,
+        }
+
+        titulo = auxiliar_ficheros.formatoArchivo(
+            "Grafica_CompararEstaciones", "png"
+        )
+
+        write_series_csv(
+            join(Constantes.RUTA_SALIDA, titulo),
+            x=x,
+            ys=series,
+            meta=meta,
+        )
+        charts.append({
+            "id": "Grafica_CompararEstaciones",
+            "kind": "graph",
+            "format": "json",
+            "x": x,
+            "series": series,
+            "meta": meta,
+        })
+
+        base_path = Path(Constantes.RUTA_SALIDA) / titulo
+        if "Grafica" in base_path.name:
+            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
+        else:
+            prefix = base_path.name[:40]
+        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
+        json_name = f"{prefix}_{h}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_name
+
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "id": "Grafica_CompararEstaciones",
+                    "kind": "graph",
+                    "format": "json",
+                    "x": x,
+                    "series": series,
+                    "meta": meta,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+    # ===========================
+    # 4) Gráfica línea comparar matrices
+    # ===========================
+    if histograma_comparar_matrices and Constantes.MATRIZ_CUSTOM is not None:
+        cadenas = histograma_comparar_matrices.split("-")
+        deltaMatriz = int(cadenas[0])
+        estaciones1 = list(map(int, cadenas[1].split(";")))
+        estaciones2 = list(map(int, cadenas[2].split(";")))
+        media_flag = cadenas[3] == "M"
+
+        eoc2 = estadisticasOcupacionHorarias(matrizDeseada, Constantes.DELTA_TIME)
+
+        titulo = auxiliar_ficheros.formatoArchivo(
+            "Grafica_CompararMatrices", "png"
+        )
+        eoc2.HistogramaCompararMatrices(
+            Constantes.MATRIZ_CUSTOM.matrix,
+            deltaMatriz,
+            estaciones1,
+            estaciones2,
+            media=media_flag,
+            nombreGrafica=titulo,
+        )
+
+        # comportamiento horario, así que 24 horas
+        x = list(range(24))
+        ys = {
+            "current": matrizDeseada.mean(axis=0).tolist(),
+            "custom": Constantes.MATRIZ_CUSTOM.matrix.mean(axis=0).tolist(),
+        }
+        meta = {
+            "type": "line",
+            "title": "Comparar matrices",
+            "xLabel": "Hora",
+            "yLabel": "Media",
+            "delta": deltaMatriz,
+            "media": media_flag,
+            "estaciones1": estaciones1,
+            "estaciones2": estaciones2,
+        }
+
+        write_series_csv(
+            join(Constantes.RUTA_SALIDA, titulo),
+            x=x,
+            ys=ys,
+            meta=meta,
+        )
+        charts.append({
+            "id": "Grafica_CompararMatrices",
+            "kind": "graph",
+            "format": "json",
+            "x": x,
+            "series": ys,
+            "meta": meta,
+        })
+
+        base_path = Path(Constantes.RUTA_SALIDA) / titulo
+        if "Grafica" in base_path.name:
+            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
+        else:
+            prefix = base_path.name[:40]
+        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
+        json_name = f"{prefix}_{h}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_name
+
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "id": "Grafica_CompararMatrices",
+                    "kind": "graph",
+                    "format": "json",
+                    "x": x,
+                    "series": ys,
+                    "meta": meta,
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+    # ===========================
+    # 5) Mapas de densidad (instantáneos)
+    # ===========================
+    if mapa_densidad:
+        # formato: "inst1;inst2[+est1;est2;...]" (si se manda "-L" no se usa aquí)
+        if "+" in mapa_densidad:
+            cadena, est_str = mapa_densidad.split("+", 1)
+            estaciones = list(map(int, est_str.split(";")))
+        else:
+            cadena = mapa_densidad
+            estaciones = []
+
+        instantes = list(map(int, cadena.split(";")))
+        mapa = MapaDensidad2(Constantes.COORDENADAS)
+        # segundo parámetro por posición: lista de estaciones
+        mapa.cargarDatos(matrizDeseada, estaciones)
+
+        for instante in instantes:
+            mapa.representarHeatmap(instante=instante)
+            base_png = auxiliar_ficheros.formatoArchivo(
+                f"Heatmap_instante{instante}", "png"
+            )
+            df_frame = pd.DataFrame({
+                "station_id": np.arange(matrizDeseada.shape[1]),
+                "t": instante,
+                "value": matrizDeseada.iloc[instante, :].tolist(),
+            })
+            df_frame.to_csv(
+                join(Constantes.RUTA_SALIDA, base_png.replace(".png", ".csv")),
+                index=False,
+            )
+
+    # ===========================
+    # 6) Video de densidad
+    # ===========================
+    if mapa_densidad_video:
+        # formato: "inicio:fin[+est1;est2;...]" donde fin puede ser "end"
+        if "+" in mapa_densidad_video:
+            momentos, est_str = mapa_densidad_video.split("+", 1)
+            estaciones = list(map(int, est_str.split(";")))
+            texto_estaciones = str(estaciones)
+        else:
+            momentos = mapa_densidad_video
+            estaciones = []
+            texto_estaciones = "TODAS"
+
+        momentos_split = momentos.split(":")
+        momentoInicio = int(momentos_split[0])
+        if momentos_split[1] != "end":
+            momentoFinal = int(momentos_split[1])
+        else:
+            momentoFinal = len(matrizDeseada) - 1
+
+        mapa = MapaDensidad2(Constantes.COORDENADAS)
+        mapa.cargarDatos(matrizDeseada, estaciones)
+        nombre_video = auxiliar_ficheros.formatoArchivo(
+            f"video_densidad_{momentoInicio}_{momentoFinal}_{texto_estaciones}",
+            "mp4",
+        )
+        mapa.realizarVideoHeatmap(
+            momentoInicio,
+            momentoFinal,
+            rutaSalida=join(Constantes.RUTA_SALIDA, nombre_video),
+        )
+
+        rows = []
+        for t in range(momentoInicio, momentoFinal + 1):
+            vals = matrizDeseada.iloc[t, :].tolist()
+            for sid, v in enumerate(vals):
+                rows.append((t, sid, v))
+        df = pd.DataFrame(rows, columns=["t", "station_id", "value"])
+        df.to_csv(
+            join(Constantes.RUTA_SALIDA, nombre_video.replace(".mp4", ".csv")),
+            index=False,
+        )
+
+    # ===========================
+    # 7) Mapa Voronoi
+    # ===========================
+    if mapa_voronoi:
+        # formato: "inst1;inst2;..."
+        mapas = list(map(int, mapa_voronoi.split(";")))
+        for instante in mapas:
+            man_vor = manejar_Voronoi(matrizDeseada, Constantes.COORDENADAS)
+            man_vor.cargarMapaInstante(instante)
+            nombrePNG = auxiliar_ficheros.formatoArchivo(
+                f"MapaVoronoi_instante{instante}", "png"
+            )
+            man_vor.realizarFoto(join(Constantes.RUTA_SALIDA, nombrePNG))
+            pd.DataFrame({
+                "station_id": np.arange(matrizDeseada.shape[1]),
+                "t": instante,
+                "value": matrizDeseada.iloc[instante, :].tolist(),
+            }).to_csv(
+                join(Constantes.RUTA_SALIDA, nombrePNG.replace(".png", ".csv")),
+                index=False,
+            )
+
+    # ===========================
+    # 8) Mapa de círculos
+    # ===========================
+    if mapa_circulo:
+        # formato: "inst1;inst2[+est1;est2;...][-L]"
+        instantes, estaciones, labels_abiertos = parse_mapa_spec(mapa_circulo)
+
+        for instante in instantes:
+            man_circulos = manejar_mapaCirculos(
+                matrizDeseada,
+                Constantes.COORDENADAS,
+                mostrarLabels=labels_abiertos,
+                listaEstaciones=estaciones,
+            )
+            man_circulos.cargarMapaInstante(
+                instante,
+                listaEstaciones=estaciones,
+            )
+            nombrePNG = auxiliar_ficheros.formatoArchivo(
+                f"MapaCirculo_instante{instante}", "png"
+            )
+            man_circulos.realizarFoto(join(Constantes.RUTA_SALIDA, nombrePNG))
+
+            if estaciones is None:
+                station_ids = np.arange(matrizDeseada.shape[1])
+                values = matrizDeseada.iloc[instante, :].tolist()
+            else:
+                station_ids = estaciones
+                values = matrizDeseada.iloc[instante, estaciones].tolist()
+
+            pd.DataFrame({
+                "station_id": station_ids,
+                "t": instante,
+                "value": values,
+            }).to_csv(
+                join(Constantes.RUTA_SALIDA, nombrePNG.replace(".png", ".csv")),
+                index=False,
+            )
+
+
+    maps_json: list[dict] = []
+
+    # ===========================
+    # 9) Mapa de desplazamientos (unificado, autosuficiente)
+    # ===========================
+    if mapa_desplazamientos and mapa_desplazamientos != Constantes.CARACTER_NULO_CMD:
+        # formato: instante;deltaOrigen;deltaTransformacion;accion;tipo
+        try:
+            inst_str, delta_orig_str, delta_dest_str, accion_str, tipo_str = (
+                mapa_desplazamientos.split(";")
+            )
+        except ValueError:
+            raise ValueError(
+                f"Cadena mapa_desplazamientos inválida: {mapa_desplazamientos} "
+                "(esperado: instante;deltaOrigen;deltaTransformacion;accion;tipo)"
+            )
+
+        instante = int(inst_str)
+        delta_origen = int(delta_orig_str)
+        delta_dest = int(delta_dest_str)
+        accion = int(accion_str)  # -1 = coger, 1 = soltar
+        tipo = int(tipo_str)  # 1 = real, 0 = ficticio
+
+
+        pattern = os.path.join(pathEntrada, "*Desplazamientos_Resultado*.csv")
+        candidatos = glob(pattern)
+        if not candidatos:
+            raise ValueError(f"No se encontró ningún fichero que cumpla el patrón {pattern}")
+        if len(candidatos) > 1:
+            raise ValueError(
+                f"Se encontraron varios ficheros Desplazamientos_Resultado*.csv: {candidatos}. "
+                "Deja solo uno en la carpeta de entrada."
+            )
+
+        df = pd.read_csv(candidatos[0])
+
+        # 2) Comprobar columnas esperadas del CSV de desplazamientos
+        expected_cols = {
+            "Estacion origen",
+            "Estacion final",
+            "tipo de peticion",
+            "Utemporal",
+            "Cantidad_peticiones",
+            "RealFicticio",
+        }
+        if not expected_cols.issubset(set(df.columns)):
+            raise ValueError(
+                "La matriz de desplazamientos no tiene las columnas esperadas "
+                f"(columnas actuales: {list(df.columns)})"
+            )
+
+        # 3) Adaptar delta si es necesario (solo agregación)
+        if delta_origen < delta_dest:
+            ratio = delta_dest / delta_origen
+            if ratio <= 0 or ratio != int(ratio):
+                raise ValueError(
+                    f"No se puede colapsar desplazamientos: "
+                    f"delta_origen={delta_origen}, delta_dest={delta_dest} "
+                    f"(ratio no entero: {ratio})"
+                )
+            df = Agrupador.colapsarDesplazamientos(
+                df,
+                delta_origen,
+                delta_dest,
+            )
+        elif delta_origen > delta_dest:
+            raise ValueError(
+                f"No se puede pasar de delta_origen={delta_origen} "
+                f"a delta_dest={delta_dest} (desagregación no soportada)."
+            )
+
+        # 4) Filtrar filas del instante, acción y tipo (real/ficticio)
+        filtrado = df[
+            (df["Utemporal"] == instante)
+            & (df["tipo de peticion"] == accion)
+            & (df["RealFicticio"] == tipo)
+            & (df["Estacion origen"] != df["Estacion final"])
+            ]
+
+        if filtrado.empty:
+            raise ValueError(
+                f"No hay desplazamientos para instante={instante}, "
+                f"accion={accion}, tipo={tipo}"
+            )
+
+        # 5) Construir matriz S×S con sumas de Cantidad_peticiones
+        max_station_id = int(
+            max(filtrado["Estacion origen"].max(), filtrado["Estacion final"].max())
+        )
+        n_stations = max_station_id + 1
+
+        mat_t = np.zeros((n_stations, n_stations), dtype=float)
+        for _, row in filtrado.iterrows():
+            o = int(row["Estacion origen"])
+            d = int(row["Estacion final"])
+            cnt = float(row["Cantidad_peticiones"])
+            if 0 <= o < n_stations and 0 <= d < n_stations:
+                mat_t[o, d] += cnt
+
+        out_totals = mat_t.sum(axis=1).tolist()
+        in_totals = mat_t.sum(axis=0).tolist()
+        station_ids = list(range(n_stations))
+
+        # 6) Generar mapa (imagen) usando el manejador existente
+        md = Manejar_Desplazamientos(
+            df,
+            Constantes.COORDENADAS,
+            accion=accion,
+            tipo=tipo,
+        )
+        md.cargarMapaInstante(instante)
+
+        nombrePNG = auxiliar_ficheros.formatoArchivo(
+            f"MapaDesplazamientos_instante{instante}", "png"
+        )
+        rutaPNG = join(Constantes.RUTA_SALIDA, nombrePNG)
+        md.realizarFoto(rutaPNG)
+
+        # 7) CSV totales por estación
+        csv_name = nombrePNG.replace(".png", ".csv")
+        rutaCSV = join(Constantes.RUTA_SALIDA, csv_name)
+        pd.DataFrame(
+            {
+                "station_id": station_ids,
+                "t": instante,
+                "out_total": out_totals,
+                "in_total": in_totals,
+            }
+        ).to_csv(rutaCSV, index=False)
+
+        # 8) HTML wrapper para iframe en el front
+        html_name = nombrePNG.replace(".png", ".html")
+        rutaHTML = join(Constantes.RUTA_SALIDA, html_name)
+        img_src = nombrePNG
+
+        with open(rutaHTML, "w", encoding="utf-8") as f:
+            f.write(
+                f"""<!doctype html>
+    <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <title>Mapa de desplazamientos t={instante}</title>
+        <style>
+          :root {{
+            color-scheme: dark;
+          }}
+          body {{
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont,
+              'Segoe UI', sans-serif;
+            background: #020617;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+          }}
+          .container {{
+            max-width: 1200px;
+            width: 100%;
+            padding: 1rem;
+            box-sizing: border-box;
+          }}
+          h1 {{
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.75rem;
+          }}
+          img {{
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+          }}
+          .meta {{
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-bottom: 0.25rem;
+          }}
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="meta">
+            Δ origen = {delta_origen} min · Δ destino = {delta_dest} min ·
+            acción = {accion} · tipo = {tipo}
+          </div>
+          <h1>Mapa de desplazamientos · instante {instante}</h1>
+          <img src="{img_src}" alt="Mapa de desplazamientos t={instante}" />
+        </div>
+      </body>
+    </html>
+    """
+            )
+
+        # 9) JSON resumen
+        json_name = nombrePNG.replace(".png", ".json")
+        rutaJSON = join(Constantes.RUTA_SALIDA, json_name)
+        with open(rutaJSON, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "id": f"MapaDesplazamientos_{instante}",
+                    "kind": "displacement_map",
+                    "format": "json",
+                    "instant": instante,
+                    "delta": delta_dest,
+                    "accion": accion,
+                    "tipo": tipo,
+                    "nodes": [
+                        {
+                            "station_id": int(sid),
+                            "out_total": out_totals[i],
+                            "in_total": in_totals[i],
+                        }
+                        for i, sid in enumerate(station_ids)
+                    ],
+                },
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
+
+        # 10) Descriptor para el frontend
+        maps_json.append(
+            {
+                "id": f"MapaDesplazamientos_{instante}",
+                "kind": "map",
+                "name": f"Mapa de desplazamientos t={instante}",
+                "format": "html",
+                "url": f"/{html_name}",
+                "api_full_url": None,
+            }
+        )
+
+    # ===========================
+    # 10) Filtrados (CSV)
+    # ===========================
+
+    # 10.1 Filtrado_EstValor (día): "operadorValor;veces;indice_dia"
+    if filtrado_EstSuperiorValor and filtrado_EstSuperiorValor != "_":
+        try:
+            partes = filtrado_EstSuperiorValor.split(";")
+            if len(partes) != 3:
+                raise ValueError(
+                    f"Cadena filtrado_EstSuperiorValor inválida: {filtrado_EstSuperiorValor}"
+                )
+
+            op_func, valor_str, op_name = __obtenerOperador(partes[0])
+            veces = int(partes[1])
+            dia_idx = int(partes[2])
+
+            estaciones = filtrador.consultarEstacionesSuperioresAUnValor(
+                float(valor_str),
+                veces,
+                dia_idx,
+                operador=op_func,
+            )
+
+            nombre = auxiliar_ficheros.formatoArchivo(
+                f"Filtrado_Estaciones{op_name}Valor_DIA{dia_idx}_{op_name}{valor_str}_{veces}",
+                "csv",
+            )
+            ruta = join(pathSalida, nombre)
+            pandas.DataFrame({"station_id": estaciones}).to_csv(ruta, index=False)
+        except Exception as e:
+            print(f"[WARN] Error en Filtrado_EstSuperiorValor: {e}")
+
+    # 10.2 Filtrado_EstValorDias (mes): "operadorValor;veces;dias;dias_excepcion"
+    if filtrado_EstSuperiorValorDias and filtrado_EstSuperiorValorDias != "_":
+        try:
+            partes = filtrado_EstSuperiorValorDias.split(";")
+            if len(partes) != 4:
+                raise ValueError(
+                    f"Cadena filtrado_EstSuperiorValorDias inválida: {filtrado_EstSuperiorValorDias}"
+                )
+
+            op_func, valor_str, op_name = __obtenerOperador(partes[0])
+            veces = int(partes[1])
+            cad_dias = partes[2]
+            dias_excepcion = int(partes[3])
+
+            if cad_dias == "all":
+                dias = list(range(diasMatrizDeseada))
+            else:
+                dias = list(map(int, cad_dias.split(";")))
+
+            estaciones = filtrador.consultarEstacionesSuperioresAUnValorEnVariosDias(
+                float(valor_str),
+                veces,
+                dias,
+                diasPerdon=dias_excepcion,
+                operador=op_func,
+            )
+
+            nombre = auxiliar_ficheros.formatoArchivo(
+                f"Filtrado_Estaciones{op_name}Valor_MES_{op_name}{valor_str}_{veces}_{'-'.join(map(str, dias))}_{dias_excepcion}",
+                "csv",
+            )
+            ruta = join(pathSalida, nombre)
+            pandas.DataFrame({"station_id": estaciones}).to_csv(ruta, index=False)
+        except Exception as e:
+            print(f"[WARN] Error en Filtrado_EstSuperiorValorDias: {e}")
+
+    # 10.3 Filtrado_Horas: "operadorValor;porcentajeEstaciones"
+    if filtrado_HorasSuperiorValor and filtrado_HorasSuperiorValor != "_":
+        try:
+            partes = filtrado_HorasSuperiorValor.split(";")
+            if len(partes) != 2:
+                raise ValueError(
+                    f"Cadena filtrado_HorasSuperiorValor inválida: {filtrado_HorasSuperiorValor}"
+                )
+
+            op_func, valor_str, op_name = __obtenerOperador(partes[0])
+            porcentajeEst = float(partes[1])
+
+            horas_idx = filtrador.consultarHorasEstacionesSuperioresAUnValor(
+                float(valor_str),
+                porcentajeEst,
+                operador=op_func,
+            )
+
+            nombre = auxiliar_ficheros.formatoArchivo(
+                f"Filtrado_Horas{op_name}Valor_{op_name}{valor_str}_{porcentajeEst}",
+                "csv",
+            )
+            ruta = join(pathSalida, nombre)
+            pandas.DataFrame({"t_index": horas_idx}).to_csv(ruta, index=False)
+        except Exception as e:
+            print(f"[WARN] Error en Filtrado_HorasSuperiorValor: {e}")
+
+    # 10.4 Filtrado_PorcentajeEstaciones: "operadorValor-est1;est2;..."
+    if filtrado_PorcentajeHoraEstacionMasValor and filtrado_PorcentajeHoraEstacionMasValor != "_":
+        try:
+            partes = filtrado_PorcentajeHoraEstacionMasValor.split("-")
+            if len(partes) != 2:
+                raise ValueError(
+                    f"Cadena filtrado_PorcentajeHoraEstacionMasValor inválida: {filtrado_PorcentajeHoraEstacionMasValor}"
+                )
+
+            op_func, valor_str, op_name = __obtenerOperador(partes[0])
+            estaciones = list(map(int, partes[1].split(";")))
+
+            porcentaje_tiempo = filtrador.consultarPorcentajeTiempoEstacionSuperiorAUnValor(
+                float(valor_str),
+                estaciones,
+                operador=op_func,
+            )
+
+            nombre = auxiliar_ficheros.formatoArchivo(
+                f"Filtrado_PorcentajeEstaciones{op_name}Valor_{op_name}{valor_str}_{'-'.join(map(str, estaciones))}",
+                "csv",
+            )
+            ruta = join(pathSalida, nombre)
+            pandas.DataFrame({"percent": [porcentaje_tiempo]}).to_csv(ruta, index=False)
+        except Exception as e:
+            print(f"[WARN] Error en Filtrado_PorcentajeEstaciones: {e}")
+
+    return {"ok": True, "charts": charts}

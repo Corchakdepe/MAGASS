@@ -57,6 +57,7 @@ export default function SidebarContentUploadSim({
                 walk_cost: walkCost / 100,
                 delta,
                 dias: null,
+                simname: simName || null,
             };
 
 
