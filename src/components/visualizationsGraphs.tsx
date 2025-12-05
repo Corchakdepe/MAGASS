@@ -2,7 +2,6 @@
 'use client';
 
 import {useState} from 'react';
-import Papa from 'papaparse';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -12,6 +11,7 @@ import {
     PointElement,
     Tooltip,
     Legend,
+    Title,
 } from 'chart.js';
 import {Bar, Line} from 'react-chartjs-2';
 import type {GraphItem} from '@/components/visualizations-panel';
@@ -24,6 +24,7 @@ ChartJS.register(
     PointElement,
     Tooltip,
     Legend,
+    Title,
 );
 
 type BackendChart = {
@@ -37,23 +38,31 @@ type BackendChart = {
         title?: string;
         xLabel?: string;
         yLabel?: string;
+        freq?: boolean;
+        media?: boolean;
         [k: string]: any;
     };
 };
 
 type ChartDataState = {
     labels: (string | number)[];
-    datasets: { label: string; data: number[]; backgroundColor: string }[];
+    datasets: {
+        label: string;
+        data: number[];
+        backgroundColor: string;
+    }[];
 } | null;
 
 type VisualizationGraphsProps = {
     runId: string;
     apiBase: string;
-    graphs?: GraphItem[];
-    chartsFromApi?: BackendChart[];
+    graphs?: GraphItem[];          // file mode (JSON files)
+    chartsFromApi?: BackendChart[]; // direct API JSON mode
 };
 
-// round helper for nicer x labels
+// ---------- helpers ----------
+
+// round helper for nicer x labels (old behavior)
 const roundNumber = (v: number, decimals = 2) => {
     const factor = 10 ** decimals;
     return Math.round(v * factor) / factor;
@@ -63,6 +72,7 @@ const backendChartToChartJs = (chart: BackendChart): ChartDataState => {
     const labels = chart.x.map(x =>
         typeof x === 'number' ? roundNumber(x) : x,
     );
+
     const keys = Object.keys(chart.series);
     if (keys.length === 0) return null;
 
@@ -78,7 +88,38 @@ const backendChartToChartJs = (chart: BackendChart): ChartDataState => {
         data: chart.series[k] ?? [],
         backgroundColor: baseColors[idx % baseColors.length],
     }));
+
     return {labels, datasets};
+};
+
+// Y-scale for histogram of counts
+const makeHistogramYScale = (values: number[]) => {
+    if (!values.length) return {beginAtZero: true as const};
+
+    const max = Math.max(...values);
+    return {
+        beginAtZero: true as const,
+        min: 0,
+        max: max * 1.05,
+        ticks: {
+            stepSize: Math.max(1, Math.round(max / 8)),
+            callback: (v: any) => (Number.isInteger(v) ? v : ''),
+        },
+    };
+};
+
+// Y-scale for time‑series / medias / acumulados
+const makeTimeSeriesYScale = (values: number[]) => {
+    if (!values.length) return {beginAtZero: true as const};
+
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+
+    return {
+        beginAtZero: min >= 0,
+        min: min >= 0 ? 0 : min,
+        max: max * 1.1,
+    };
 };
 
 export default function VisualizationGraphs(props: VisualizationGraphsProps) {
@@ -91,81 +132,12 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
     const [content, setContent] = useState<string | object>('');
     const [chartData, setChartData] = useState<ChartDataState>(null);
 
-    const parseXYCsv = (
-        csvText: string,
-        label: string,
-    ): {
-        datasets: {
-            backgroundColor: string;
-            borderColor: string;
-            data: number[];
-            hoverBackgroundColor: string;
-            hoverBorderColor: string;
-            label: string;
-        }[];
-        labels: (number | string)[];
-    } => {
-        const parsed = Papa.parse(csvText.trim(), {
-            header: true,
-            skipEmptyLines: true,
-        });
-
-        const rows = parsed.data as Record<string, string>[];
-
-        const xs: (number | string)[] = [];
-        const ys: number[] = [];
-
-        rows.forEach(r => {
-            const xRaw = r.x;
-            const xNum = Number(xRaw);
-            const x =
-                !Number.isNaN(xNum) && xRaw !== undefined
-                    ? roundNumber(xNum) // round CSV x values
-                    : (xRaw as string);
-
-            let yRaw: number | null = null;
-
-            if (r.value !== undefined) {
-                yRaw = Number(r.value);
-            } else if (r.cum !== undefined) {
-                yRaw = Number(r.cum);
-            } else {
-                for (const [k, v] of Object.entries(r)) {
-                    if (k === 'x') continue;
-                    const num = Number(v);
-                    if (!Number.isNaN(num)) {
-                        yRaw = num;
-                        break;
-                    }
-                }
-            }
-
-            if (x !== undefined && yRaw !== null && !Number.isNaN(yRaw)) {
-                xs.push(x);
-                ys.push(yRaw);
-            }
-        });
-
-        return {
-            labels: xs,
-            datasets: [
-                {
-                    label,
-                    data: ys,
-                    backgroundColor: 'rgba(54,162,235,0.7)',
-                    borderColor: 'rgba(54,162,235,1)',
-                    hoverBackgroundColor: 'rgba(34,197,94,0.8)',
-                    hoverBorderColor: 'rgba(22,163,74,1)',
-                },
-            ],
-        };
-    };
     const handleSelect = async (id: string) => {
         setSelectedId(id);
         setChartData(null);
         setContent('');
 
-        // JSON mode (charts generated by backend: already in BackendChart shape)
+        // API JSON mode: already BackendChart[]
         if (jsonMode && (props as any).chartsFromApi) {
             const chartsFromApi = (props as any).chartsFromApi as BackendChart[];
             const chart = chartsFromApi.find(c => c.id === id);
@@ -177,7 +149,7 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
             return;
         }
 
-        // File mode (CSV + JSON files)
+        // File mode: fetch JSON file
         if (!fileMode || !(props as any).graphs || !(props as any).apiBase) return;
 
         const graphs = (props as any).graphs as GraphItem[];
@@ -188,54 +160,14 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
 
         try {
             const url = item.api_full_url || `${apiBase}${item.url}`;
+            const res = await fetch(url, {cache: 'no-store'});
+            const json = await res.json();
+            setContent(json);
 
-            if (item.format === 'csv') {
-                const res = await fetch(url, {cache: 'no-store'});
-                const text = await res.text();
-                setContent(text);
-
-                const cd = parseXYCsv(text, item.name);
+            if (json && json.x && json.series) {
+                const cd = backendChartToChartJs(json as BackendChart);
                 setChartData(cd);
-
-                // Buscar JSON hermano
-                const graphs = (props as any).graphs as GraphItem[];
-                const baseName = item.name.replace(/\.csv$/i, '');
-                const metaItem = graphs.find(
-                    g =>
-                        g.format === 'json' &&
-                        (g.name || g.id || '').toString().replace(/\.json$/i, '') === baseName,
-                );
-
-                if (metaItem) {
-                    const metaUrl = metaItem.api_full_url || `${apiBase}${metaItem.url}`;
-                    try {
-                        const metaRes = await fetch(metaUrl, {cache: 'no-store'});
-                        const metaJson = await metaRes.json();
-                        // metaJson ya tiene x, series, meta
-                        if (metaJson?.meta) {
-                            // Guardar meta dentro de selectedItem “virtual”
-                            (item as any).meta = metaJson.meta;
-                        }
-                    } catch {
-                        // meta opcional, si falla seguimos con defaults
-                    }
-                }
-            } else if (item.format === 'json') {
-                const res = await fetch(url, {cache: 'no-store'});
-                const json = await res.json();
-                setContent(json);
-
-                // si el JSON tiene meta.type, úsalo también aquí
-                if (json && json.x && json.series) {
-                    const cd = backendChartToChartJs(json as BackendChart);
-                    setChartData(cd);
-                } else {
-                    setChartData(null);
-                }
             } else {
-                const res = await fetch(url, {cache: 'no-store'});
-                const text = await res.text();
-                setContent(text);
                 setChartData(null);
             }
         } catch {
@@ -243,55 +175,37 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
             setChartData(null);
         }
     };
+
     const listItems = fileMode
         ? ((props as any).graphs as GraphItem[]) ?? []
         : ((props as any).chartsFromApi as BackendChart[]) ?? [];
 
     const selectedItem =
         fileMode && (props as any).graphs
-            ? ((props as any).graphs as GraphItem[]).find(g => g.id === selectedId)
+            ? ((props as any).graphs as GraphItem[]).find(
+                g => g.id === selectedId,
+            )
             : jsonMode && (props as any).chartsFromApi
                 ? ((props as any).chartsFromApi as BackendChart[]).find(
                     c => c.id === selectedId,
                 )
                 : null;
 
-// Decide chart type: JSON → meta.type, CSV → filename heuristic
+    // Decide chart type using meta.type
     let chartType: 'bar' | 'line' = 'bar';
 
     if (jsonMode && (props as any).chartsFromApi && selectedId) {
         const chartsFromApi = (props as any).chartsFromApi as BackendChart[];
         const apiChart = chartsFromApi.find(c => c.id === selectedId);
-        if (apiChart?.meta?.type === 'line') {
-            chartType = 'line';
-        } else if (apiChart?.meta?.type === 'bar') {
-            chartType = 'bar';
-        }
+        if (apiChart?.meta?.type === 'line') chartType = 'line';
+        else if (apiChart?.meta?.type === 'bar') chartType = 'bar';
     } else if (fileMode && selectedItem) {
         const metaType = (selectedItem as any).meta?.type;
-
-        // 1) Si ya hemos inyectado meta (CSV+JSON emparejados)
-        if (metaType === 'line') {
-            chartType = 'line';
-        } else if (metaType === 'bar') {
-            chartType = 'bar';
-        } else if ((selectedItem as any).format === 'json') {
-            // 2) Para JSON, usa el propio contenido como BackendChart
+        if ((selectedItem as any).format === 'json') {
             const json = content as any;
-            const t = json?.meta?.type;
-            if (t === 'line') {
-                chartType = 'line';
-            } else if (t === 'bar') {
-                chartType = 'bar';
-            }
-        } else {
-            // 3) Fallback por nombre de fichero
-            const name = ((selectedItem as any).name || (selectedItem as any).id || '')
-                .toString()
-                .toLowerCase();
-            if (name.includes('acumulado') || name.includes('acumulad')) {
-                chartType = 'line';
-            }
+            const t = json?.meta?.type ?? metaType;
+            if (t === 'line') chartType = 'line';
+            else if (t === 'bar') chartType = 'bar';
         }
     }
 
@@ -299,7 +213,7 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
         <section className="space-y-3">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">
-                    Graphs {jsonMode ? '(from API JSON)' : '(CSV / JSON files)'}
+                    Graphs {jsonMode ? '(from API JSON)' : '(JSON files)'}
                 </h2>
                 <span className="text-xs text-muted-foreground">Run: {runId}</span>
             </div>
@@ -345,113 +259,154 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
 
                             {selectedItem && (
                                 <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div>
-                                            <h3 className="font-medium">
-                                                {'name' in selectedItem
-                                                    ? (selectedItem as any).name
-                                                    : (selectedItem as any).meta?.title ||
-                                                    (selectedItem as any).id}
-                                            </h3>
-                                            <p className="text-[11px] text-muted-foreground">
-                                                Format:{' '}
-                                                {'format' in selectedItem
-                                                    ? (selectedItem as any).format.toUpperCase()
-                                                    : 'JSON'}
-                                            </p>
-                                        </div>
+                                    {(() => {
+                                        // meta: prefer JSON content, fallback to item.meta
+                                        const contentObj =
+                                            typeof content === 'object' && content !== null
+                                                ? (content as any)
+                                                : null;
+                                        const metaFromContent = contentObj?.meta || {};
+                                        const metaFromItem = (selectedItem as any)?.meta || {};
+                                        const meta = {...metaFromItem, ...metaFromContent};
 
-                                        {fileMode &&
-                                            'api_full_url' in selectedItem &&
-                                            (props as any).apiBase && (
-                                                <a
-                                                    href={
-                                                        (selectedItem as any).api_full_url ||
-                                                        `${(props as any).apiBase}${
-                                                            (selectedItem as any).url
-                                                        }`
-                                                    }
-                                                    download
-                                                    className="text-xs underline text-primary"
-                                                >
-                                                    Download
-                                                </a>
-                                            )}
-                                    </div>
+                                        const xLabel = meta.xLabel || 'X';
+                                        const yLabel = meta.yLabel || 'Y';
+                                        const chartTitle = meta.title || '';
+                                        const isHistogram = meta.freq === true;
 
-                                    {chartData && (
-                                        <div className="mb-3">
-                                            {chartType === 'bar' ? (
-                                                <Bar
-                                                    data={chartData}
-                                                    options={{
-                                                        responsive: true,
-                                                        plugins: {
-                                                            legend: {
-                                                                display: chartData.datasets.length > 1,
-                                                            },
-                                                        },
-                                                        scales: {
-                                                            x: {
-                                                                title: {
-                                                                    display: !!(selectedItem as any)?.meta?.xLabel,
-                                                                    text:
-                                                                        (selectedItem as any)?.meta?.xLabel ||
-                                                                        'X',
-                                                                },
-                                                            },
-                                                            y: {
-                                                                title: {
-                                                                    display: !!(selectedItem as any)?.meta?.yLabel,
-                                                                    text:
-                                                                        (selectedItem as any)?.meta?.yLabel ||
-                                                                        'Y',
-                                                                },
-                                                                beginAtZero: true,
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            ) : (
-                                                <Line
-                                                    data={chartData}
-                                                    options={{
-                                                        responsive: true,
-                                                        plugins: {
-                                                            legend: {
-                                                                display: chartData.datasets.length > 1,
-                                                            },
-                                                        },
-                                                        scales: {
-                                                            x: {
-                                                                title: {
-                                                                    display: !!(selectedItem as any)?.meta?.xLabel,
-                                                                    text:
-                                                                        (selectedItem as any)?.meta?.xLabel ||
-                                                                        'X',
-                                                                },
-                                                            },
-                                                            y: {
-                                                                title: {
-                                                                    display: !!(selectedItem as any)?.meta?.yLabel,
-                                                                    text:
-                                                                        (selectedItem as any)?.meta?.yLabel ||
-                                                                        'Y',
-                                                                },
-                                                                beginAtZero: true,
-                                                            },
-                                                        },
-                                                    }}
-                                                />
-                                            )}
-                                        </div>
-                                    )}
+                                        const yValuesRaw =
+                                            chartData?.datasets
+                                                ?.flatMap(ds => ds.data)
+                                                .map(v => Number(v)) ?? [];
+                                        const yValues = yValuesRaw.filter(
+                                            v => !Number.isNaN(v),
+                                        ) as number[];
 
-                                    <pre className="text-xs whitespace-pre-wrap">
-                    {typeof content === 'string'
-                        ? content
-                        : JSON.stringify(content, null, 2)}
-                  </pre>
+                                        const yScale = isHistogram
+                                            ? makeHistogramYScale(yValues)
+                                            : makeTimeSeriesYScale(yValues);
+
+                                        return (
+                                            <>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div>
+                                                        <h3 className="font-medium">
+                                                            {'name' in selectedItem
+                                                                ? (selectedItem as any).name
+                                                                : chartTitle || (selectedItem as any).id}
+                                                        </h3>
+                                                        <p className="text-[11px] text-muted-foreground">
+                                                            Format:{' '}
+                                                            {'format' in selectedItem
+                                                                ? (selectedItem as any).format.toUpperCase()
+                                                                : 'JSON'}
+                                                        </p>
+                                                    </div>
+
+                                                    {fileMode &&
+                                                        'api_full_url' in selectedItem &&
+                                                        (props as any).apiBase && (
+                                                            <a
+                                                                href={
+                                                                    (selectedItem as any).api_full_url ||
+                                                                    `${(props as any).apiBase}${
+                                                                        (selectedItem as any).url
+                                                                    }`
+                                                                }
+                                                                download
+                                                                className="text-xs underline text-primary"
+                                                            >
+                                                                Download
+                                                            </a>
+                                                        )}
+                                                </div>
+
+                                                {chartData && (
+                                                    <div className="mb-3">
+                                                        {chartType === 'bar' ? (
+                                                            <Bar
+                                                                data={chartData}
+                                                                options={{
+                                                                    responsive: true,
+                                                                    plugins: {
+                                                                        legend: {
+                                                                            display:
+                                                                                chartData.datasets.length > 1,
+                                                                        },
+                                                                        title: {
+                                                                            display: !!chartTitle,
+                                                                            text: chartTitle,
+                                                                        },
+                                                                    },
+                                                                    scales: {
+                                                                        x: {
+                                                                            title: {
+                                                                                display: !!xLabel,
+                                                                                text: xLabel,
+                                                                            },
+                                                                            ticks: {
+                                                                                autoSkip: true,
+                                                                                maxTicksLimit: 12,
+                                                                            },
+                                                                        },
+                                                                        y: {
+                                                                            ...yScale,
+                                                                            title: {
+                                                                                display: !!yLabel,
+                                                                                text: yLabel,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Line
+                                                                data={chartData}
+                                                                options={{
+                                                                    responsive: true,
+                                                                    plugins: {
+                                                                        legend: {
+                                                                            display:
+                                                                                chartData.datasets.length > 1,
+                                                                        },
+                                                                        title: {
+                                                                            display: !!chartTitle,
+                                                                            text: chartTitle,
+                                                                        },
+                                                                    },
+                                                                    scales: {
+                                                                        x: {
+                                                                            title: {
+                                                                                display: !!xLabel,
+                                                                                text: xLabel,
+                                                                            },
+                                                                            ticks: {
+                                                                                autoSkip: true,
+                                                                                maxTicksLimit: 12,
+                                                                            },
+                                                                        },
+                                                                        y: {
+                                                                            ...yScale,
+                                                                            title: {
+                                                                                display: !!yLabel,
+                                                                                text: yLabel,
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <pre className="text-xs whitespace-pre-wrap">
+                          {typeof content === 'string'
+                              ? content
+                              : JSON.stringify(content, null, 2)}
+                        </pre>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>
@@ -461,4 +416,3 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
         </section>
     );
 }
-;
