@@ -40,10 +40,8 @@ export default function VisualizationsPanel({
                     runId={runId}
                     apiBase={apiBase}
                     graphs={graphs}
-                    // remove chartsFromApi here
                 />
             )}
-
             {showMaps && (
                 <VisualizationMaps
                     runId={runId}

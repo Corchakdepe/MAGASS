@@ -1,7 +1,6 @@
 from __future__ import annotations
 import hashlib
 import operator
-from glob import glob
 import os
 import shutil
 from pathlib import Path
@@ -99,10 +98,12 @@ def __obtenerOperador(string: str):
         return operator.lt, string.replace("<", ""), "MAY"
     return operator.ge, string.replace(">=", ""), "MAYIGUAL"
 
+
 # Para el grafico de lineas, hay que definir los dias para cada estacion, 87;212;all#all todos los dias para ambas estaciones
 class StationDays(BaseModel):
     station_id: int
     days: Union[str, List[int]]
+
 
 # Modelo del analysis con lo que pide sea para mapa, graph o filtro
 class AnalysisArgs(BaseModel):
@@ -135,9 +136,6 @@ class AnalysisArgs(BaseModel):
 
     use_filter_for_maps: bool = False
     filter_result_filename: Optional[str] = None
-
-
-
 
 
 class SimulateArgs(BaseModel):
@@ -1104,11 +1102,10 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 index=False,
             )
 
-
     maps_json: list[dict] = []
 
     # ===========================
-    # 9) Mapa de desplazamientos (unificado, autosuficiente)
+    # 9) Mapa de desplazamientos (unificado)
     # ===========================
     if mapa_desplazamientos and mapa_desplazamientos != Constantes.CARACTER_NULO_CMD:
         # formato: instante;deltaOrigen;deltaTransformacion;accion;tipo
@@ -1117,29 +1114,55 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 mapa_desplazamientos.split(";")
             )
         except ValueError:
-            raise ValueError(
-                f"Cadena mapa_desplazamientos inválida: {mapa_desplazamientos} "
-                "(esperado: instante;deltaOrigen;deltaTransformacion;accion;tipo)"
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Cadena mapa_desplazamientos inválida: {mapa_desplazamientos} "
+                    "(esperado: instante;deltaOrigen;deltaTransformacion;accion;tipo)"
+                ),
             )
 
-        instante = int(inst_str)
-        delta_origen = int(delta_orig_str)
-        delta_dest = int(delta_dest_str)
-        accion = int(accion_str)  # -1 = coger, 1 = soltar
-        tipo = int(tipo_str)  # 1 = real, 0 = ficticio
+        try:
+            instante = int(inst_str)
+            delta_origen = int(delta_orig_str)
+            delta_dest = int(delta_dest_str)
+            accion = int(accion_str)  # -1 = coger, 1 = soltar
+            tipo = int(tipo_str)  # 1 = real, 0 = ficticio
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Valores no enteros en mapa_desplazamientos: {mapa_desplazamientos}",
+            )
 
+        # 1) Leer matriz de desplazamientos N×6 desde *_Desplazamientos_Resultado*.csv
+        import os
+        from glob import glob
 
         pattern = os.path.join(pathEntrada, "*Desplazamientos_Resultado*.csv")
         candidatos = glob(pattern)
         if not candidatos:
-            raise ValueError(f"No se encontró ningún fichero que cumpla el patrón {pattern}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se encontró ningún fichero que cumpla el patrón {pattern}",
+            )
         if len(candidatos) > 1:
-            raise ValueError(
-                f"Se encontraron varios ficheros Desplazamientos_Resultado*.csv: {candidatos}. "
-                "Deja solo uno en la carpeta de entrada."
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Se encontraron varios ficheros Desplazamientos_Resultado*.csv: "
+                    f"{candidatos}. Deja solo uno en la carpeta de entrada."
+                ),
             )
 
-        df = pd.read_csv(candidatos[0])
+        try:
+            matriz_despl = pd.read_csv(candidatos[0])
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error leyendo el fichero de desplazamientos {candidatos[0]}: {e}",
+            )
+
+        df = pd.DataFrame(matriz_despl).copy()
 
         # 2) Comprobar columnas esperadas del CSV de desplazamientos
         expected_cols = {
@@ -1151,19 +1174,25 @@ def run_analysis(args: AnalysisArgs) -> dict:
             "RealFicticio",
         }
         if not expected_cols.issubset(set(df.columns)):
-            raise ValueError(
-                "La matriz de desplazamientos no tiene las columnas esperadas "
-                f"(columnas actuales: {list(df.columns)})"
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "La matriz de desplazamientos no tiene las columnas esperadas "
+                    f"(faltan en {list(df.columns)})"
+                ),
             )
 
-        # 3) Adaptar delta si es necesario (solo agregación)
+        # 3) Adaptar delta si es necesario (solo agregación, con Agrupador)
         if delta_origen < delta_dest:
             ratio = delta_dest / delta_origen
             if ratio <= 0 or ratio != int(ratio):
-                raise ValueError(
-                    f"No se puede colapsar desplazamientos: "
-                    f"delta_origen={delta_origen}, delta_dest={delta_dest} "
-                    f"(ratio no entero: {ratio})"
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"No se puede colapsar desplazamientos: "
+                        f"delta_origen={delta_origen}, delta_dest={delta_dest} "
+                        f"(ratio no entero: {ratio})"
+                    ),
                 )
             df = Agrupador.colapsarDesplazamientos(
                 df,
@@ -1171,12 +1200,15 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 delta_dest,
             )
         elif delta_origen > delta_dest:
-            raise ValueError(
-                f"No se puede pasar de delta_origen={delta_origen} "
-                f"a delta_dest={delta_dest} (desagregación no soportada)."
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"No se puede pasar de delta_origen={delta_origen} "
+                    f"a delta_dest={delta_dest} (desagregación no soportada)"
+                ),
             )
 
-        # 4) Filtrar filas del instante, acción y tipo (real/ficticio)
+        # 4) Filtrar filas del instante, acción y tipo
         filtrado = df[
             (df["Utemporal"] == instante)
             & (df["tipo de peticion"] == accion)
@@ -1185,9 +1217,12 @@ def run_analysis(args: AnalysisArgs) -> dict:
             ]
 
         if filtrado.empty:
-            raise ValueError(
-                f"No hay desplazamientos para instante={instante}, "
-                f"accion={accion}, tipo={tipo}"
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"No hay desplazamientos para instante={instante}, "
+                    f"accion={accion}, tipo={tipo}"
+                ),
             )
 
         # 5) Construir matriz S×S con sumas de Cantidad_peticiones
@@ -1208,23 +1243,31 @@ def run_analysis(args: AnalysisArgs) -> dict:
         in_totals = mat_t.sum(axis=0).tolist()
         station_ids = list(range(n_stations))
 
-        # 6) Generar mapa (imagen) usando el manejador existente
-        md = Manejar_Desplazamientos(
-            df,
-            Constantes.COORDENADAS,
-            accion=accion,
-            tipo=tipo,
-        )
-        md.cargarMapaInstante(instante)
-
-        nombrePNG = auxiliar_ficheros.formatoArchivo(
-            f"MapaDesplazamientos_instante{instante}", "png"
-        )
-        rutaPNG = join(Constantes.RUTA_SALIDA, nombrePNG)
-        md.realizarFoto(rutaPNG)
+        # 6) Generar HTML interactivo con Folium (MapaDesplazamientos)
+        try:
+            md = Manejar_Desplazamientos(
+                df,
+                Constantes.COORDENADAS,
+                accion=accion,
+                tipo=tipo,
+            )
+            md.cargarMapaInstante(instante)
+            # MapaDesplazamientos guarda en Constantes.RUTA_SALIDA con nombre MapaDesplazamientos_instante{instante}.html
+            html_name = auxiliar_ficheros.formatoArchivo(
+                f"MapaDesplazamientos_instante{instante}", "html"
+            )
+            rutaHTML = join(Constantes.RUTA_SALIDA, html_name)
+            # Si el save interno ya usa ese nombre/ruta, no hace falta copiar nada más
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error generando mapa interactivo de desplazamientos: {e}",
+            )
 
         # 7) CSV totales por estación
-        csv_name = nombrePNG.replace(".png", ".csv")
+        csv_name = html_name.replace(".html", ".csv")
         rutaCSV = join(Constantes.RUTA_SALIDA, csv_name)
         pd.DataFrame(
             {
@@ -1235,75 +1278,8 @@ def run_analysis(args: AnalysisArgs) -> dict:
             }
         ).to_csv(rutaCSV, index=False)
 
-        # 8) HTML wrapper para iframe en el front
-        html_name = nombrePNG.replace(".png", ".html")
-        rutaHTML = join(Constantes.RUTA_SALIDA, html_name)
-        img_src = nombrePNG
-
-        with open(rutaHTML, "w", encoding="utf-8") as f:
-            f.write(
-                f"""<!doctype html>
-    <html lang="es">
-      <head>
-        <meta charset="utf-8">
-        <title>Mapa de desplazamientos t={instante}</title>
-        <style>
-          :root {{
-            color-scheme: dark;
-          }}
-          body {{
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont,
-              'Segoe UI', sans-serif;
-            background: #020617;
-            color: #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-          }}
-          .container {{
-            max-width: 1200px;
-            width: 100%;
-            padding: 1rem;
-            box-sizing: border-box;
-          }}
-          h1 {{
-            font-size: 1rem;
-            font-weight: 600;
-            margin: 0 0 0.75rem;
-          }}
-          img {{
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-          }}
-          .meta {{
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-bottom: 0.25rem;
-          }}
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="meta">
-            Δ origen = {delta_origen} min · Δ destino = {delta_dest} min ·
-            acción = {accion} · tipo = {tipo}
-          </div>
-          <h1>Mapa de desplazamientos · instante {instante}</h1>
-          <img src="{img_src}" alt="Mapa de desplazamientos t={instante}" />
-        </div>
-      </body>
-    </html>
-    """
-            )
-
-        # 9) JSON resumen
-        json_name = nombrePNG.replace(".png", ".json")
+        # 8) JSON resumen
+        json_name = html_name.replace(".html", ".json")
         rutaJSON = join(Constantes.RUTA_SALIDA, json_name)
         with open(rutaJSON, "w", encoding="utf-8") as f:
             json.dump(
@@ -1329,7 +1305,7 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 indent=2,
             )
 
-        # 10) Descriptor para el frontend
+        # 9) Descriptor para el frontend
         maps_json.append(
             {
                 "id": f"MapaDesplazamientos_{instante}",
