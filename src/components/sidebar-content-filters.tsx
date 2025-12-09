@@ -120,7 +120,7 @@ export function FiltersPanel({apiBase, runId}: FiltersPanelProps) {
         setLoading(true);
         try {
             const res = await fetch(
-                `${apiBase}/results/list?run=${encodeURIComponent(runId)}&kind=graph`,
+                `${apiBase}/results/list?run=${encodeURIComponent(runId)}&kind=filter`,
                 {cache: 'no-store'},
             );
             if (!res.ok) return;
