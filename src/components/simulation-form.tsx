@@ -17,7 +17,7 @@ type StatisticsSimulationFormProps = {
     simName: string;
     setSimName: (v: string) => void;
 };
-export default function StatisticsSimulationForm({
+export default function SimulationForm({
                                                      stress,
                                                      setStress,
                                                      walkCost,

@@ -88,6 +88,11 @@ type FiltersPanelProps = {
     runId: string;
 };
 
+type SidebarFiltersProps = {
+    onSimulationComplete: (data: SimulationData) => void;
+    runId?: string;  // NEW
+};
+
 type StationsResult = { stations: number[] };
 type HoursResult = { hours: number[] };
 type PercentResult = { percent: number };
@@ -106,6 +111,7 @@ function isPercentFile(name: string) {
         name.toLowerCase().includes('porcentaje')
     );
 }
+
 
 export function FiltersPanel({apiBase, runId}: FiltersPanelProps) {
     const [files, setFiles] = useState<RawResultItem[]>([]);
@@ -178,7 +184,7 @@ export function FiltersPanel({apiBase, runId}: FiltersPanelProps) {
                 </CardHeader>
                 <CardContent className="space-y-2">
                     <Button size="sm" variant="outline" onClick={loadFiles}>
-                      <RefreshCw className="mr-2 h-4 w-4" />
+                        <RefreshCw className="mr-2 h-4 w-4"/>
                         Recargar
                     </Button>
                     {loading && (
@@ -263,9 +269,6 @@ export function FiltersPanel({apiBase, runId}: FiltersPanelProps) {
 // SidebarContentFilters
 // ======================
 
-type SidebarFiltersProps = {
-    onSimulationComplete: (data: SimulationData | any) => void;
-};
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
@@ -289,6 +292,7 @@ const MATRICES = [
 
 export default function SidebarContentFilters({
                                                   onSimulationComplete,
+                                                  runId
                                               }: SidebarFiltersProps) {
     const {toast} = useToast();
     const [isRunning, setIsRunning] = useState(false);
@@ -307,8 +311,6 @@ export default function SidebarContentFilters({
         setSeleccionAgreg(next.join(';'));
     };
 
-    const [inputFolder, setInputFolder] = useState('./Resultados_Simulador/Marzo_Reales');
-    const [outputFolder, setOutputFolder] = useState('./Resultados_Analisis/Marzo_Reales');
 
     const [filterKind, setFilterKind] = useState<FilterKind>('EstValorDias');
 
@@ -323,25 +325,15 @@ export default function SidebarContentFilters({
     });
 
     const handleRunFilter = async () => {
-        if (!inputFolder.trim() || !outputFolder.trim()) {
-            toast({
-                variant: 'destructive',
-                title: 'Carpetas requeridas',
-                description: 'Introduce carpeta de entrada y salida válidas.',
-            });
-            return;
-        }
 
-        const filtro = buildFiltroFromUnified(filterKind, filterState, '_');
-
+        const filtro = buildFiltroFromUnified(filterKind, filterState, undefined);
         setIsRunning(true);
         try {
             const body = {
-                input_folder: inputFolder,
-                output_folder: outputFolder,
+                run: runId || undefined,
                 filtro,
-                tipo_filtro: filterKind,
-                seleccion_agregacion: seleccionAgreg || '-1',
+                tipofiltro: filterKind,
+                seleccionagregacion: seleccionAgreg === "-1" ? -1 : seleccionAgreg,
             };
 
             const response = await fetch(`${API_BASE}/exe/analizar-json`, {
@@ -384,25 +376,7 @@ export default function SidebarContentFilters({
             </SidebarHeader>
 
             <SidebarBody className="p-4 space-y-4 overflow-y-auto text-sm">
-                <div className="space-y-1">
-                    <Label htmlFor="entrada">Entrada ficheros</Label>
-                    <Input
-                        id="entrada"
-                        value={inputFolder}
-                        onChange={e => setInputFolder(e.target.value)}
-                        placeholder="./Resultados_Simulador"
-                    />
-                </div>
 
-                <div className="space-y-1">
-                    <Label htmlFor="salida">Salida ficheros</Label>
-                    <Input
-                        id="salida"
-                        value={outputFolder}
-                        onChange={e => setOutputFolder(e.target.value)}
-                        placeholder="./Resultados_Analisis"
-                    />
-                </div>
 
                 <div className="space-y-1">
                     <Label className="font-bold">Tipo de filtro</Label>

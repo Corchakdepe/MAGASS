@@ -7,7 +7,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import {Home, BarChart3, Settings, FolderOpen, ChartArea, Map, Play, Filter} from 'lucide-react';
+import {Home, Settings, FolderOpen, ChartArea, Map, Play, Filter} from 'lucide-react';
 import { TbMapCog } from 'react-icons/tb';
 
 export default function SidebarContentComponent() {

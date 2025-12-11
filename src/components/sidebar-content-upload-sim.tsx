@@ -3,7 +3,7 @@
 
 import {useState} from 'react';
 import {useToast} from '@/hooks/use-toast';
-import StatisticsSimulationForm from '@/components/statistics-simulation-form';
+import SimulationForm from '@/components/simulation-form';
 import {Button} from '@/components/ui/button';
 import {
     SidebarHeader,
@@ -111,21 +111,7 @@ export default function SidebarContentUploadSim({
                         placeholder="./Datos/Marzo_Reales"
                     />
                 </div>
-
-                {/* Output folder opcional */}
-                <div className="space-y-1">
-                    <Label htmlFor="outputPath">
-                        Output folder (optional, auto-created if empty)
-                    </Label>
-                    <Input
-                        id="outputPath"
-                        value={outputPath}
-                        onChange={e => setOutputPath(e.target.value)}
-                        placeholder="./results/2025... (auto)"
-                    />
-                </div>
-
-                <StatisticsSimulationForm
+                <SimulationForm
                     stress={stress}
                     setStress={setStress}
                     walkCost={walkCost}

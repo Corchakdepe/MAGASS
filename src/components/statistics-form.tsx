@@ -30,6 +30,11 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
+interface MapAnalysisSidebarProps {
+    // e.g. "20251210_140806_sim_ST0_S0.00_WC1.00_D15"
+    runId?: string;
+}
+
 const MATRICES = [
     {label: 'Matriz externa (usuario)', id: -1},
     {label: 'Ocupación', id: 0},
@@ -47,6 +52,7 @@ const MATRICES = [
     {label: 'Ficticias no resueltas coger', id: 12},
     {label: 'Ficticias no resueltas dejar', id: 13},
 ];
+
 
 const MAPAS = [
     {label: 'Mapa Densidad', arg: 'mapa_densidad'},
@@ -99,7 +105,7 @@ function buildFiltroFromUnified(
     return nullChar;
 }
 
-export default function StatisticsForm() {
+export default function StatisticsForm({runId}: MapAnalysisSidebarProps) {
     const [entrada, setEntrada] = useState('');
     const [salida, setSalida] = useState('');
     const [seleccionAgreg, setSeleccionAgreg] = useState('');//matrix select
@@ -184,11 +190,16 @@ export default function StatisticsForm() {
         return spec;
     };
 
-    // -------------------------
-    // Lanzar análisis
-    // -------------------------
+// -------------------------
+// Lanzar análisis (MAPS) – SAME LOGIC AS GRAPHS
+// -------------------------
     const handleAnalyze = async () => {
-        if (apiBusy) return;
+        if (!runId) {
+            setApiError('Selecciona una simulación en el historial antes de analizar.');
+            return;
+        }
+        if (apiBusy || selectedMaps.length === 0) return;
+
         setApiBusy(true);
         setApiError(null);
 
@@ -200,33 +211,24 @@ export default function StatisticsForm() {
             : undefined;
 
         const commonPayload: any = {
-            input_folder: entrada || '',
-            output_folder: salida || '',
+            // SAME IDEA AS GRAPHS: use run, backend builds ./results/run
+            input_folder: `./results/${runId}`,
+            output_folder: `./results/${runId}`,
             seleccion_agregacion: seleccionAgreg || '-1',
 
             delta_media: nzInt(deltaMediaTxt),
             delta_acumulada: nzInt(deltaAcumTxt),
 
-            graf_barras_est_med: undefined,
-            graf_barras_est_acum: undefined,
-            graf_barras_dia: undefined,
-            graf_linea_comp_est: undefined,
-            graf_linea_comp_mats: undefined,
-
-            mapa_densidad: undefined,
-            video_densidad: undefined,
-            mapa_voronoi: undefined,
-            mapa_circulo: undefined,
-            mapa_desplazamientos: undefined,
-
             filtro: filtroStr,
             tipo_filtro: useFilterForMaps ? filterKind : undefined,
             use_filter_for_maps: useFilterForMaps,
+            use_filter_for_graphs: false,
 
             filtrado_EstValor: undefined,
             filtrado_EstValorDias: undefined,
             filtrado_Horas: undefined,
             filtrado_PorcentajeEstaciones: undefined,
+            filter_result_filename: null,
         };
 
         const mapRequests = selectedMaps.map(async apiKey => {
@@ -269,28 +271,7 @@ export default function StatisticsForm() {
         <div className="space-y-6">
             {/* Entradas y opciones */}
             <div className="space-y-4">
-                <h3 className="text-base font-semibold">Entradas y opciones</h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <Label htmlFor="entrada">Entrada ficheros</Label>
-                        <Input
-                            id="entrada"
-                            value={entrada}
-                            onChange={e => setEntrada(e.target.value)}
-                            placeholder="./Resultados_Simulador"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <Label htmlFor="salida">Salida ficheros</Label>
-                        <Input
-                            id="salida"
-                            value={salida}
-                            onChange={e => setSalida(e.target.value)}
-                            placeholder="./Resultados_Analisis"
-                        />
-                    </div>
-                </div>
 
                 {/* matrices */}
                 <div className="space-y-2">
