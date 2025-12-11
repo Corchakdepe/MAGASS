@@ -1,0 +1,20 @@
+# OS / IDE
+.DS_Store
+**/.DS_Store
+.idea/
+
+# Node / Next
+node_modules/
+.next/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs / build / misc
+logs/
+dist/
+build/
+
