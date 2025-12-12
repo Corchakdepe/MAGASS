@@ -1,7 +1,7 @@
 // components/visualization-graphs.tsx
 'use client';
 
-import {useState} from 'react';
+import React, {useState} from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import {Bar, Line} from 'react-chartjs-2';
 import type {GraphItem} from '@/components/visualizations-panel';
+import {ChartSpline} from "lucide-react";
 
 ChartJS.register(
     CategoryScale,
@@ -26,6 +27,7 @@ ChartJS.register(
     Legend,
     Title,
 );
+
 
 type BackendChart = {
     id: string;
@@ -211,11 +213,11 @@ export default function VisualizationGraphs(props: VisualizationGraphsProps) {
 
     return (
         <section className="space-y-3">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">
-                    Graphs {jsonMode ? '(from API JSON)' : '(JSON files)'}
+            <div className="flex items-center gap-2">
+                <ChartSpline className="h-5 w-5 text-xl"/>
+                <h2 className="text-xl font-semibold right-1" >
+                    Analytics Graph Creator
                 </h2>
-                <span className="text-xs text-muted-foreground">Run: {runId}</span>
             </div>
 
             {listItems.length === 0 && (
