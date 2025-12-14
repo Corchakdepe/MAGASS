@@ -3,5 +3,5 @@ export type MainContentMode =
     | 'simulations'
     | 'analyticsGraphs'
     | 'analyticsMaps'
-    | 'maps'
+    | 'history'
     | 'filters';

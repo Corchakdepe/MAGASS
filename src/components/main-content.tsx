@@ -9,7 +9,7 @@ import type {MainContentMode} from '@/types/view-mode';
 import SummaryPanel from '@/components/summary-panel';
 import VisualizationsPanel from '@/components/visualizations-panel';
 import type {GraphItem} from '@/components/visualizations-panel';
-import {FiltersPanel} from '@/components/sidebar-content-filters';
+import {FiltersPanel} from '@/components/visualizationsFilters';
 import DashboardPanel from '@/components/dashboard-panel';
 
 
@@ -163,7 +163,7 @@ export default function MainContent({
                     setGraphs([]);
                 }
 
-                if (mode === 'maps' || mode === 'analyticsMaps') {
+                if (mode === 'analyticsMaps') {
                     const mapsRes = await fetch(
                         `${API_BASE}/results/list?run=${encodeURIComponent(
                             runForFetch,
@@ -286,12 +286,11 @@ export default function MainContent({
 
             <main className="flex-1 p-6 space-y-6 overflow-y-auto">
 
-
                 {mode === 'simulations' && (
                     <SummaryPanel kind="simulation" summaryData={simulationSummary}/>
                 )}
 
-                {(mode === 'analyticsGraphs' || mode === 'analyticsMaps' || mode === 'maps') && (
+                {(mode === 'analyticsGraphs' || mode === 'analyticsMaps') && (
                     <VisualizationsPanel
                         mode={mode}
                         apiBase={API_BASE}
@@ -307,9 +306,10 @@ export default function MainContent({
                     <FiltersPanel apiBase={API_BASE} runId={currentFolder}/>
                 )}
 
-                {mode === 'dashboard' && currentFolder && (
+                {mode === 'dashboard'  && currentFolder && (
                     <DashboardPanel apiBase={API_BASE} runId={currentFolder}/>
                 )}
+
 
             </main>
         </div>

@@ -13,7 +13,7 @@ import SidebarContentUploadMaps from '@/components/sidebar-content-upload-maps';
 import GraphAnalysisSidebar from '@/components/graph-analysis-sidebar';
 import {Button} from '@/components/ui/button';
 import type {SimulationData} from '@/types/simulation';
-import SidebarContentFilters from './sidebar-content-filters';
+import VisualizationsFilters from './visualizationsFilters';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
@@ -185,9 +185,9 @@ export default function SidebarHistory({onSimulationComplete}: SidebarHistoryPro
     } else if (pathname.startsWith('/filters') && onSimulationComplete) {
         // If filters should also use current run, add runId prop there as well
         content = (
-            <SidebarContentFilters
+            <VisualizationsFilters
                 onSimulationComplete={onSimulationComplete}
-                // runId={currentRunId ?? undefined} // if SidebarContentFilters supports it
+                runId={currentRunId ?? undefined} // if SidebarContentFilters supports it
             />
         );
     }

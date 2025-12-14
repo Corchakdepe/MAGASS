@@ -20,7 +20,6 @@ export default function SidebarContentComponent() {
     { id: 'analyticsGraphCreator', label: 'Analytics graph creator', icon: ChartArea, path: '/analyticsGraphCreator' },
     { id: 'analyticsMapCreator', label: 'Analytics map creator', icon: TbMapCog, path: '/analyticsMapCreator' },
     { id: 'filter', label: 'Filter', icon: Filter, path: '/filters' },
-    { id: 'maps', label: 'Maps visualizations', icon: Map, path: '/maps' },
     { id: 'history', label: 'History', icon: FolderOpen, path: '/history' },
     { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   ];

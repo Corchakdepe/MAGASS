@@ -30,7 +30,7 @@ export default function VisualizationsPanel({
                                                 chartsFromApi,
                                             }: VisualizationsPanelProps) {
     const showGraphs = mode === 'analyticsGraphs';
-    const showMaps = mode === 'maps' || mode === 'analyticsMaps';
+    const showMaps =  mode === 'analyticsMaps';
 
     return (
 

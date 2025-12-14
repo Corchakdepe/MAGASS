@@ -22,7 +22,7 @@ function getModeFromPath(pathname: string): MainContentMode {
   if (pathname.startsWith('/simulador')) return 'simulations';
   if (pathname.startsWith('/analyticsGraphCreator')) return 'analyticsGraphs';
   if (pathname.startsWith('/analyticsMapCreator')) return 'analyticsMaps';
-  if (pathname.startsWith('/maps')) return 'maps';
+
   if (pathname.startsWith('/filters')) return 'filters';
   if (pathname.startsWith('/history')) return 'dashboard'; // or 'simulations', as you prefer
   return 'dashboard';

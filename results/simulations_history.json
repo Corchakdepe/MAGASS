@@ -1,0 +1,40 @@
+{
+  "simulations": [
+    {
+      "simname": "20251213_170836_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20251213_170836_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20251213_170836_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "Sevilla Pruebas",
+      "simfolder": "20251213_171046_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20251213_171046_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20251213_171320_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20251213_171320_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20251213_171320_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20251213_171417_sim_ST0_S0.57_WC0.29_D15",
+      "simfolder": "20251213_171417_sim_ST0_S0.57_WC0.29_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20251213_171417_sim_ST0_S0.57_WC0.29_D15"
+    }
+  ]
+}
