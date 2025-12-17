@@ -30,6 +30,7 @@ export default function AppLayout({children}: AppLayoutProps) {
 
     const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
     const [currentRunId, setCurrentRunId] = useState<string | null>(null);
+    const [simulationName, setSimulationName] = useState<string | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     // Only used when bottom panel is present
@@ -37,6 +38,7 @@ export default function AppLayout({children}: AppLayoutProps) {
 
     const handleSimulationComplete = (data: SimulationData) => {
         setSimulationData(data);
+        setSimulationName(data.simName);
         setCurrentRunId(data.folder);
         setRefreshTrigger((prev) => prev + 1);
     };
@@ -55,10 +57,9 @@ export default function AppLayout({children}: AppLayoutProps) {
             <SidebarProvider defaultOpen>
                 <Sidebar side="left">
                     <SidebarContentComponent
-                        simulationName={simulationData?.simName ?? null}
+                        simulationName={simulationName ?? null}
                         currentFolder={currentRunId ?? null}
                     />
-
                 </Sidebar>
 
                 <SidebarInset>

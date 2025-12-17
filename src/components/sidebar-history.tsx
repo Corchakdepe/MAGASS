@@ -107,7 +107,7 @@ export default function SidebarHistory({
       const summary = parseSummary(summaryString);
 
       const simData: SimulationData = {
-        simName: '',
+        simName: item.name ?? item.cityname ?? item.simfolder,
         folder: item.simfolder,
         created: item.created,
         fileCount: item.file_count,

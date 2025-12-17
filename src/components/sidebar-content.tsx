@@ -69,12 +69,8 @@ export default function SidebarContentComponent({
             </SidebarBody>
             <SidebarFooter className="p-4 border-t">
                 <div className="space-y-1">
-                    <p className="text-[11px] text-xl">Temp gonzalo bike</p>
-                    <p className="text-[11px] text-xl"> {simulationName ?? 'Sin Nombre '}</p>
-                    <p className="text-[11px] text-x truncate">        {currentFolder ? `${currentFolder}` : '—'} </p>
-                    <p className="text-x truncate">
-
-                    </p>
+                    <p className="text-[12px] font-bold text-xs truncate">{simulationName ?? 'No name'}</p>
+                    <p className="text-[8px] text-xs text-muted-foreground ">{currentFolder} </p>
                 </div>
             </SidebarFooter>
         </>
