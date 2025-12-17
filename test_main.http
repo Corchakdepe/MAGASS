@@ -10,44 +10,14 @@ Accept: application/json
 
 ###
 
-### 3. Simular con valores por defecto
-GET http://127.0.0.1:8000/exe/simular?rutaEntrada=./uploads/&rutaSalida=./results/&comando_stress=0&tipoStress=0&coste_andar=1&delta=15
-Accept: application/json
-
-###
-
-GET http://127.0.0.1:8000/exe/simular?stressType=1&stress=0.5&walkCost=0.75&delta=15
-Accept: application/json
-###
-
-
-### 4. Análisis con parámetros (crear carpeta de salida automáticamente)
-GET http://127.0.0.1:8000/exe/analizar?entradaFicheros=./Resultados_Simulador/20251023_124651_SimulacionD15S0.0C1.0&salidaFicheros=./Resultados_Analisis/Marzo_Reales&seleccion_agregacion=-1&deltaMedia=&deltaAcumulada=&graf_barras_est_med=&graf_barras_est_acum=&graf_barras_dia=&graf_linea_comp_est=&graf_linea_comp_mats=&mapa_densidad=0&video_densidad=&mapa_voronoi=&mapa_circulo=&mapa_desplazamientos=&filtrado_EstValor=&filtrado_EstValorDias=&filtrado_Horas=&filtrado_PorcentajeEstaciones=
-Accept: application/json
-###
-
-### 5. Obtener KPIs de zonas
-GET http://127.0.0.1:8000/zones
-Accept: application/json
-
-
-###
-GET http://127.0.0.1:8000/test-log
-Accept: application/json
-
-###
-GET http://127.0.0.1:8000/test/
-Accept: application/json
-
-####
 
 POST http://127.0.0.1:8000/exe/analizar-json
 Content-Type: application/json
 Accept: application/json
 
 {
-  "input_folder": "results/20251124_164716_sim_ST0_S0.00_WC1.00_D15",
-  "output_folder": "results/20251124_164716_sim_ST0_S0.00_WC1.00_D15",
+  "input_folder": "./results/20251213_171417_sim_ST0_S0.57_WC0.29_D15",
+  "output_folder": "./results/20251213_171417_sim_ST0_S0.57_WC0.29_D15",
   "seleccion_agregacion": "1",
 
   "delta_media": 60,
@@ -55,14 +25,14 @@ Accept: application/json
 
   "graf_barras_est_med": null,
   "graf_barras_est_acum": null,
-  "graf_barras_dia": "all_M-F",
+  "graf_barras_dia": null,
   "graf_linea_comp_est": null,
   "graf_linea_comp_mats": null,
 
   "mapa_densidad": null,
   "video_densidad": null,
   "mapa_voronoi": null,
-  "mapa_circulo": null,
+  "mapa_circulo": "10",
   "mapa_desplazamientos": null,
 
   "filtrado_EstValor": null,

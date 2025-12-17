@@ -25,12 +25,7 @@ export default function SidebarContentUploadMaps({
 
     return (
         <>
-            <SidebarHeader className="p-4">
-                <h2 className="text-xl font-semibold font-headline">Analysis</h2>
-                <h3 className="text-s font-light font-headline">
-                    Map creation parameters
-                </h3>
-            </SidebarHeader>
+
             <SidebarBody className="p-4 space-y-6 overflow-y-auto">
                 <StatisticsForm runId={runId}/>
             </SidebarBody>

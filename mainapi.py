@@ -146,6 +146,7 @@ def append_simulation_metadata(
 def get_latest_station_bikes_info() -> tuple[Optional[str], Optional[int], Optional[int]]:
     """Extracts city, station count, and bike count from latest CSV in uploads folder"""
     folder = "uploads"
+    #Tengo que repensar eso para que no este hardcoded pero aun no se bien como va a ser el upload por ahora se queda aqui
     suffix = "_15min_deltas.csv"
 
     try:
@@ -1045,7 +1046,7 @@ async def get_dashboard_stations_map(run: str = Query(..., description="Simulati
                 mapa_densidad=None,
                 video_densidad=None,
                 mapa_voronoi=None,
-                mapa_circulo="1",
+                mapa_circulo="0",
                 mapa_desplazamientos=None,
                 filtrado_EstValor=None,
                 filtrado_EstValorDias=None,

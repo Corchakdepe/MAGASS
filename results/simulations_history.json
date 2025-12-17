@@ -35,6 +35,24 @@
       "numberOfBikes": 2512,
       "simdata": {},
       "simdataId": "20251213_171417_sim_ST0_S0.57_WC0.29_D15"
+    },
+    {
+      "simname": "20251217_113753_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20251217_113753_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20251217_113753_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20251217_145207_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20251217_145207_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20251217_145207_sim_ST0_S0.00_WC1.00_D15"
     }
   ]
 }

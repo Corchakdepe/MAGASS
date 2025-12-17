@@ -117,6 +117,25 @@ export default function StatisticsForm({runId}: MapAnalysisSidebarProps) {
     const [instantesMaps, setInstantesMaps] = useState<Record<string, string>>({}); //instantes de los mapas
     const [stationsMaps, setStationsMaps] = useState<Record<string, string>>({});//estaciones de los mapas
     const [labelsMaps, setLabelsMaps] = useState<Record<string, boolean>>({});//L del mapa de circulo
+    const [advancedUser, setAdvancedUser] = useState(false);
+    const baseRunFolder = `./results/${runId}`;
+    const inputFolder =
+        advancedUser && entrada.trim().length > 0
+            ? `./results/${entrada.trim()}`
+            : baseRunFolder;
+    const outputFolder =
+        advancedUser && salida.trim().length > 0
+            ? `./results/${salida.trim()}`
+            : baseRunFolder;
+
+
+    type DeltaMode = 'media' | 'acumulada';
+    const [deltaMode, setDeltaMode] = useState<DeltaMode>('media');
+    const [deltaValueTxt, setDeltaValueTxt] = useState('');
+
+// Optional: separate advanced I/O boxes
+    const [advancedEntrada, setAdvancedEntrada] = useState('');
+    const [advancedSalida, setAdvancedSalida] = useState('');
 
     const [filterKind, setFilterKind] = useState<FilterKind>('EstValorDias');
     const [filterState, setFilterState] = useState<UnifiedFilterState>({
@@ -206,19 +225,21 @@ export default function StatisticsForm({runId}: MapAnalysisSidebarProps) {
         const nzInt = (s?: string) =>
             s && s.trim().length ? Number(s.trim()) : undefined;
 
-        const filtroStr = useFilterForMaps
-            ? buildFiltroFromUnified(filterKind, filterState, '_')
-            : undefined;
+        const delta_media =
+            advancedUser && deltaMode === 'media' ? nzInt(deltaValueTxt) : undefined;
+
+        const delta_acumulada =
+            advancedUser && deltaMode === 'acumulada' ? nzInt(deltaValueTxt) : undefined;
+
+        const filtroStr =
+            useFilterForMaps ? buildFiltroFromUnified(filterKind, filterState, '_') : undefined;
 
         const commonPayload: any = {
-            // SAME IDEA AS GRAPHS: use run, backend builds ./results/run
-            input_folder: `./results/${runId}`,
-            output_folder: `./results/${runId}`,
+            input_folder: inputFolder,
+            output_folder: outputFolder,
             seleccion_agregacion: seleccionAgreg || '-1',
-
-            delta_media: nzInt(deltaMediaTxt),
-            delta_acumulada: nzInt(deltaAcumTxt),
-
+            delta_media,
+            delta_acumulada,
             filtro: filtroStr,
             tipo_filtro: useFilterForMaps ? filterKind : undefined,
             use_filter_for_maps: useFilterForMaps,
@@ -267,538 +288,721 @@ export default function StatisticsForm({runId}: MapAnalysisSidebarProps) {
     // -------------------------
     // Render
     // -------------------------
+
     return (
         <div className="space-y-6">
             {/* Entradas y opciones */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Column 1: Maps + Filter */}
+                <div className="space-y-4">
 
 
-                {/* matrices */}
-                <div className="space-y-2">
-                    <Label>Selección/agregación matrices</Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                className="w-full justify-between"
+                    {/* MULTIPLOS MAPAS   */}
+                    {/* Mapas
+<div className="space-y-2">
+  <Label className="text-sm font-medium">Mapas a generar</Label>
+
+  <Popover>
+    <PopoverTrigger asChild>
+      <Button variant="outline" role="combobox" className="w-full justify-between">
+        {selectedMaps.length > 0
+          ? `${selectedMaps.length} ${selectedMaps.join(', ')}`
+          : 'Selecciona mapas...'}
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    </PopoverTrigger>
+
+    <PopoverContent className="w-[360px] p-0">
+      <Command>
+        <CommandInput placeholder="Buscar mapa..." />
+        <CommandEmpty>No encontrado</CommandEmpty>
+        <CommandList>
+          <CommandGroup>
+            {MAPAS.map(m => (
+              <CommandItem
+                key={m.arg}
+                onSelect={() => toggleMap(m.arg)}
+                className="flex items-center space-x-2 cursor-pointer"
+              >
+                <Checkbox
+                  checked={selectedMaps.includes(m.arg)}
+                  onCheckedChange={() => toggleMap(m.arg)}
+                />
+                <span className="text-sm">{m.label}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">{m.arg}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>
+
+  <div className="space-y-3 pt-2">
+    {selectedMaps.map(arg => {
+      const m = MAPAS.find(mm => mm.arg === arg);
+      if (!m) return null;
+
+      return (
+        <div
+          key={arg}
+          className="border border-muted rounded-md px-3 py-2 space-y-2"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium">{m.label}</span>
+            <span className="text-[10px] text-muted-foreground">{arg}</span>
+          </div>
+
+          <div className="space-y-2 pl-1">
+            {(arg === 'mapa_densidad' ||
+              arg === 'mapa_voronoi' ||
+              arg === 'mapa_circulo') && (
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">
+                  Instantes (ej: 0;10;20)
+                </Label>
+                <Input
+                  className="h-8 text-xs w-full"
+                  value={instantesMaps[arg] || ''}
+                  onChange={e =>
+                    setInstantesMaps({
+                      ...instantesMaps,
+                      [arg]: e.target.value,
+                    })
+                  }
+                  placeholder="0;10;20"
+                />
+              </div>
+            )}
+
+            {arg === 'video_densidad' && (
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">
+                  Rango (ej: 0:1440 o 0:end)
+                </Label>
+                <Input
+                  className="h-8 text-xs w-full"
+                  value={instantesMaps[arg] || ''}
+                  onChange={e =>
+                    setInstantesMaps({
+                      ...instantesMaps,
+                      [arg]: e.target.value,
+                    })
+                  }
+                  placeholder="0:1440 o 0:end"
+                />
+              </div>
+            )}
+
+            {(arg === 'mapa_densidad' ||
+              arg === 'video_densidad' ||
+              arg === 'mapa_circulo') && (
+              <div className="space-y-1">
+                <Label className="text-[11px] text-muted-foreground">
+                  Estaciones (IDs ;, opcional)
+                </Label>
+                <Input
+                  disabled={useFilterForMaps}
+                  className="h-8 text-xs w-full"
+                  value={stationsMaps[arg] || ''}
+                  onChange={e =>
+                    setStationsMaps({
+                      ...stationsMaps,
+                      [arg]: e.target.value,
+                    })
+                  }
+                  placeholder={
+                    useFilterForMaps
+                      ? 'Usando estaciones del filtro'
+                      : '1;15;26;48;...'
+                  }
+                />
+              </div>
+            )}
+
+            {arg === 'mapa_circulo' && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`labels-${arg}`}
+                  checked={labelsMaps[arg] ?? false}
+                  onCheckedChange={checked =>
+                    setLabelsMaps({
+                      ...labelsMaps,
+                      [arg]: Boolean(checked),
+                    })
+                  }
+                />
+                <Label htmlFor={`labels-${arg}`} className="text-[11px] cursor-pointer">
+                  Abrir labels (-L)
+                </Label>
+              </div>
+            )}
+
+            {arg === 'mapa_desplazamientos' && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Instante</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={instantesMaps['mapa_desplazamientos_inst'] || ''}
+                      onChange={e =>
+                        setInstantesMaps({
+                          ...instantesMaps,
+                          mapa_desplazamientos_inst: e.target.value,
+                        })
+                      }
+                      placeholder="10"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Δ origen</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={instantesMaps['mapa_desplazamientos_d_ori'] || ''}
+                      onChange={e =>
+                        setInstantesMaps({
+                          ...instantesMaps,
+                          mapa_desplazamientos_d_ori: e.target.value,
+                        })
+                      }
+                      placeholder="15"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Δ destino</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={instantesMaps['mapa_desplazamientos_d_dst'] || ''}
+                      onChange={e =>
+                        setInstantesMaps({
+                          ...instantesMaps,
+                          mapa_desplazamientos_d_dst: e.target.value,
+                        })
+                      }
+                      placeholder="720"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Movimiento</Label>
+                    <Select
+                      value={instantesMaps['mapa_desplazamientos_mov'] || ''}
+                      onValueChange={v =>
+                        setInstantesMaps({
+                          ...instantesMaps,
+                          mapa_desplazamientos_mov: v,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Selecciona (1 / -1)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 (salidas)</SelectItem>
+                        <SelectItem value="-1">-1 (entradas)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-muted-foreground">Tipo petición</Label>
+                    <Select
+                      value={instantesMaps['mapa_desplazamientos_tipo'] || ''}
+                      onValueChange={v =>
+                        setInstantesMaps({
+                          ...instantesMaps,
+                          mapa_desplazamientos_tipo: v,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Selecciona (real / fict.)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 (real)</SelectItem>
+                        <SelectItem value="0">0 (ficticia)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
+
+
+leave the back at it is for future use, change only the input style here*/}
+
+                    {/* Mapas */}
+                    <div className="space-y-2">
+
+
+                        {/* Select-style input (like Delta), but keeps selectedMaps: string[] for future */}
+                        <div className="space-y-1">
+                            <Select
+                                value={selectedMaps[0] ?? ''}
+                                onValueChange={(v) => setSelectedMaps(v ? [v] : [])}
                             >
-                                {selectedIds.length > 0
-                                    ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(
-                                        ';',
-                                    )}`
-                                    : 'Selecciona matrices...'}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0">
-                            <Command>
-                                <CommandInput placeholder="Buscar matriz..."/>
-                                <CommandEmpty>No encontrada</CommandEmpty>
-                                <CommandList>
-                                    <CommandGroup>
-                                        {MATRICES.map(m => (
-                                            <CommandItem
-                                                key={m.id}
-                                                onSelect={() => toggleMatrix(m.id)}
-                                                className="flex items-center space-x-2 cursor-pointer"
-                                            >
-                                                <Checkbox
-                                                    checked={selectedIds.includes(String(m.id))}
-                                                    onCheckedChange={() => toggleMatrix(m.id)}
-                                                />
-                                                <span className="text-sm">
+                                <SelectTrigger className="h-8 text-xs w-full">
+                                    <SelectValue placeholder="Selecciona mapa..."/>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {MAPAS.map((m) => (
+                                        <SelectItem key={m.arg} value={m.arg}>
+                                            {m.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-3 pt-2">
+                            {selectedMaps.map(arg => {
+                                const m = MAPAS.find(mm => mm.arg === arg);
+                                if (!m) return null;
+
+                                return (
+                                    <div
+                                        key={arg}
+                                        className="border border-muted rounded-md px-3 py-2 space-y-2"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-medium">{m.label}</span>
+                                            <span className="text-[10px] text-muted-foreground">{arg}</span>
+                                        </div>
+
+                                        <div className="space-y-2 pl-1">
+                                            {(arg === 'mapa_densidad' ||
+                                                arg === 'mapa_voronoi' ||
+                                                arg === 'mapa_circulo') && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[11px] text-muted-foreground">
+                                                        Instantes (ej: 0;10;20)
+                                                    </Label>
+                                                    <Input
+                                                        className="h-8 text-xs w-full"
+                                                        value={instantesMaps[arg] || ''}
+                                                        onChange={e =>
+                                                            setInstantesMaps({
+                                                                ...instantesMaps,
+                                                                [arg]: e.target.value,
+                                                            })
+                                                        }
+                                                        placeholder="0;10;20"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {arg === 'video_densidad' && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[11px] text-muted-foreground">
+                                                        Rango (ej: 0:1440 o 0:end)
+                                                    </Label>
+                                                    <Input
+                                                        className="h-8 text-xs w-full"
+                                                        value={instantesMaps[arg] || ''}
+                                                        onChange={e =>
+                                                            setInstantesMaps({
+                                                                ...instantesMaps,
+                                                                [arg]: e.target.value,
+                                                            })
+                                                        }
+                                                        placeholder="0:1440 o 0:end"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {(arg === 'mapa_densidad' ||
+                                                arg === 'video_densidad' ||
+                                                arg === 'mapa_circulo') && (
+                                                <div className="space-y-1">
+                                                    <Label className="text-[11px] text-muted-foreground">
+                                                        Estaciones (IDs ;, opcional)
+                                                    </Label>
+                                                    <Input
+                                                        disabled={useFilterForMaps}
+                                                        className="h-8 text-xs w-full"
+                                                        value={stationsMaps[arg] || ''}
+                                                        onChange={e =>
+                                                            setStationsMaps({
+                                                                ...stationsMaps,
+                                                                [arg]: e.target.value,
+                                                            })
+                                                        }
+                                                        placeholder={
+                                                            useFilterForMaps
+                                                                ? 'Usando estaciones del filtro'
+                                                                : '1;15;26;48;...'
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {arg === 'mapa_circulo' && (
+                                                <div className="flex items-center gap-2">
+                                                    <Checkbox
+                                                        id={`labels-${arg}`}
+                                                        checked={labelsMaps[arg] ?? false}
+                                                        onCheckedChange={checked =>
+                                                            setLabelsMaps({
+                                                                ...labelsMaps,
+                                                                [arg]: Boolean(checked),
+                                                            })
+                                                        }
+                                                    />
+                                                    <Label htmlFor={`labels-${arg}`}
+                                                           className="text-[11px] cursor-pointer">
+                                                        Abrir labels (-L)
+                                                    </Label>
+                                                </div>
+                                            )}
+
+                                            {arg === 'mapa_desplazamientos' && (
+                                                <div className="space-y-3">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Instante
+                                                            </Label>
+                                                            <Input
+                                                                className="h-8 text-xs"
+                                                                value={instantesMaps['mapa_desplazamientos_inst'] || ''}
+                                                                onChange={e =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_inst: e.target.value,
+                                                                    })
+                                                                }
+                                                                placeholder="10"
+                                                            />
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Δ origen
+                                                            </Label>
+                                                            <Input
+                                                                className="h-8 text-xs"
+                                                                value={instantesMaps['mapa_desplazamientos_d_ori'] || ''}
+                                                                onChange={e =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_d_ori: e.target.value,
+                                                                    })
+                                                                }
+                                                                placeholder="15"
+                                                            />
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Δ destino
+                                                            </Label>
+                                                            <Input
+                                                                className="h-8 text-xs"
+                                                                value={instantesMaps['mapa_desplazamientos_d_dst'] || ''}
+                                                                onChange={e =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_d_dst: e.target.value,
+                                                                    })
+                                                                }
+                                                                placeholder="720"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Movimiento
+                                                            </Label>
+                                                            <Select
+                                                                value={instantesMaps['mapa_desplazamientos_mov'] || ''}
+                                                                onValueChange={v =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_mov: v,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs">
+                                                                    <SelectValue placeholder="Selecciona (1 / -1)"/>
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="1">1 (salidas)</SelectItem>
+                                                                    <SelectItem value="-1">-1 (entradas)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[11px] text-muted-foreground">
+                                                                Tipo petición
+                                                            </Label>
+                                                            <Select
+                                                                value={instantesMaps['mapa_desplazamientos_tipo'] || ''}
+                                                                onValueChange={v =>
+                                                                    setInstantesMaps({
+                                                                        ...instantesMaps,
+                                                                        mapa_desplazamientos_tipo: v,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 text-xs">
+                                                                    <SelectValue
+                                                                        placeholder="Selecciona (real / fict.)"/>
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="1">1 (real)</SelectItem>
+                                                                    <SelectItem value="0">0 (ficticia)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+
+                    {/* Filtro */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="use-filter-maps"
+                                checked={useFilterForMaps}
+                                onCheckedChange={v => setUseFilterForMaps(Boolean(v))}
+                            />
+                            {/*   Usar filtro para limitar estaciones del mapa */}
+                            <Label htmlFor="use-filter-maps" className="text-xs">
+                                Habilitar Filtrado
+                            </Label>
+                        </div>
+
+                        {useFilterForMaps && (
+                            <>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Tipo de filtro</Label>
+                                    <select
+                                        className="w-full border rounded px-2 py-1 text-xs bg-background"
+                                        value={filterKind}
+                                        onChange={e => setFilterKind(e.target.value as FilterKind)}
+                                    >
+                                        <option value="EstValor">Estación valor (día)</option>
+                                        <option value="EstValorDias">Estación valor (mes)</option>
+                                    </select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Operador</Label>
+                                        <Select
+                                            value={filterState.operator}
+                                            onValueChange={operator => setFilterState(s => ({...s, operator}))}
+                                        >
+                                            <SelectTrigger className="h-8 text-xs w-full">
+                                                <SelectValue/>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value=">=">{'>='}</SelectItem>
+                                                <SelectItem value="<=">{'<='}</SelectItem>
+                                                <SelectItem value=">">{'>'}</SelectItem>
+                                                <SelectItem value="<">{'<'}</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Valor</Label>
+                                        <Input
+                                            className="h-8 text-xs w-full"
+                                            value={filterState.value}
+                                            onChange={e => setFilterState(s => ({...s, value: e.target.value}))}
+                                            placeholder="65"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <Label htmlFor="dayPct" className="text-xs">
+                                        % del día
+                                    </Label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            id="dayPct"
+                                            type="range"
+                                            min={0}
+                                            max={100}
+                                            value={Number(filterState.dayPct || 0)}
+                                            onChange={e => setFilterState(s => ({...s, dayPct: e.target.value}))}
+                                            className="flex-1"
+                                        />
+                                        <span className="w-12 text-right text-sm">
+                    {filterState.dayPct || 0}%
+                  </span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Días</Label>
+                                    <Input
+                                        className="h-8 text-xs w-full"
+                                        value={filterState.days}
+                                        onChange={e => setFilterState(s => ({...s, days: e.target.value}))}
+                                        placeholder="all o 0;1;2"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Días excepción</Label>
+                                    <Input
+                                        className="h-8 text-xs w-full"
+                                        value={filterState.allowedFailDays}
+                                        onChange={e =>
+                                            setFilterState(s => ({...s, allowedFailDays: e.target.value}))
+                                        }
+                                        placeholder="5"
+                                    />
+                                </div>
+
+
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Column 2: Matrices */}
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" role="combobox" className=" justify-between h-8 text-xs w-full">
+                                    {selectedIds.length > 0
+                                        ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(';')}`
+                                        : 'Selecciona matrices...'}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                                </Button>
+                            </PopoverTrigger>
+
+                            <PopoverContent className="w-[400px] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Buscar matriz..."/>
+                                    <CommandEmpty>No encontrada</CommandEmpty>
+                                    <CommandList>
+                                        <CommandGroup>
+                                            {MATRICES.map(m => (
+                                                <CommandItem
+                                                    key={m.id}
+                                                    onSelect={() => toggleMatrix(m.id)}
+                                                    className="flex items-center space-x-2 cursor-pointer"
+                                                >
+                                                    <Checkbox
+                                                        checked={selectedIds.includes(String(m.id))}
+                                                        onCheckedChange={() => toggleMatrix(m.id)}
+                                                    />
+                                                    <span className="text-sm">
                           {m.label} ({m.id})
                         </span>
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                    <Input
-                        value={seleccionAgreg}
-                        onChange={e => setSeleccionAgreg(e.target.value)}
-                        placeholder="Ej: 1;2;3"
-                    />
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
+
                 </div>
 
-                {/* deltas */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div className="space-y-1">
-                        <Label htmlFor="deltaMedia">Delta Media</Label>
-                        <Input
-                            id="deltaMedia"
-                            value={deltaMediaTxt}
-                            onChange={e => setDeltaMediaTxt(e.target.value)}
-                            placeholder="4, 60, 1440…"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <Label htmlFor="deltaAcum">Delta Acumulada</Label>
-                        <Input
-                            id="deltaAcum"
-                            value={deltaAcumTxt}
-                            onChange={e => setDeltaAcumTxt(e.target.value)}
-                            placeholder="4, 60, 1440…"
-                        />
-                    </div>
-                </div>
-
-                {/* Filtro para mapas */}
-                <div className="space-y-3 mt-4">
+                {/* Column 3: Advanced */}
+                <div className="space-y-4">
                     <div className="flex items-center gap-2">
                         <Checkbox
-                            id="use-filter-maps"
-                            checked={useFilterForMaps}
-                            onCheckedChange={v => setUseFilterForMaps(Boolean(v))}
+                            id="advanced-user"
+                            checked={advancedUser}
+                            onCheckedChange={v => setAdvancedUser(Boolean(v))}
                         />
-                        <Label htmlFor="use-filter-maps" className="text-xs">
-                            Usar filtro para limitar estaciones del mapa
+                        <Label htmlFor="advanced-user" className="text-xs">
+                            Advanced user
                         </Label>
                     </div>
 
-                    {useFilterForMaps && (
-                        <>
+                    {advancedUser && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <Label className="text-xs">Tipo de filtro</Label>
-                                <select
-                                    className="w-full border rounded px-2 py-1 text-xs bg-background"
-                                    value={filterKind}
-                                    onChange={e =>
-                                        setFilterKind(e.target.value as FilterKind)
-                                    }
-                                >
-                                    <option value="EstValor">Estación valor (día)</option>
-                                    <option value="EstValorDias">Estación valor (mes)</option>
-                                    <option value="Horas">Horas críticas</option>
-                                    <option value="Porcentaje">Porcentaje estaciones</option>
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Operador</Label>
-                                    <Select
-                                        value={filterState.operator}
-                                        onValueChange={operator =>
-                                            setFilterState(s => ({...s, operator}))
-                                        }
-                                    >
-                                        <SelectTrigger className="h-8 text-xs w-full">
-                                            <SelectValue/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value=">=">{'>='}</SelectItem>
-                                            <SelectItem value="<=">{'<='}</SelectItem>
-                                            <SelectItem value=">">{'>'}</SelectItem>
-                                            <SelectItem value="<">{'<'}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Valor</Label>
-                                    <Input
-                                        className="h-8 text-xs w-full"
-                                        value={filterState.value}
-                                        onChange={e =>
-                                            setFilterState(s => ({...s, value: e.target.value}))
-                                        }
-                                        placeholder="65"
-                                    />
-                                </div>
+                                <Label className="text-xs">Delta</Label>
+                                <Select value={deltaMode} onValueChange={v => setDeltaMode(v as DeltaMode)}>
+                                    <SelectTrigger className="h-8 text-xs w-full">
+                                        <SelectValue placeholder="Selecciona delta..."/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="media">Delta Media</SelectItem>
+                                        <SelectItem value="acumulada">Delta Acumulada</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="dayPct" className="text-xs">
-                                    % del día
-                                </Label>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        id="dayPct"
-                                        type="range"
-                                        min={0}
-                                        max={100}
-                                        value={Number(filterState.dayPct || 0)}
-                                        onChange={e =>
-                                            setFilterState(s => ({
-                                                ...s,
-                                                dayPct: e.target.value,
-                                            }))
-                                        }
-                                        className="flex-1"
-                                    />
-                                    <span className="w-12 text-right text-sm">
-                    {filterState.dayPct || 0}%
-                  </span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label className="text-xs">Días</Label>
+                                <Label className="text-xs">Valor</Label>
                                 <Input
                                     className="h-8 text-xs w-full"
-                                    value={filterState.days}
-                                    onChange={e =>
-                                        setFilterState(s => ({...s, days: e.target.value}))
-                                    }
-                                    placeholder="all o 0;1;2"
+                                    value={deltaValueTxt}
+                                    onChange={e => setDeltaValueTxt(e.target.value)}
+                                    placeholder="4, 60, 1440…"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {advancedUser && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <Label className="h-8 text-xs">Advanced input</Label>
+                                <Input
+                                    value={advancedEntrada}
+                                    onChange={e => setAdvancedEntrada(e.target.value)}
+                                    placeholder="..."
                                 />
                             </div>
 
                             <div className="space-y-1">
-                                <Label className="text-xs">Días excepción</Label>
+                                <Label className="h-8 text-xs">Advanced output</Label>
                                 <Input
-                                    className="h-8 text-xs w-full"
-                                    value={filterState.allowedFailDays}
-                                    onChange={e =>
-                                        setFilterState(s => ({
-                                            ...s,
-                                            allowedFailDays: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="5"
+                                    value={advancedSalida}
+                                    onChange={e => setAdvancedSalida(e.target.value)}
+                                    placeholder="..."
                                 />
                             </div>
-
-                            <div className="space-y-1">
-                                <Label htmlFor="stationsPct" className="text-xs">
-                                    % estaciones
-                                </Label>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        id="stationsPct"
-                                        type="range"
-                                        min={0}
-                                        max={100}
-                                        value={Number(filterState.stationsPct || 0)}
-                                        onChange={e =>
-                                            setFilterState(s => ({
-                                                ...s,
-                                                stationsPct: e.target.value,
-                                            }))
-                                        }
-                                        className="flex-1"
-                                    />
-                                    <span className="w-12 text-right text-sm">
-                    {filterState.stationsPct || 0}%
-                  </span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label className="text-xs">Estaciones (IDs ;)</Label>
-                                <Input
-                                    className="h-8 text-xs w-full"
-                                    value={filterState.stationsList}
-                                    onChange={e =>
-                                        setFilterState(s => ({
-                                            ...s,
-                                            stationsList: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="1;15;26;48;..."
-                                />
-                            </div>
-                        </>
+                        </div>
                     )}
                 </div>
 
-                {/* Mapas */}
-                <div className="space-y-2 mt-4">
-                    <Label className="text-sm font-medium">Mapas a generar</Label>
+                {/* Column 4: Analizar */}
+                <div className="space-y-3">
+                    <Button onClick={handleAnalyze} disabled={apiBusy} className="w-full">
+                        {apiBusy ? 'Analizando...' : 'Analizar'}
+                    </Button>
 
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                className="w-full justify-between"
-                            >
-                                {selectedMaps.length > 0
-                                    ? `${selectedMaps.length} seleccionado(s): ${selectedMaps.join(
-                                        ', ',
-                                    )}`
-                                    : 'Selecciona mapas...'}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[360px] p-0">
-                            <Command>
-                                <CommandInput placeholder="Buscar mapa..."/>
-                                <CommandEmpty>No encontrado</CommandEmpty>
-                                <CommandList>
-                                    <CommandGroup>
-                                        {MAPAS.map(m => (
-                                            <CommandItem
-                                                key={m.arg}
-                                                onSelect={() => toggleMap(m.arg)}
-                                                className="flex items-center space-x-2 cursor-pointer"
-                                            >
-                                                <Checkbox
-                                                    checked={selectedMaps.includes(m.arg)}
-                                                    onCheckedChange={() => toggleMap(m.arg)}
-                                                />
-                                                <span className="text-sm">{m.label}</span>
-                                                <span className="ml-auto text-[10px] text-muted-foreground">
-                          {m.arg}
-                        </span>
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-
-                    <div className="space-y-3 pt-2">
-                        {selectedMaps.map(arg => {
-                            const m = MAPAS.find(mm => mm.arg === arg);
-                            if (!m) return null;
-
-                            return (
-                                <div
-                                    key={arg}
-                                    className="border border-muted rounded-md px-3 py-2 space-y-2"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium">{m.label}</span>
-                                        <span className="text-[10px] text-muted-foreground">
-                      {arg}
-                    </span>
-                                    </div>
-
-                                    <div className="space-y-2 pl-1">
-                                        {(arg === 'mapa_densidad' ||
-                                            arg === 'mapa_voronoi' ||
-                                            arg === 'mapa_circulo') && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[11px] text-muted-foreground">
-                                                    Instantes (ej: 0;10;20)
-                                                </Label>
-                                                <Input
-                                                    className="h-8 text-xs w-full"
-                                                    value={instantesMaps[arg] || ''}
-                                                    onChange={e =>
-                                                        setInstantesMaps({
-                                                            ...instantesMaps,
-                                                            [arg]: e.target.value,
-                                                        })
-                                                    }
-                                                    placeholder="0;10;20"
-                                                />
-                                            </div>
-                                        )}
-
-                                        {arg === 'video_densidad' && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[11px] text-muted-foreground">
-                                                    Rango (ej: 0:1440 o 0:end)
-                                                </Label>
-                                                <Input
-                                                    className="h-8 text-xs w-full"
-                                                    value={instantesMaps[arg] || ''}
-                                                    onChange={e =>
-                                                        setInstantesMaps({
-                                                            ...instantesMaps,
-                                                            [arg]: e.target.value,
-                                                        })
-                                                    }
-                                                    placeholder="0:1440 o 0:end"
-                                                />
-                                            </div>
-                                        )}
-
-                                        {(arg === 'mapa_densidad' ||
-                                            arg === 'video_densidad' ||
-                                            arg === 'mapa_circulo') && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[11px] text-muted-foreground">
-                                                    Estaciones (IDs ;, opcional)
-                                                </Label>
-                                                <Input
-                                                    disabled={useFilterForMaps}
-                                                    className="h-8 text-xs w-full"
-                                                    value={stationsMaps[arg] || ''}
-                                                    onChange={e =>
-                                                        setStationsMaps({
-                                                            ...stationsMaps,
-                                                            [arg]: e.target.value,
-                                                        })
-                                                    }
-                                                    placeholder={
-                                                        useFilterForMaps
-                                                            ? 'Usando estaciones del filtro'
-                                                            : '1;15;26;48;...'
-                                                    }
-                                                />
-                                            </div>
-                                        )}
-
-                                        {arg === 'mapa_circulo' && (
-                                            <div className="flex items-center gap-2">
-                                                <Checkbox
-                                                    id={`labels-${arg}`}
-                                                    checked={labelsMaps[arg] ?? false}
-                                                    onCheckedChange={checked =>
-                                                        setLabelsMaps({
-                                                            ...labelsMaps,
-                                                            [arg]: Boolean(checked),
-                                                        })
-                                                    }
-                                                />
-                                                <Label
-                                                    htmlFor={`labels-${arg}`}
-                                                    className="text-[11px] cursor-pointer"
-                                                >
-                                                    Abrir labels (-L)
-                                                </Label>
-                                            </div>
-                                        )}
-
-                                        {arg === 'mapa_desplazamientos' && (
-                                            <div className="space-y-3">
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[11px] text-muted-foreground">
-                                                            Instante
-                                                        </Label>
-                                                        <Input
-                                                            className="h-8 text-xs"
-                                                            value={
-                                                                instantesMaps['mapa_desplazamientos_inst'] || ''
-                                                            }
-                                                            onChange={e =>
-                                                                setInstantesMaps({
-                                                                    ...instantesMaps,
-                                                                    mapa_desplazamientos_inst: e.target.value,
-                                                                })
-                                                            }
-                                                            placeholder="10"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[11px] text-muted-foreground">
-                                                            Δ origen
-                                                        </Label>
-                                                        <Input
-                                                            className="h-8 text-xs"
-                                                            value={
-                                                                instantesMaps['mapa_desplazamientos_d_ori'] || ''
-                                                            }
-                                                            onChange={e =>
-                                                                setInstantesMaps({
-                                                                    ...instantesMaps,
-                                                                    mapa_desplazamientos_d_ori: e.target.value,
-                                                                })
-                                                            }
-                                                            placeholder="15"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[11px] text-muted-foreground">
-                                                            Δ destino
-                                                        </Label>
-                                                        <Input
-                                                            className="h-8 text-xs"
-                                                            value={
-                                                                instantesMaps['mapa_desplazamientos_d_dst'] || ''
-                                                            }
-                                                            onChange={e =>
-                                                                setInstantesMaps({
-                                                                    ...instantesMaps,
-                                                                    mapa_desplazamientos_d_dst: e.target.value,
-                                                                })
-                                                            }
-                                                            placeholder="720"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[11px] text-muted-foreground">
-                                                            Movimiento
-                                                        </Label>
-                                                        <Select
-                                                            value={
-                                                                instantesMaps['mapa_desplazamientos_mov'] || ''
-                                                            }
-                                                            onValueChange={v =>
-                                                                setInstantesMaps({
-                                                                    ...instantesMaps,
-                                                                    mapa_desplazamientos_mov: v,
-                                                                })
-                                                            }
-                                                        >
-                                                            <SelectTrigger className="h-8 text-xs">
-                                                                <SelectValue placeholder="Selecciona (1 / -1)"/>
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="1">1 (salidas)</SelectItem>
-                                                                <SelectItem value="-1">-1 (entradas)</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[11px] text-muted-foreground">
-                                                            Tipo petición
-                                                        </Label>
-                                                        <Select
-                                                            value={
-                                                                instantesMaps['mapa_desplazamientos_tipo'] || ''
-                                                            }
-                                                            onValueChange={v =>
-                                                                setInstantesMaps({
-                                                                    ...instantesMaps,
-                                                                    mapa_desplazamientos_tipo: v,
-                                                                })
-                                                            }
-                                                        >
-                                                            <SelectTrigger className="h-8 text-xs">
-                                                                <SelectValue placeholder="Selecciona (real / fict.)"/>
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="1">1 (real)</SelectItem>
-                                                                <SelectItem value="0">0 (ficticia)</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="space-y-1">
-                        <Label className="text-[11px] text-muted-foreground">
-                            Resumen selección
-                        </Label>
-                        <Input
-                            value={selectedMaps
-                                .map(k => buildMapArg(k))
-                                .filter(Boolean)
-                                .join(';')}
-                            readOnly
-                            className="h-8 text-xs"
-                            placeholder="Ej: mapa_circulo 0;10+1;15;26-L"
-                        />
-                    </div>
+                    {apiError && <span className="text-sm text-destructive">{apiError}</span>}
                 </div>
-            </div>
-            <div className="flex gap-3 items-center pt-2 border-t">
-                <Button onClick={handleAnalyze} disabled={apiBusy}>
-                    {apiBusy ? 'Analizando...' : 'Analizar'}
-                </Button>
-                {apiError && (
-                    <span className="text-sm text-destructive">{apiError}</span>
-                )}
             </div>
         </div>
     );
+
+
 }

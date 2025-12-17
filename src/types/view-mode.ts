@@ -4,4 +4,5 @@ export type MainContentMode =
     | 'analyticsGraphs'
     | 'analyticsMaps'
     | 'history'
+    | 'maps'
     | 'filters';

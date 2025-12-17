@@ -31,6 +31,7 @@ export default function VisualizationsPanel({
                                             }: VisualizationsPanelProps) {
     const showGraphs = mode === 'analyticsGraphs';
     const showMaps =  mode === 'analyticsMaps';
+    const showMapsList = mode === 'maps';
 
     return (
 
@@ -43,6 +44,13 @@ export default function VisualizationsPanel({
                 />
             )}
             {showMaps && (
+                <VisualizationMaps
+                    runId={runId}
+                    apiBase={apiBase}
+                    maps={maps}
+                />
+            )}
+            {showMapsList && (
                 <VisualizationMaps
                     runId={runId}
                     apiBase={apiBase}

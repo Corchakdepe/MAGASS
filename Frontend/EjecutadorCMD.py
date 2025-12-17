@@ -1259,7 +1259,7 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 f"MapaDesplazamientos_instante{instante}", "html"
             )
             rutaHTML = join(Constantes.RUTA_SALIDA, html_name)
-            # Si el save interno ya usa ese nombre/ruta, no hace falta copiar nada más
+            # Si el save interno ya usa ese nombre/ruta, no hace falta copiar nada ma
         except Exception as e:
             import traceback
             traceback.print_exc()

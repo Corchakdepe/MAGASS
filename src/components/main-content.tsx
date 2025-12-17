@@ -163,7 +163,7 @@ export default function MainContent({
                     setGraphs([]);
                 }
 
-                if (mode === 'analyticsMaps') {
+                if (mode === 'analyticsMaps' || mode === 'maps') {
                     const mapsRes = await fetch(
                         `${API_BASE}/results/list?run=${encodeURIComponent(
                             runForFetch,
@@ -267,22 +267,7 @@ export default function MainContent({
 
     return (
         <div className="flex flex-col h-full">
-            <header className="flex items-center justify-between p-4 border-b bg-card">
-                <div>
-                    <h1 className="text-2xl font-bold font-headline">
-                        Gonzalo Bike Dashboard
-                    </h1>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Current run: {currentFolder}
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={fetchLatest}>
-                        <RefreshCw className="mr-2 h-4 w-4"/>
-                        Refresh
-                    </Button>
-                </div>
-            </header>
+
 
             <main className="flex-1 p-6 space-y-6 overflow-y-auto">
 
@@ -308,6 +293,18 @@ export default function MainContent({
 
                 {mode === 'dashboard'  && currentFolder && (
                     <DashboardPanel apiBase={API_BASE} runId={currentFolder}/>
+                )}
+
+                {(mode === 'maps') && (
+                    <VisualizationsPanel
+                        mode={mode}
+                        apiBase={API_BASE}
+                        runId={currentFolder}
+                        simulationData={simulationData ?? null}
+                        graphs={graphs}
+                        maps={maps}
+                        chartsFromApi={chartsFromApi}
+                    />
                 )}
 
 
