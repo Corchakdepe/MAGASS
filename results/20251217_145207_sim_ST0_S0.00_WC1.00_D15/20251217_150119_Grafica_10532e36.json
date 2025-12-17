@@ -1,0 +1,59 @@
+{
+  "id": "GraficaDias_[]",
+  "kind": "graph",
+  "format": "json",
+  "x": [
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN
+  ],
+  "series": {
+    "value": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "meta": {
+    "type": "bar",
+    "title": "Días []",
+    "xLabel": "Valor",
+    "yLabel": "Frecuencia",
+    "freq": true,
+    "media": true
+  }
+}
