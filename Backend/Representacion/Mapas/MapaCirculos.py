@@ -3,33 +3,62 @@ from os.path import join
 import numpy as np
 import pandas as pd
 import folium
-from branca.colormap import ColorMap,LinearColormap
+from branca.colormap import ColorMap, LinearColormap
 
 from Backend import Constantes
 from Backend.Auxiliares import auxiliar_tiempo, auxiliar_ficheros
 import seaborn as sns
+from branca.element import MacroElement
+from jinja2 import Template
 
 import branca
+
+
+class _PostMessageOnClick(MacroElement):
+    def __init__(self, station_id: int, map_name: str):
+        super().__init__()
+        self._name = "PostMessageOnClick"
+        self.station_id = int(station_id)
+        self.map_name = str(map_name)
+
+        self._template = Template(u"""
+        {% macro script(this, kwargs) %}
+          (function(){
+            var layer = {{ this._parent.get_name() }};
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: {{ this.station_id }}, mapName: "{{ this.map_name }}" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        {% endmacro %}
+        """)
+
+
 class MapaCirculos:
 
-    def __init__(self, matriz: pd.DataFrame, coordenadas: np.array,valorMax = None,mostrarPopup = False):
+    def __init__(self, matriz: pd.DataFrame, coordenadas: np.array, valorMax=None, mostrarPopup=False):
         self.matriz = matriz
         self.coordenadas = coordenadas
-        mitad = len(coordenadas)//2
+        mitad = len(coordenadas) // 2
         self.mapa = folium.Map([coordenadas[mitad][1], coordenadas[mitad][2]], zoom_start=13)
-        self.valorMax = valorMax#Necesito esto para las escalas cuando filtro las estaciones.
+        self.valorMax = valorMax  # Necesito esto para las escalas cuando filtro las estaciones.
         self.mostrarPopup = mostrarPopup
 
     # Función que representa un mapa con círculos que representan las estaciones.
-    def representarInstante(self,instante):
-        fila = auxiliar_tiempo.devolverInstante(self.matriz,instante)
+    def representarInstante(self, instante):
+        fila = auxiliar_tiempo.devolverInstante(self.matriz, instante)
 
         if not fila.empty:
             fila = fila.iloc[0, 1:]
             if self.valorMax is None:
-                valorMax = self.matriz.iloc[:,1:].max().max()
+                valorMax = self.matriz.iloc[:, 1:].max().max()
             else:
-                valorMax=self.valorMax
+                valorMax = self.valorMax
             valorMin = self.matriz.min().min()
 
             if valorMax != valorMin:
@@ -40,7 +69,6 @@ class MapaCirculos:
                 colormap = colormap.to_step(n=4)
                 colormap.caption = 'Data represented'
                 colormap.add_to(self.mapa)
-
 
             if valorMin < 0:
                 nValoresNeg = len(np.unique(self.matriz[(self.matriz < 0)]))
@@ -66,11 +94,11 @@ class MapaCirculos:
         for i in range(len(self.coordenadas)):
             if not fila.empty:
                 label = "Station " + str(round(self.coordenadas[i, 0])) + "<br> Data: " + str(round(fila[i], 2))
-                if fila[i]< 0:
+                if fila[i] < 0:
                     color = paleta_negativos[round(abs(fila[i]) * (len(paleta_negativos) - 1) / abs(valorMin))]
-                    self.__dibujarCirculo(self.coordenadas[i], 150, fila[i], valorMax, label,color=color)
+                    self.__dibujarCirculo(self.coordenadas[i], 150, fila[i], valorMax, label, color=color)
                 else:
-                    self.__dibujarCirculo(self.coordenadas[i], 150, fila[i], valorMax,label)
+                    self.__dibujarCirculo(self.coordenadas[i], 150, fila[i], valorMax, label)
 
             else:
                 label = "Estacion " + str(round(self.coordenadas[i, 0]))
@@ -83,33 +111,30 @@ class MapaCirculos:
         else:
             self.mapa.save("MapaCirculos.html")
 
-    # Función auxiliar que representa un circulo dado sus coordenadas, el radio y el color deseado.
-    def __dibujarCirculo(self, coordenada:list[float], radio, valorPunto,valorMax, label="error",color=None):
+    def __dibujarCirculo(self, coordenada: list[float], radio, valorPunto, valorMax, label="error", color=None):
+        if color is None:
+            color_list = ['blue', 'red']
+            color_scale = LinearColormap(color_list, vmin=0, vmax=valorMax)
+            color = color_scale(valorPunto)
 
-        if color == None:
-            color_list = ['blue','red']
-            color_scale = LinearColormap(color_list, vmin = 0, vmax= valorMax)
+        # 1) Create the circle FIRST and keep a reference
+        circle = folium.Circle(
+            radius=radio,
+            location=[coordenada[1], coordenada[2]],
+            color=color,
+            fill=True,
+            fill_opacity=0.4,
+        )
 
-
-            color =  color_scale(valorPunto)
-
-
-
+        # 2) Keep your popup behavior (choose show=True or default)
         if self.mostrarPopup:
-            folium.Circle(
-                radius=radio,
-                location=[coordenada[1], coordenada[2]],
-                color=color,
-                fill=True,
-                fill_opacity=0.4,
-                popup = folium.Popup(label, max_width=200,show=True)
-            ).add_to(self.mapa)
+            circle.add_child(folium.Popup(label, max_width=200, show=True))
         else:
+            circle.add_child(folium.Popup(label))
 
-            folium.Circle(
-                radius=radio,
-                location=[coordenada[1], coordenada[2]],
-                color=color,
-                fill=True,
-                fill_opacity=0.4
-            ).add_child(folium.Popup(label)).add_to(self.mapa)
+        # 3) Attach JS click → postMessage to parent
+        station_id = int(round(coordenada[0]))
+        circle.add_child(_PostMessageOnClick(station_id=station_id, map_name="mapa_circulo"))
+
+        # 4) Finally add to map
+        circle.add_to(self.mapa)

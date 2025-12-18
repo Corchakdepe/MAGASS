@@ -70,7 +70,7 @@ export default function SidebarContentComponent({
             <SidebarFooter className="p-4 border-t">
                 <div className="space-y-1">
                     <p className="text-[12px] font-bold text-xs truncate">{simulationName ?? 'No name'}</p>
-                    <p className="text-[8px] text-xs text-muted-foreground ">{currentFolder} </p>
+                    <p className="text-[8px] text-xs text-muted-foreground truncate">{currentFolder} </p>
                 </div>
             </SidebarFooter>
         </>

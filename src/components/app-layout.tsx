@@ -1,6 +1,4 @@
 'use client';
-
-import {useMemo, useState} from 'react';
 import {usePathname} from 'next/navigation';
 import {SidebarProvider, Sidebar, SidebarInset} from '@/components/ui/sidebar';
 import SidebarContentComponent from '@/components/sidebar-content';
@@ -9,11 +7,15 @@ import MainContent from '@/components/main-content';
 import type {SimulationData} from '@/types/simulation';
 import type {MainContentMode} from '@/types/view-mode';
 import {BottomPanel} from '@/components/BottomPanel';
+import {useCallback, useMemo, useState} from 'react';
 
 import SidebarContentUploadMaps from '@/components/sidebar-content-upload-maps';
 import GraphAnalysisSidebar from '@/components/graph-analysis-sidebar';
 
 type AppLayoutProps = { children?: React.ReactNode };
+
+
+export type StationPickPayload = { mapName?: string; station: number; data?: number | null };
 
 function getModeFromPath(pathname: string): MainContentMode {
     if (pathname.startsWith('/simulador')) return 'simulations';
@@ -52,6 +54,37 @@ export default function AppLayout({children}: AppLayoutProps) {
     const showBottomPanel = panelMode !== 'none';
     const showRightSidebar = mode === 'simulations' || mode === 'dashboard';
 
+    type StationsTargetKey = 'mapa_densidad' | 'mapa_voronoi' | 'mapa_circulo';
+
+    const [pickedStations, setPickedStations] = useState<Record<string, string>>({});
+    const [activeStationsTargetKey, setActiveStationsTargetKey] =
+        useState<StationsTargetKey>('mapa_circulo');
+
+    function parseStationsLoose(input: string): number[] {
+        return Array.from(new Set((input ?? '').trim().split(/[^0-9]+/g).filter(Boolean).map(Number)))
+            .filter(n => Number.isFinite(n) && Number.isInteger(n) && n >= 0)
+            .sort((a, b) => a - b);
+    }
+
+    function formatStationsCanonical(nums: number[]) {
+        return nums.join(';');
+    }
+
+    const toggleStation = useCallback((mapKey: string, station: number) => {
+        setPickedStations(prev => {
+            const current = parseStationsLoose(prev[mapKey] ?? '');
+            const next = current.includes(station)
+                ? current.filter(x => x !== station)
+                : [...current, station].sort((a, b) => a - b);
+            return {...prev, [mapKey]: formatStationsCanonical(next)};
+        });
+    }, []);
+
+    const onStationPick = useCallback((p: { mapName?: string; station: number; data?: number | null }) => {
+        toggleStation(activeStationsTargetKey, p.station);
+    }, [activeStationsTargetKey, toggleStation]);
+
+
     return (
         <div className="flex min-h-screen w-full">
             <SidebarProvider defaultOpen>
@@ -70,6 +103,8 @@ export default function AppLayout({children}: AppLayoutProps) {
                                 simulationData={simulationData}
                                 triggerRefresh={refreshTrigger}
                                 mode={mode}
+                                onStationPick={onStationPick}
+                                // optionally also activeStationsTargetKey if you need it there
                             />
                             {children}
                         </div>
@@ -105,8 +140,13 @@ export default function AppLayout({children}: AppLayoutProps) {
                             <SidebarContentUploadMaps
                                 runId={currentRunId ?? undefined}
                                 onSimulationComplete={handleSimulationComplete}
+                                externalStationsMaps={pickedStations}
+                                activeStationsTargetKey={activeStationsTargetKey}
+                                onActiveStationsTargetKeyChange={setActiveStationsTargetKey}
                             />
-                        )}
+
+                            )}
+
                         {panelMode === 'graphs' && (
                             <GraphAnalysisSidebar runId={currentRunId ?? undefined}/>
                         )}

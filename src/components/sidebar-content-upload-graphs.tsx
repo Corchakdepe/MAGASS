@@ -77,12 +77,6 @@ export default function SidebarContentUploadMaps({
                 {/* StatisticsForm debería exponer input_folder y output_folder */}
                 <StatisticsForm/>
             </SidebarBody>
-            <SidebarFooter className="p-4 border-t">
-                {/* Si quieres botón global, lo conectas cuando StatisticsForm te devuelva folders */}
-                {/* <Button onClick={() => handleRunAnalysis(...)} disabled={isRunning} className="w-full">
-          {isRunning ? 'Running Analysis...' : 'Run Analysis'}
-        </Button> */}
-            </SidebarFooter>
         </>
     );
 }

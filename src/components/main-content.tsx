@@ -11,6 +11,7 @@ import VisualizationsPanel from '@/components/visualizations-panel';
 import type {GraphItem} from '@/components/visualizations-panel';
 import {FiltersPanel} from '@/components/visualizationsFilters';
 import DashboardPanel from '@/components/dashboard-panel';
+import MapAnalysisCreator from '@/components/map-analysis-creator';
 
 
 export type RawResultItem = {
@@ -28,7 +29,10 @@ type MainContentProps = {
     simulationData: SimulationData | null;
     triggerRefresh?: number;
     mode: MainContentMode;
+    onStationPick?: (p: { mapName?: string; station: number; data?: number | null }) => void;
+
 };
+
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
@@ -74,7 +78,9 @@ export default function MainContent({
                                         simulationData: externalSimData,
                                         triggerRefresh,
                                         mode,
+                                        onStationPick,
                                     }: MainContentProps) {
+
     const [simulationData, setSimulationData] =
         useState<SimulationData | null>(externalSimData);
     const [simulationSummary, setSimulationSummary] =
@@ -275,7 +281,29 @@ export default function MainContent({
                     <SummaryPanel kind="simulation" summaryData={simulationSummary}/>
                 )}
 
-                {(mode === 'analyticsGraphs' || mode === 'analyticsMaps') && (
+                {mode === 'analyticsGraphs' && (
+                    <VisualizationsPanel
+                        mode={mode}
+                        apiBase={API_BASE}
+                        runId={currentFolder}
+                        simulationData={simulationData ?? null}
+                        graphs={graphs}
+                        maps={maps}
+                        chartsFromApi={chartsFromApi}
+                    />
+                )}
+
+                {mode === 'analyticsMaps' && (
+                    <MapAnalysisCreator
+                        runId={currentFolder}
+                        apiBase={API_BASE}
+                        maps={maps}
+                        onStationPick={onStationPick}
+                    />
+
+                )}
+
+                {mode === 'maps' && (
                     <VisualizationsPanel
                         mode={mode}
                         apiBase={API_BASE}
@@ -291,20 +319,8 @@ export default function MainContent({
                     <FiltersPanel apiBase={API_BASE} runId={currentFolder}/>
                 )}
 
-                {mode === 'dashboard'  && currentFolder && (
+                {mode === 'dashboard' && currentFolder && (
                     <DashboardPanel apiBase={API_BASE} runId={currentFolder}/>
-                )}
-
-                {(mode === 'maps') && (
-                    <VisualizationsPanel
-                        mode={mode}
-                        apiBase={API_BASE}
-                        runId={currentFolder}
-                        simulationData={simulationData ?? null}
-                        graphs={graphs}
-                        maps={maps}
-                        chartsFromApi={chartsFromApi}
-                    />
                 )}
 
 

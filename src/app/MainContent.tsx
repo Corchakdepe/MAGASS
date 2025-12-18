@@ -110,11 +110,7 @@ export default function AppMainContent({
     }
   };
 
-  useEffect(() => {
-    fetchLatest();
-    const interval = setInterval(fetchLatest, 30000);
-    return () => clearInterval(interval);
-  }, [triggerRefresh, mode]);
+
 
   if (isLoading) {
     return (

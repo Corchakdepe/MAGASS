@@ -11,27 +11,35 @@ import {
 import type {SimulationData} from '@/types/simulation';
 import StatisticsForm from '@/components/statistics-form';
 
+type StationsTargetKey = 'mapa_densidad' | 'mapa_voronoi' | 'mapa_circulo';
+
 type SidebarContentProps = {
     onSimulationComplete: (data: SimulationData | any) => void;
     runId?: string;
+    externalStationsMaps?: Record<string, string>;
+    activeStationsTargetKey?: StationsTargetKey;
+    onActiveStationsTargetKeyChange?: (k: StationsTargetKey) => void;
 };
 
 export default function SidebarContentUploadMaps({
                                                      onSimulationComplete,
                                                      runId,
+                                                     externalStationsMaps,
+                                                     activeStationsTargetKey,
+                                                     onActiveStationsTargetKeyChange,
                                                  }: SidebarContentProps) {
     const {toast} = useToast();
     const [isRunning] = useState(false); // reserved if you later want a global button
 
     return (
-        <>
+        <SidebarBody className="p-4 space-y-6 overflow-y-auto">
+            <StatisticsForm
+                runId={runId}
+                externalStationsMaps={externalStationsMaps}
+                activeStationsTargetKey={activeStationsTargetKey}
+                onActiveStationsTargetKeyChange={onActiveStationsTargetKeyChange}
+            />
 
-            <SidebarBody className="p-4 space-y-6 overflow-y-auto">
-                <StatisticsForm runId={runId}/>
-            </SidebarBody>
-            <SidebarFooter className="p-4 border-t">
-                {/* If you later want a single global "Run" button, wire it to StatisticsForm state */}
-            </SidebarFooter>
-        </>
+        </SidebarBody>
     );
 }

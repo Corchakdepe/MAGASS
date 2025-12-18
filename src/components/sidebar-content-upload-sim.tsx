@@ -88,15 +88,7 @@ export default function UploadSimPanel({ onSimulationComplete }: UploadSimPanelP
         />
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="outputPath">Output folder (optional)</Label>
-        <Input
-          id="outputPath"
-          value={outputPath}
-          onChange={(e) => setOutputPath(e.target.value)}
-          placeholder="./results"
-        />
-      </div>
+
 
       <SimulationForm
         stress={stress}
