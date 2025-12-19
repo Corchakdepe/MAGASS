@@ -1,42 +1,59 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import type { DateRange } from 'react-day-picker';
+import {useEffect, useMemo, useState} from 'react';
+import type {DateRange} from 'react-day-picker';
+import {Calendar as CalendarIcon, Clock as ClockIcon} from 'lucide-react';
 
-import dayjs, { Dayjs } from 'dayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { TimeClock } from '@mui/x-date-pickers/TimeClock';
+import dayjs, {Dayjs} from 'dayjs';
+import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
+import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs';
+import {TimeClock} from '@mui/x-date-pickers/TimeClock';
 
-import { Calendar } from './ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import {Calendar} from './ui/calendar';
+import {Popover, PopoverContent, PopoverTrigger} from './ui/popover';
+import {Button} from './ui/button';
+import {Label} from './ui/label';
 
 type InstantesInputProps = {
   deltaOutMin: number;
   value: string;
   onChange: (next: string) => void;
-
-  // Inject helpers from statistics-form.tsx
-  parseInstantesLoose: (input: string) => number[];
-  formatInstantesCanonical: (nums: number[]) => string;
-  computeInstanteFromDayTime: (p: { day: number; hour: number; minute: number; deltaOutMin: number }) => number;
-  pad2: (n: number) => string;
 };
 
 export function InstantesInput(props: InstantesInputProps) {
-  const {
-    deltaOutMin,
-    value,
-    onChange,
-    parseInstantesLoose,
-    formatInstantesCanonical,
-    computeInstanteFromDayTime,
-    pad2,
-  } = props;
+  const { deltaOutMin, value, onChange } = props;
+
+  // ---- helpers internos ----
+  const parseInstantesLoose = (input: string): number[] => {
+    const tokens = input
+      .trim()
+      .split(/[^0-9]+/g)
+      .map(t => t.trim())
+      .filter(Boolean);
+
+    const nums = tokens
+      .map(t => Number(t))
+      .filter(n => Number.isFinite(n) && Number.isInteger(n) && n >= 0);
+
+    return Array.from(new Set(nums)).sort((a, b) => a - b);
+  };
+
+  const formatInstantesCanonical = (nums: number[]): string => nums.join(';');
+
+  const computeInstanteFromDayTime = (p: {
+    day: number;
+    hour: number;
+    minute: number;
+    deltaOutMin: number;
+  }): number => {
+    const { day, hour, minute, deltaOutMin } = p;
+    const mins = hour * 60 + minute;
+    const slot = mins / deltaOutMin;
+    return day * (1440 / deltaOutMin) + slot;
+  };
+
+  const pad2 = (n: number) => String(n).padStart(2, '0');
 
   // ---- range selection (base -> target) ----
   const [range, setRange] = useState<DateRange | undefined>(undefined);
@@ -60,7 +77,8 @@ export function InstantesInput(props: InstantesInputProps) {
     return 1440 / deltaOutMin;
   }, [deltaOutMin]);
 
-  const normalizeValue = (raw: string) => formatInstantesCanonical(parseInstantesLoose(raw));
+  const normalizeValue = (raw: string) =>
+    formatInstantesCanonical(parseInstantesLoose(raw));
 
   const onPasteCanonicalize = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData('text');
@@ -75,7 +93,8 @@ export function InstantesInput(props: InstantesInputProps) {
     return Math.round((a0.getTime() - b0.getTime()) / (24 * 60 * 60 * 1000));
   };
 
-  const dayIndex = baseDate && selectedDate ? dateDiffInDays(selectedDate, baseDate) : null;
+  const dayIndex =
+    baseDate && selectedDate ? dateDiffInDays(selectedDate, baseDate) : null;
 
   const minutesStep = Math.max(1, deltaOutMin > 0 ? deltaOutMin : 1);
 
@@ -98,7 +117,7 @@ export function InstantesInput(props: InstantesInputProps) {
     });
 
     return Number.isInteger(inst) ? inst : null;
-  }, [deltaOutMin, baseDate, selectedDate, dayIndex, minuteOk, clockValue, computeInstanteFromDayTime]);
+  }, [deltaOutMin, baseDate, selectedDate, dayIndex, minuteOk, clockValue]);
 
   const insertInstante = (inst: number) => {
     const current = parseInstantesLoose(value);
@@ -110,7 +129,7 @@ export function InstantesInput(props: InstantesInputProps) {
     setTimeout(() => setFlash(false), 450);
   };
 
-  // Calendar click1 sets base, click2 sets target (same-day allowed by clicking same date twice)
+  // Calendar click1 sets base, click2 sets target
   const onDayClick = (day: Date) => {
     setRange(prev => {
       if (!prev?.from || prev.to) return { from: day, to: undefined };
@@ -142,11 +161,12 @@ export function InstantesInput(props: InstantesInputProps) {
     setTimeOpen(false);
     setRange(undefined);
     setClockValue(dayjs().hour(0).minute(0).second(0).millisecond(0));
-  }, [clockValue]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clockValue]);
 
   const calendarButtonText = (() => {
-    if (!range?.from) return 'Selecciona fecha base (Día 0)';
-    if (!range?.to) return `Base: ${range.from.toLocaleDateString()} · Selecciona fecha objetivo`;
+    if (!range?.from) return 'Selecciona fecha';
+    if (!range?.to) return `${range.from.toLocaleDateString()}`;
     return `Base: ${range.from.toLocaleDateString()} → ${range.to.toLocaleDateString()}`;
   })();
 
@@ -154,74 +174,63 @@ export function InstantesInput(props: InstantesInputProps) {
 
   return (
     <div className="space-y-2">
-      <div className="space-y-1">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-2">
         <Label className="text-[11px] text-muted-foreground">
           Instantes
         </Label>
-        <Input
-          className="h-8 text-xs w-full"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onPaste={onPasteCanonicalize}
-          placeholder="0;10;20"
-        />
 
-        <div className="text-[11px] text-muted-foreground">
-          <span className={flash ? 'text-foreground' : undefined}>
-            Último añadido: {lastAdded ?? '—'}
-          </span>
+        {/* Small preview */}
+        <div
+          className="max-w-[220px] truncate text-[11px] text-muted-foreground"
+          title={value}
+        >
+          {value || '—'}
         </div>
       </div>
 
-      <div className="border border-muted rounded-md p-2 space-y-2">
-        <div className="text-[11px] text-muted-foreground">
-          Flujo: base → objetivo → hora/min (auto inserta) · Δ={deltaOutMin > 0 ? deltaOutMin : '??'} min ·{' '}
-          {instPerDay ? `${instPerDay} inst/día` : 'inst/día ?'}
-        </div>
-
-        {/* Step 1-2: calendar */}
-        <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Día (base → objetivo)</Label>
-
+      {/* Control box */}
+      <div className="flex items-center justify-between gap-2 rounded-md border border-muted bg-muted/30 p-2">
+        <div className="flex items-center gap-2">
+          {/* Calendar */}
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="h-8 text-xs w-full justify-start">
-                {calendarButtonText}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                aria-label={calendarButtonText}
+                title={calendarButtonText}
+              >
+                <CalendarIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
 
             <PopoverContent className="p-0">
-              <Calendar mode="range" selected={range} onDayClick={onDayClick} initialFocus />
-
-              <div className="p-2 border-t flex gap-2">
-                <Button type="button" variant="outline" className="h-8 text-xs flex-1" onClick={() => setRange(undefined)}>
-                  Reset
-                </Button>
-                <Button type="button" variant="outline" className="h-8 text-xs flex-1" onClick={() => setCalendarOpen(false)}>
-                  Cerrar
-                </Button>
-              </div>
+              <Calendar
+                mode="range"
+                selected={range}
+                onDayClick={onDayClick}
+                initialFocus
+              />
             </PopoverContent>
           </Popover>
-        </div>
 
-        {/* Step 3-4: MUI clock */}
-        <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Hora (TimeClock)</Label>
-
+          {/* Time */}
           <Popover open={timeOpen} onOpenChange={setTimeOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="h-8 text-xs w-full justify-start"
-                disabled={!range?.from || !range?.to || deltaOutMin <= 0}
+                size="icon"
+                className="h-8 w-8"
+                aria-label={`Seleccionar hora (${timeButtonText})`}
+                title={`Seleccionar hora (${timeButtonText})`}
               >
-                {timeButtonText}
+                <ClockIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
 
-            {/* give it a bounded size so it doesn't feel huge */}
-            <PopoverContent className="p-2 w-[320px]">
+            <PopoverContent className="w-[320px] p-2">
               <div style={{ minHeight: 300 }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <TimeClock
@@ -229,14 +238,15 @@ export function InstantesInput(props: InstantesInputProps) {
                     onChange={(newValue) => {
                       if (!newValue) return;
 
-                      // snap to deltaOutMin step
                       let m = newValue.minute();
                       if (minutesStep > 1) {
                         m = Math.round(m / minutesStep) * minutesStep;
                         if (m >= 60) m = 60 - minutesStep;
                       }
 
-                      setClockValue(newValue.minute(m).second(0).millisecond(0));
+                      setClockValue(
+                        newValue.minute(m).second(0).millisecond(0),
+                      );
                     }}
                     views={['hours', 'minutes']}
                     minutesStep={minutesStep}
@@ -251,6 +261,13 @@ export function InstantesInput(props: InstantesInputProps) {
               )}
             </PopoverContent>
           </Popover>
+        </div>
+
+        {/* Right-side status */}
+        <div className="text-[11px] text-muted-foreground">
+          {pendingInstante !== null
+            ? `Añadir: ${pendingInstante}`
+            : `Δ=${deltaOutMin}`}
         </div>
       </div>
     </div>

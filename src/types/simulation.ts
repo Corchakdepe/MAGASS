@@ -63,3 +63,5 @@ export interface SimulationData {
   csvData: string;
   simName: string;
 }
+
+

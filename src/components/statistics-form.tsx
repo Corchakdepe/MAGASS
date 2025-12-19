@@ -1,56 +1,45 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import {InstantesInput} from '@/components/instantes-input';
-import {useState, useMemo, useEffect} from 'react';
-import {Label} from '@/components/ui/label';
-import type {DateRange} from 'react-day-picker';
-import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
-import {Input} from '@/components/ui/input';
-import {Button} from '@/components/ui/button';
-import {Checkbox} from '@/components/ui/checkbox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import * as React from "react";
+import {useEffect, useState} from "react";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {useRouter} from "next/navigation";
+import {usePersistentState} from "@/hooks/usePersistentState";
+import {MapsControls} from "@/components/MapsControls/MapsControls";
+import {MapsAndGraphsFilterControls} from "@/components/MapsAndGraphsFilterControls";
+import {MatrixSelect} from "@/components/MatrixSelect";
+import {AdvancedControls} from "@/components/AdvancedControls";
+import {Label} from "@/components/ui/label";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+import type {DateRange} from "react-day-picker";
+import type {
+    MapKey,
+    StationsTargetKey,
+    DeltaMode,
+    FilterKind,
+    UnifiedFilterState,
+} from "@/types/analysis";
+import {API_BASE, MATRICES, MAPAS, MAP_KEY_SET} from "@/lib/analysis/constants";
+import {parseDeltaFromRunId, parseStationsSimple} from "@/lib/analysis/parsers";
+import {buildFiltroFromUnified, dateDiffInDays} from "@/lib/analysis/filters";
 
+type QuickGraphKey =
+    | "graf_barras_est_med"
+    | "graf_barras_est_acum"
+    | "graf_linea_comp_est";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
-
-
-const MATRICES = [
-    {label: 'Matriz externa', id: -1},
-    {label: 'Ocupación', id: 0},
-    {label: 'Ocupación relativa', id: 1},
-    {label: 'Peticiones resueltas dejar', id: 5},
-    {label: 'Peticiones no resueltas coger', id: 6},
-    {label: 'Peticiones no resueltas dejar', id: 7},
-    {label: 'Km ficticios dejar', id: 9},
-    {label: 'Ficticias resueltas coger', id: 10},
-    {label: 'Ficticias resueltas dejar', id: 11},
-    {label: 'Ficticias no resueltas coger', id: 12},
+const QUICK_GRAPHS: { label: string; key: QuickGraphKey }[] = [
+    {label: "Barras por estación (media)", key: "graf_barras_est_med"},
+    {label: "Barras por estación (acumulada)", key: "graf_barras_est_acum"},
+    {label: "Líneas comparar estaciones", key: "graf_linea_comp_est"},
 ];
 
-
-type MapKey = 'mapa_densidad' | 'mapa_voronoi' | 'mapa_circulo' | 'mapa_desplazamientos';
-
-const MAP_KEY_SET = new Set<MapKey>([
-    'mapa_densidad',
-    'mapa_voronoi',
-    'mapa_circulo',
-    'mapa_desplazamientos',
-]);
-
-function isMapKey(v: string): v is MapKey {
-    return MAP_KEY_SET.has(v as MapKey);
-}
-
-
-type StationsTargetKey = 'mapa_densidad' | 'mapa_voronoi' | 'mapa_circulo';
-
+const ALLOWED_GRAPH_MATRIX_IDS = [-1, 0, 1, 9, 10, 11, 12, 13] as const;
+type AllowedGraphMatrixId = (typeof ALLOWED_GRAPH_MATRIX_IDS)[number];
 
 interface MapAnalysisSidebarProps {
     runId?: string;
@@ -59,52 +48,16 @@ interface MapAnalysisSidebarProps {
     onActiveStationsTargetKeyChange?: (k: StationsTargetKey) => void;
 }
 
-
-function parseDeltaFromRunId(runId?: string): number | null {
-    if (!runId) return null;
-
-    // typical: "..._D15" or "...-D15"
-    const m =
-        runId.match(/(?:^|[_-])D(\d+)(?:$|[_-])/i) ??
-        runId.match(/D(\d+)/i);
-
-    if (!m) return null;
-
-    const n = Number(m[1]);
-    return Number.isFinite(n) && n > 0 ? n : null;
+function isMapKey(v: string): v is MapKey {
+    return MAP_KEY_SET.has(v as MapKey);
 }
 
-
-function parseInstantesLoose(input: string): number[] {
-    // Accept: ; , space, newline, tabs, |, :, -, etc.
-    // Example: "0;10, 20\n30" -> [0,10,20,30]
-    const tokens = input
-        .trim()
-        .split(/[^0-9]+/g)
-        .map(t => t.trim())
-        .filter(Boolean);
-
-    const nums = tokens
-        .map(t => Number(t))
-        .filter(n => Number.isFinite(n) && Number.isInteger(n) && n >= 0);
-
-    // unique + sorted
-    return Array.from(new Set(nums)).sort((a, b) => a - b);
-}
-
-function formatInstantesCanonical(nums: number[]): string {
-    return nums.join(';');
-}
-
-
-type DeltaMode = 'media' | 'acumulada';
-
-function nzInt(s?: string) {
+// Local-only (still used here)
+function nzIntLoose(s?: string) {
     if (!s) return undefined;
     const n = Number(String(s).trim());
     return Number.isFinite(n) ? n : undefined;
 }
-
 
 function computeDeltaOutMin(params: {
     deltaInMin: number;
@@ -114,114 +67,11 @@ function computeDeltaOutMin(params: {
 }) {
     const {deltaInMin, advancedUser, deltaValueTxt} = params;
     if (!advancedUser) return deltaInMin;
-    const v = nzInt(deltaValueTxt);
+
+    const v = nzIntLoose(deltaValueTxt);
     if (!v || v <= 0) return deltaInMin;
+
     return v; // target delta in minutes
-}
-
-function validateDeltaTransform(deltaInMin: number, deltaOutMin: number) {
-    if (!deltaInMin || deltaInMin <= 0)
-        return 'Delta actual no disponible. Selecciona una simulación o introduce el delta (min).';
-
-    if (!deltaOutMin || deltaOutMin <= 0)
-        return 'Delta salida inválido.';
-
-    if (deltaOutMin < deltaInMin)
-        return 'Delta objetivo no puede ser menor que el delta actual.';
-
-    if (deltaOutMin % deltaInMin !== 0)
-        return 'Delta objetivo debe ser múltiplo del delta actual (para agrupar instantes).';
-
-    if (1440 % deltaOutMin !== 0)
-        return 'Delta objetivo debe dividir 1440 (para convertir día/hora a instante).';
-
-    return null;
-}
-
-
-function computeInstanteFromDayTime(params: {
-    day: number;
-    hour: number;
-    minute: number;
-    deltaOutMin: number;
-}) {
-    const {day, hour, minute, deltaOutMin} = params;
-    const mins = hour * 60 + minute;
-    const slot = mins / deltaOutMin;
-    return day * (1440 / deltaOutMin) + slot;
-}
-
-function pad2(n: number) {
-    return String(n).padStart(2, '0');
-}
-
-
-const MAPAS: { label: string; arg: MapKey }[] = [
-    {label: 'Mapa Densidad', arg: 'mapa_densidad'},
-    {label: 'Mapa Voronoi', arg: 'mapa_voronoi'},
-    {label: 'Mapa Círculo', arg: 'mapa_circulo'},
-    {label: 'Mapa Desplazamientos', arg: 'mapa_desplazamientos'},
-];
-
-
-type FilterKind = 'EstValor' | 'EstValorDias' | 'Horas' | 'Porcentaje';
-
-
-type UnifiedFilterState = {
-    operator: string;
-    value: string;
-    dayPct: string;
-    days: string;
-    allowedFailDays: string;
-    stationsPct: string;
-    stationsList: string;
-};
-
-function buildFiltroFromUnified(
-    kind: FilterKind,
-    f: UnifiedFilterState,
-    nullChar = '_',
-): string {
-    const v = f.value.trim();
-    const days = f.days.trim() || 'all';
-    const dayPct = f.dayPct.trim();
-    const fail = f.allowedFailDays.trim();
-    const pEst = f.stationsPct.trim();
-    const list = f.stationsList.trim();
-
-    if (kind === 'EstValor' || kind === 'EstValorDias') {
-        if (!v || !dayPct || !fail) return nullChar;
-        return `${f.operator}${v};${dayPct};${days};${fail}`;
-    }
-
-    if (kind === 'Horas') {
-        if (!v || !pEst) return nullChar;
-        return `${f.operator}${v};${pEst}`;
-    }
-
-    if (kind === 'Porcentaje') {
-        if (!v || !list) return nullChar;
-        return `${f.operator}${v}-${list}`;
-    }
-
-    return nullChar;
-}
-
-function parseStationsLoose(input: string): number[] {
-    return Array.from(
-        new Set(
-            (input ?? '')
-                .trim()
-                .split(/[^0-9]+/g)
-                .filter(Boolean)
-                .map(Number)
-                .filter(n => Number.isFinite(n) && Number.isInteger(n) && n >= 0),
-        ),
-    ).sort((a, b) => a - b);
-}
-
-function formatStationsCanonical(nums: number[]) {
-    return nums.join(';');
 }
 
 export default function StatisticsForm({
@@ -230,35 +80,107 @@ export default function StatisticsForm({
                                            activeStationsTargetKey,
                                            onActiveStationsTargetKeyChange,
                                        }: MapAnalysisSidebarProps) {
-    const [entrada, setEntrada] = useState('');
-    const [salida, setSalida] = useState('');
-    const [seleccionAgreg, setSeleccionAgreg] = useState('');//matrix select
+    const router = useRouter();
+
+    // -------------------------
+    // Persistent UI state
+    // -------------------------
+    const [entrada, setEntrada] = usePersistentState<string>("stats_entrada", "");
+    const [salida, setSalida] = usePersistentState<string>("stats_salida", "");
+    const [seleccionAgreg, setSeleccionAgreg] = usePersistentState<string>(
+        "stats_seleccionAgreg",
+        "",
+    );
+
+    const [selectedMaps, setSelectedMaps, selectedMapsHydrated] =
+        usePersistentState<MapKey[]>("statsselectedMaps", []);
+
+    const [instantesMaps, setInstantesMaps] = usePersistentState<Record<string, string>>(
+        "stats_instantesMaps",
+        {
+            mapa_densidad: "",
+            mapa_circulo: "",
+            mapa_voronoi: "",
+            mapa_desplazamientos_inst: "",
+            mapa_desplazamientos_d_ori: "",
+            mapa_desplazamientos_d_dst: "",
+            mapa_desplazamientos_mov: "",
+            mapa_desplazamientos_tipo: "",
+        },
+    );
+
+    const [stationsMaps, setStationsMaps, stationsHydrated] =
+        usePersistentState<Record<string, string>>("stationsMaps", {});
+
+    const [labelsMaps, setLabelsMaps, labelsHydrated] =
+        usePersistentState<Record<string, boolean>>("statslabelsMaps", {});
+
+    const [filterKind, setFilterKind] = usePersistentState<FilterKind>(
+        "stats_filterKind",
+        "EstValorDias",
+    );
+
+    const [filterState, setFilterState] = usePersistentState<UnifiedFilterState>(
+        "stats_filterState",
+        {
+            operator: ">=",
+            value: "65",
+            dayPct: "0",
+            days: "all",
+            allowedFailDays: "5",
+            stationsPct: "0",
+            stationsList: "",
+        },
+    );
+
+    const [useFilterForMaps, setUseFilterForMaps, filterHydrated] =
+        usePersistentState<boolean>("statsuseFilterForMaps", false);
+
+    const [advancedUser, setAdvancedUser] = usePersistentState<boolean>(
+        "stats_advancedUser",
+        false,
+    );
+    const [deltaMode, setDeltaMode] = usePersistentState<DeltaMode>(
+        "stats_deltaMode",
+        "media",
+    );
+    const [deltaValueTxt, setDeltaValueTxt] = usePersistentState<string>(
+        "stats_deltaValueTxt",
+        "",
+    );
+    const [advancedEntrada, setAdvancedEntrada] = usePersistentState<string>(
+        "stats_advancedEntrada",
+        "",
+    );
+    const [advancedSalida, setAdvancedSalida] = usePersistentState<string>(
+        "stats_advancedSalida",
+        "",
+    );
+
+    // Quick-graph helper UI
+    const [circleStationsForGraphs, setCircleStationsForGraphs] =
+        usePersistentState<string>("stats_circleStationsForGraphs", "");
+    const [quickGraph, setQuickGraph] = useState<QuickGraphKey | null>(null);
+
+    // Calendar state for filter
+    const [daysRange, setDaysRange] = useState<DateRange | undefined>();
+
+    // -------------------------
+    // Non-persistent runtime state
+    // -------------------------
     const parsedDelta = parseDeltaFromRunId(runId);
     const [deltaInMinState, setDeltaInMinState] = useState<number>(parsedDelta ?? 0);
-    const [deltaAutoSource, setDeltaAutoSource] = useState<'runId' | 'api' | 'manual'>(
-        parsedDelta ? 'runId' : 'api',
+    const [deltaAutoSource, setDeltaAutoSource] = useState<"runId" | "api" | "manual">(
+        parsedDelta ? "runId" : "api",
     );
     const [deltaLoading, setDeltaLoading] = useState(false);
+
+    const [apiBusy, setApiBusy] = useState(false);
+    const [apiError, setApiError] = useState<string | null>(null);
+
     const deltaInMin = deltaInMinState;
-    const [apiBusy, setApiBusy] = useState(false);//controlar estado api
-    const [apiError, setApiError] = useState<string | null>(null);//controlar estado api
-    const [selectedMaps, setSelectedMaps] = useState<MapKey[]>([]);
-    const [instantesMaps, setInstantesMaps] = useState<Record<string, string>>({});
-    const [stationsMaps, setStationsMaps] = useState<Record<string, string>>({});
-    const [labelsMaps, setLabelsMaps] = useState<Record<string, boolean>>({});
 
-
-    useEffect(() => {
-        if (!externalStationsMaps) return;
-
-        setStationsMaps((prev: Record<string, string>) => ({
-            ...prev,
-            ...externalStationsMaps,
-        }));
-    }, [externalStationsMaps]);
-
-
-    const [advancedUser, setAdvancedUser] = useState(false);
+    // Derived folders (same behavior as your original)
     const baseRunFolder = `./results/${runId}`;
     const inputFolder =
         advancedUser && entrada.trim().length > 0
@@ -269,105 +191,75 @@ export default function StatisticsForm({
             ? `./results/${salida.trim()}`
             : baseRunFolder;
 
-
-    type DeltaMode = 'media' | 'acumulada';
-    const [deltaMode, setDeltaMode] = useState<DeltaMode>('media');
-    const [deltaValueTxt, setDeltaValueTxt] = useState('');
-
-// Optional: separate advanced I/O boxes
-    const [advancedEntrada, setAdvancedEntrada] = useState('');
-    const [advancedSalida, setAdvancedSalida] = useState('');
-
-    const [filterKind, setFilterKind] = useState<FilterKind>('EstValorDias');
-    const [filterState, setFilterState] = useState<UnifiedFilterState>({
-        operator: '>=',
-        value: '65',
-        dayPct: '0',
-        days: 'all',
-        allowedFailDays: '5',
-        stationsPct: '0',
-        stationsList: '',
-    });//valores base del filtrado
-    const [useFilterForMaps, setUseFilterForMaps] = useState(false);//bool de usar filtro
-
     const deltaOutMin = computeDeltaOutMin({
         deltaInMin,
         advancedUser,
         deltaMode,
         deltaValueTxt,
     });
-    const deltaError = validateDeltaTransform(deltaInMin, deltaOutMin);
 
     // -------------------------
-    // Selección matrices
+    // Effects
     // -------------------------
-    const selectedIds = seleccionAgreg
-        .split(';')
-        .map(s => s.trim())
-        .filter(s => s !== '');
+    useEffect(() => {
+        if (!stationsHydrated) return;
+        const circleStations = stationsMaps["mapa_circulo"] ?? "";
+        setCircleStationsForGraphs(circleStations);
+    }, [stationsHydrated, stationsMaps, setCircleStationsForGraphs]);
 
-    const toggleMatrix = (id: number) => {
-        const idStr = String(id);
-        let next = [...selectedIds];
-        if (next.includes(idStr)) next = next.filter(x => x !== idStr);
-        else next.push(idStr);
-        setSeleccionAgreg(next.join(';'));
-    };
+    useEffect(() => {
+        if (!externalStationsMaps) return;
+        if (!stationsHydrated) return;
 
-    // -------------------------
-    // Mapas helpers
-    // -------------------------
-
-    function isStationsTargetKey(k: MapKey): k is StationsTargetKey {
-        return k === 'mapa_densidad' || k === 'mapa_voronoi' || k === 'mapa_circulo';
-    }
+        setStationsMaps((prev) => ({
+            ...prev,
+            ...externalStationsMaps,
+        }));
+    }, [externalStationsMaps, stationsHydrated, setStationsMaps]);
 
     useEffect(() => {
         const fromRunId = parseDeltaFromRunId(runId);
         if (fromRunId) {
             setDeltaInMinState(fromRunId);
-            setDeltaAutoSource('runId');
+            setDeltaAutoSource("runId");
             return;
         }
 
-        // If not in runId, try API
         const fetchDelta = async () => {
             if (!runId) {
                 setDeltaInMinState(0);
-                setDeltaAutoSource('api');
+                setDeltaAutoSource("api");
                 return;
             }
 
             setDeltaLoading(true);
             try {
-                // Preferred (per-run). If backend doesn't support it, it will fail and we fallback.
-                let res = await fetch(`${API_BASE}/simulation-summary?runId=${encodeURIComponent(runId)}`, {
-                    cache: 'no-store',
-                });
+                let res = await fetch(
+                    `${API_BASE}/simulation-summary?runId=${encodeURIComponent(runId)}`,
+                    {cache: "no-store"},
+                );
 
                 if (!res.ok) {
-                    // Fallback: old endpoint (may return latest summary)
-                    res = await fetch(`${API_BASE}/simulation-summary`, {cache: 'no-store'});
+                    res = await fetch(`${API_BASE}/simulation-summary`, {cache: "no-store"});
                 }
 
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
                 const txt = await res.text();
-                const cleaned = txt.trim().replace(/^"|"$/g, '');
-                const first = cleaned.split(',')[0];
+                const cleaned = txt.trim().replace(/^"|"$/g, "");
+                const first = cleaned.split(",")[0];
                 const n = Number(first);
 
                 if (Number.isFinite(n) && n > 0) {
                     setDeltaInMinState(n);
-                    setDeltaAutoSource('api');
+                    setDeltaAutoSource("api");
                 } else {
-                    // leave 0 → user can fill manually
                     setDeltaInMinState(0);
-                    setDeltaAutoSource('manual');
+                    setDeltaAutoSource("manual");
                 }
             } catch {
                 setDeltaInMinState(0);
-                setDeltaAutoSource('manual');
+                setDeltaAutoSource("manual");
             } finally {
                 setDeltaLoading(false);
             }
@@ -376,47 +268,64 @@ export default function StatisticsForm({
         fetchDelta();
     }, [runId]);
 
-
-    const buildMapArg = (apiKey: string): string | undefined => {
-        if (apiKey === 'mapa_desplazamientos') {
-            const inst = (instantesMaps['mapa_desplazamientos_inst'] || '').trim();
-            const dOri = (instantesMaps['mapa_desplazamientos_d_ori'] || '').trim();
-            const dDst = (instantesMaps['mapa_desplazamientos_d_dst'] || '').trim();
-            const mov = (instantesMaps['mapa_desplazamientos_mov'] || '').trim();
-            const tipo = (instantesMaps['mapa_desplazamientos_tipo'] || '').trim();
-            if (!inst || !dOri || !dDst || !mov || !tipo) return undefined;
-            return `${inst};${dOri};${dDst};${mov};${tipo}`;
+    // -------------------------
+    // Helpers (still local)
+    // -------------------------
+    const buildMapArg = (
+        apiKey: MapKey,
+        inst: Record<string, string>,
+        st: Record<string, string>,
+        labels: Record<string, boolean>,
+        useFilter: boolean,
+    ): string | null => {
+        if (apiKey === "mapa_desplazamientos") {
+            const inst0 = (inst["mapa_desplazamientos_inst"] || "").trim();
+            const dOri = (inst["mapa_desplazamientos_d_ori"] || "").trim();
+            const dDst = (inst["mapa_desplazamientos_d_dst"] || "").trim();
+            const mov = (inst["mapa_desplazamientos_mov"] || "").trim();
+            const tipo = (inst["mapa_desplazamientos_tipo"] || "").trim();
+            if (!inst0 || !dOri || !dDst || !mov || !tipo) return null;
+            return `${inst0};${dOri};${dDst};${mov};${tipo}`;
         }
+
         const supportsStations =
-            apiKey === 'mapa_densidad' ||
-            apiKey === 'mapa_circulo' ||
-            apiKey === 'mapa_voronoi';
+            apiKey === "mapa_densidad" || apiKey === "mapa_circulo" || apiKey === "mapa_voronoi";
 
-        const base = (instantesMaps[apiKey] || '').trim();
-        if (!base) return undefined;
-
+        const base = (inst[apiKey] || "").trim();
+        if (!base) return null;
 
         let spec = base;
 
-        if (supportsStations && !useFilterForMaps) {
-            const stations = (stationsMaps[apiKey] || '').trim();
+        if (supportsStations && !useFilter) {
+            const stations = (st[apiKey] || "").trim();
             if (stations) spec += `+${stations}`;
         }
 
-        if (apiKey === 'mapa_circulo') {
-            const labels = labelsMaps[apiKey] ?? false;
-            if (labels) spec += '-L';
+        if (apiKey === "mapa_circulo") {
+            const labelsOn = labels[apiKey] ?? false;
+            if (labelsOn) spec += "-L";
         }
 
         return spec;
     };
 
-// -------------------------
-// Lanzar análisis (MAPS) – SAME LOGIC AS GRAPHS
-// -------------------------
+    function buildQuickGraphArg(
+        key: QuickGraphKey,
+        stationIds: number[],
+    ): string | { station_id: number; days: "all" }[] | null {
+        if (!stationIds.length) return null;
+        if (key === "graf_linea_comp_est") {
+            return stationIds.map((id) => ({station_id: id, days: "all" as const}));
+        }
+        return `${stationIds.join(";")}-all`;
+    }
+
+    // -------------------------
+    // Actions
+    // -------------------------
     const handleAnalyze = async () => {
         if (!runId) {
-            setApiError('Selecciona una simulación en el historial antes de analizar.');
+            setApiError("Selecciona una simulación en el historial antes de analizar.");
             return;
         }
         if (apiBusy || selectedMaps.length === 0) return;
@@ -424,22 +333,19 @@ export default function StatisticsForm({
         setApiBusy(true);
         setApiError(null);
 
-        const nzInt = (s?: string) =>
-            s && s.trim().length ? Number(s.trim()) : undefined;
-
         const delta_media =
-            advancedUser && deltaMode === 'media' ? nzInt(deltaValueTxt) : undefined;
-
+            advancedUser && deltaMode === "media" ? nzIntLoose(deltaValueTxt) : undefined;
         const delta_acumulada =
-            advancedUser && deltaMode === 'acumulada' ? nzInt(deltaValueTxt) : undefined;
+            advancedUser && deltaMode === "acumulada" ? nzIntLoose(deltaValueTxt) : undefined;
 
-        const filtroStr =
-            useFilterForMaps ? buildFiltroFromUnified(filterKind, filterState, '_') : undefined;
+        const filtroStr = useFilterForMaps
+            ? buildFiltroFromUnified(filterKind, filterState, "_")
+            : undefined;
 
         const commonPayload: any = {
             input_folder: inputFolder,
             output_folder: outputFolder,
-            seleccion_agregacion: seleccionAgreg || '-1',
+            seleccion_agregacion: seleccionAgreg || "-1",
             delta_media,
             delta_acumulada,
             filtro: filtroStr,
@@ -454,25 +360,22 @@ export default function StatisticsForm({
             filter_result_filename: null,
         };
 
-        const mapRequests = selectedMaps.map(async apiKey => {
-            const arg = buildMapArg(apiKey);
-            const payload = {
-                ...commonPayload,
-                [apiKey]: arg,
-            };
+        const mapRequests = selectedMaps.map(async (apiKey) => {
+            const arg = buildMapArg(apiKey, instantesMaps, stationsMaps, labelsMaps, useFilterForMaps);
+            if (!arg) return null;
+
+            const payload = {...commonPayload, [apiKey]: arg};
 
             const res = await fetch(`${API_BASE}/exe/analizar-json`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload),
             });
 
             const json = await res.json().catch(() => null);
             if (!res.ok) {
                 throw new Error(
-                    `Error analizando mapa ${apiKey}: ${res.status} ${
-                        (json as any)?.detail ?? ''
-                    }`,
+                    `Error analizando mapa ${apiKey}: ${res.status} ${(json as any)?.detail ?? ""}`,
                 );
             }
             return json;
@@ -481,502 +384,258 @@ export default function StatisticsForm({
         try {
             await Promise.all(mapRequests);
         } catch (e: any) {
-            setApiError(e?.message ?? 'Error inesperado');
+            setApiError(e?.message ?? "Error inesperado");
+        } finally {
+            setApiBusy(false);
+        }
+    };
+
+    const handleCreateQuickGraphFromCircle = async (graphKey: QuickGraphKey) => {
+        if (!runId) {
+            setApiError("Selecciona una simulación en el historial antes de crear gráficas.");
+            return;
+        }
+        if (apiBusy) return;
+
+        const stationIds = parseStationsSimple(circleStationsForGraphs);
+        if (!stationIds.length) {
+            setApiError("Selecciona estaciones en el mapa (o escríbelas) antes de crear la gráfica.");
+            return;
+        }
+
+        const selectedMatrixId = Number(seleccionAgreg || "-1");
+        if (!ALLOWED_GRAPH_MATRIX_IDS.includes(selectedMatrixId as AllowedGraphMatrixId)) {
+            setApiError(
+                `Para crear esta gráfica, la matriz debe ser una de: ${ALLOWED_GRAPH_MATRIX_IDS.join(", ")}.`,
+            );
+            return;
+        }
+
+        const arg = buildQuickGraphArg(graphKey, stationIds);
+        if (!arg) {
+            setApiError("Parámetros inválidos para la gráfica.");
+            return;
+        }
+
+        setApiBusy(true);
+        setApiError(null);
+
+        try {
+            const payload: any = {
+                input_folder: inputFolder,
+                output_folder: outputFolder,
+                seleccion_agregacion: String(selectedMatrixId),
+
+                delta_media: undefined,
+                delta_acumulada: undefined,
+                filtro: undefined,
+                tipo_filtro: undefined,
+                use_filter_for_maps: false,
+                use_filter_for_graphs: false,
+                filter_result_filename: null,
+
+                graf_barras_est_med: graphKey === "graf_barras_est_med" ? arg : undefined,
+                graf_barras_est_acum: graphKey === "graf_barras_est_acum" ? arg : undefined,
+                graf_linea_comp_est: graphKey === "graf_linea_comp_est" ? arg : undefined,
+
+                grafbarrasdia: undefined,
+                graflineacompmats: undefined,
+
+                mapadensidad: undefined,
+                videodensidad: undefined,
+                mapavoronoi: undefined,
+                mapacirculo: undefined,
+                mapadesplazamientos: undefined,
+
+                filtradoEstValor: undefined,
+                filtradoEstValorDias: undefined,
+                filtradoHoras: undefined,
+                filtradoPorcentajeEstaciones: undefined,
+            };
+
+            const res = await fetch(`${API_BASE}/exe/analizar-json`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json().catch(() => null);
+            if (!res.ok) {
+                throw new Error(
+                    `Error creando gráfica: ${res.status} ${JSON.stringify((json as any)?.detail ?? json)}`,
+                );
+            }
+
+            router.push("/analyticsGraphCreator");
+        } catch (e: any) {
+            setApiError(e?.message ?? "Error inesperado al crear la gráfica.");
         } finally {
             setApiBusy(false);
         }
     };
 
     // -------------------------
-    // Render
+    // Hydration gate (persistent state)
     // -------------------------
+    const uiHydrated = selectedMapsHydrated && stationsHydrated && labelsHydrated && filterHydrated;
 
-    return (
-        <div className="space-y-6">
-            {/* Entradas y opciones */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Column 1: Maps + Filter */}
-                <div className="space-y-4">
+    if (!uiHydrated) {
+        return <div className="p-3 text-xs text-muted-foreground">Loading…</div>;
+    }
 
-
-                    {/* Mapas */}
-                    <div className="space-y-2">
-
-
-                        {/* Select-style input (like Delta), but keeps selectedMaps: string[] for future */}
-                        <div className="space-y-1">
-                            <Select
-                                value={selectedMaps[0] ?? ''}
-                                onValueChange={(v) => {
-                                    if (!isMapKey(v)) {
-                                        setSelectedMaps([]);
-                                        return;
-                                    }
-
-                                    setSelectedMaps([v]); // v is MapKey here
-
-                                    if (v === 'mapa_densidad' || v === 'mapa_voronoi' || v === 'mapa_circulo') {
-                                        onActiveStationsTargetKeyChange?.(v); // v is StationsTargetKey-compatible here
-                                    }
-                                }}
-
-
-                            >
-                                <SelectTrigger className="h-8 text-xs w-full">
-                                    <SelectValue placeholder="Selecciona mapa..."/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {MAPAS.map((m) => (
-                                        <SelectItem key={m.arg} value={m.arg}>
-                                            {m.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-3 pt-2">
-                            {selectedMaps.map(arg => {
-                                const m = MAPAS.find(mm => mm.arg === arg);
-                                if (!m) return null;
-                                return (
-                                    <div
-                                        key={arg}
-                                        className="border border-muted rounded-md px-3 py-2 space-y-2"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-medium">{m.label}</span>
-                                        </div>
-
-                                        <div className="space-y-2 pl-1">
-                                            {(arg === 'mapa_densidad' || arg === 'mapa_voronoi' || arg === 'mapa_circulo') && (
-                                                <div className="space-y-2">
-                                                    {deltaError ? <div
-                                                        className="text-xs text-destructive">{deltaError}</div> : null}
-
-                                                    <InstantesInput
-                                                        deltaOutMin={deltaOutMin}
-                                                        value={instantesMaps[arg] ?? ''}
-                                                        onChange={(next) => setInstantesMaps({
-                                                            ...instantesMaps,
-                                                            [arg]: next
-                                                        })}
-                                                        parseInstantesLoose={parseInstantesLoose}
-                                                        formatInstantesCanonical={formatInstantesCanonical}
-                                                        computeInstanteFromDayTime={computeInstanteFromDayTime}
-                                                        pad2={pad2}
-                                                    />
-
-
-                                                </div>
-                                            )}
-
-                                            {(arg === 'mapa_densidad' ||
-                                                arg === 'mapa_circulo') && (
-                                                <div className="space-y-1">
-                                                    <Label className="text-[11px] text-muted-foreground">
-                                                        Estaciones (IDs ;, opcional)
-                                                    </Label>
-                                                    <Input
-                                                        disabled={useFilterForMaps}
-                                                        className="h-8 text-xs w-full"
-                                                        value={stationsMaps[arg] || ''}
-                                                        onChange={(e) => setStationsMaps({
-                                                            ...stationsMaps,
-                                                            [arg]: e.target.value
-                                                        })}
-                                                        onFocus={() => {
-                                                            if (isStationsTargetKey(arg)) {
-                                                                onActiveStationsTargetKeyChange?.(arg);
-                                                            }
-                                                        }}
-
-                                                    />
-
-                                                </div>
-                                            )}
-
-                                            {arg === 'mapa_circulo' && (
-                                                <div className="flex items-center gap-2">
-                                                    <Checkbox
-                                                        id={`labels-${arg}`}
-                                                        checked={labelsMaps[arg] ?? false}
-                                                        onCheckedChange={checked =>
-                                                            setLabelsMaps({
-                                                                ...labelsMaps,
-                                                                [arg]: Boolean(checked),
-                                                            })
-                                                        }
-                                                    />
-                                                    <Label htmlFor={`labels-${arg}`}
-                                                           className="text-[11px] cursor-pointer">
-                                                        Abrir labels (-L)
-                                                    </Label>
-                                                </div>
-                                            )}
-
-                                            {arg === 'mapa_desplazamientos' && (
-                                                <div className="space-y-3">
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[11px] text-muted-foreground">
-                                                                Instante
-                                                            </Label>
-                                                            <Input
-                                                                className="h-8 text-xs"
-                                                                value={instantesMaps['mapa_desplazamientos_inst'] || ''}
-                                                                onChange={e =>
-                                                                    setInstantesMaps({
-                                                                        ...instantesMaps,
-                                                                        mapa_desplazamientos_inst: e.target.value,
-                                                                    })
-                                                                }
-                                                                placeholder="10"
-                                                            />
-                                                        </div>
-
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[11px] text-muted-foreground">
-                                                                Δ origen
-                                                            </Label>
-                                                            <Input
-                                                                className="h-8 text-xs"
-                                                                value={instantesMaps['mapa_desplazamientos_d_ori'] || ''}
-                                                                onChange={e =>
-                                                                    setInstantesMaps({
-                                                                        ...instantesMaps,
-                                                                        mapa_desplazamientos_d_ori: e.target.value,
-                                                                    })
-                                                                }
-                                                                placeholder="15"
-                                                            />
-                                                        </div>
-
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[11px] text-muted-foreground">
-                                                                Δ destino
-                                                            </Label>
-                                                            <Input
-                                                                className="h-8 text-xs"
-                                                                value={instantesMaps['mapa_desplazamientos_d_dst'] || ''}
-                                                                onChange={e =>
-                                                                    setInstantesMaps({
-                                                                        ...instantesMaps,
-                                                                        mapa_desplazamientos_d_dst: e.target.value,
-                                                                    })
-                                                                }
-                                                                placeholder="720"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[11px] text-muted-foreground">
-                                                                Movimiento
-                                                            </Label>
-                                                            <Select
-                                                                value={instantesMaps['mapa_desplazamientos_mov'] || ''}
-                                                                onValueChange={v =>
-                                                                    setInstantesMaps({
-                                                                        ...instantesMaps,
-                                                                        mapa_desplazamientos_mov: v,
-                                                                    })
-                                                                }
-                                                            >
-                                                                <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue placeholder="Selecciona (1 / -1)"/>
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="1">1 (salidas)</SelectItem>
-                                                                    <SelectItem value="-1">-1 (entradas)</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[11px] text-muted-foreground">
-                                                                Tipo petición
-                                                            </Label>
-                                                            <Select
-                                                                value={instantesMaps['mapa_desplazamientos_tipo'] || ''}
-                                                                onValueChange={v =>
-                                                                    setInstantesMaps({
-                                                                        ...instantesMaps,
-                                                                        mapa_desplazamientos_tipo: v,
-                                                                    })
-                                                                }
-                                                            >
-                                                                <SelectTrigger className="h-8 text-xs">
-                                                                    <SelectValue
-                                                                        placeholder="Selecciona (real / fict.)"/>
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="1">1 (real)</SelectItem>
-                                                                    <SelectItem value="0">0 (ficticia)</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-
-                    {/* Filtro */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="use-filter-maps"
-                                checked={useFilterForMaps}
-                                onCheckedChange={v => setUseFilterForMaps(Boolean(v))}
-                            />
-                            {/*   Usar filtro para limitar estaciones del mapa */}
-                            <Label htmlFor="use-filter-maps" className="text-xs">
-                                Habilitar Filtrado
-                            </Label>
-                        </div>
-
-                        {useFilterForMaps && (
-                            <>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Tipo de filtro</Label>
-                                    <select
-                                        className="w-full border rounded px-2 py-1 text-xs bg-background"
-                                        value={filterKind}
-                                        onChange={e => setFilterKind(e.target.value as FilterKind)}
-                                    >
-                                        <option value="EstValor">Estación valor (día)</option>
-                                        <option value="EstValorDias">Estación valor (mes)</option>
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="space-y-1">
-                                        <Label className="text-xs">Operador</Label>
-                                        <Select
-                                            value={filterState.operator}
-                                            onValueChange={operator => setFilterState(s => ({...s, operator}))}
-                                        >
-                                            <SelectTrigger className="h-8 text-xs w-full">
-                                                <SelectValue/>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value=">=">{'>='}</SelectItem>
-                                                <SelectItem value="<=">{'<='}</SelectItem>
-                                                <SelectItem value=">">{'>'}</SelectItem>
-                                                <SelectItem value="<">{'<'}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <Label className="text-xs">Valor</Label>
-                                        <Input
-                                            className="h-8 text-xs w-full"
-                                            value={filterState.value}
-                                            onChange={e => setFilterState(s => ({...s, value: e.target.value}))}
-                                            placeholder="65"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <Label htmlFor="dayPct" className="text-xs">
-                                        % del día
-                                    </Label>
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            id="dayPct"
-                                            type="range"
-                                            min={0}
-                                            max={100}
-                                            value={Number(filterState.dayPct || 0)}
-                                            onChange={e => setFilterState(s => ({...s, dayPct: e.target.value}))}
-                                            className="flex-1"
-                                        />
-                                        <span className="w-12 text-right text-sm">
-                    {filterState.dayPct || 0}%
-                  </span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Días</Label>
-                                    <Input
-                                        className="h-8 text-xs w-full"
-                                        value={filterState.days}
-                                        onChange={e => setFilterState(s => ({...s, days: e.target.value}))}
-                                        placeholder="all o 0;1;2"
-                                    />
-                                </div>
-
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Días excepción</Label>
-                                    <Input
-                                        className="h-8 text-xs w-full"
-                                        value={filterState.allowedFailDays}
-                                        onChange={e =>
-                                            setFilterState(s => ({...s, allowedFailDays: e.target.value}))
-                                        }
-                                        placeholder="5"
-                                    />
-                                </div>
-
-
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Column 2: Matrices */}
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Select
-                            value={seleccionAgreg || ''} // keep same state var (string)
-                            onValueChange={(v) => setSeleccionAgreg(v)} // single value only
-                        >
-                            <SelectTrigger className="justify-between h-8 text-xs w-full">
-                                <SelectValue placeholder="Selecciona matriz..."/>
-                            </SelectTrigger>
-
-                            <SelectContent>
-                                {MATRICES.map((m) => (
-                                    <SelectItem key={m.id} value={String(m.id)}>
-                                        {m.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-
-                {/*Multiple Matrix System*/}
-                { /*  <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className=" justify-between h-8 text-xs w-full">
-                                    {selectedIds.length > 0
-                                        ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(';')}`
-                                        : 'Selecciona matrices...'}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                </Button>
-                            </PopoverTrigger>
-
-                            <PopoverContent className="w-[400px] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Buscar matriz..."/>
-                                    <CommandEmpty>No encontrada</CommandEmpty>
-                                    <CommandList>
-                                        <CommandGroup>
-                                            {MATRICES.map(m => (
-                                                <CommandItem
-                                                    key={m.id}
-                                                    onSelect={() => toggleMatrix(m.id)}
-                                                    className="flex items-center space-x-2 cursor-pointer"
-                                                >
-                                                    <Checkbox
-                                                        checked={selectedIds.includes(String(m.id))}
-                                                        onCheckedChange={() => toggleMatrix(m.id)}
-                                                    />
-                                                    <span className="text-sm">
-                          {m.label} ({m.id})
-                        </span>
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
-
-                </div> */}
-
-                {/* Column 3: Advanced */}
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            id="advanced-user"
-                            checked={advancedUser}
-                            onCheckedChange={v => setAdvancedUser(Boolean(v))}
-                        />
-                        <Label htmlFor="advanced-user" className="text-xs">
-                            Advanced user
-                        </Label>
-                    </div>
-
-                    {advancedUser && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <Label className="text-xs">Delta</Label>
-                                <Select value={deltaMode} onValueChange={v => setDeltaMode(v as DeltaMode)}>
-                                    <SelectTrigger className="h-8 text-xs w-full">
-                                        <SelectValue placeholder="Selecciona delta..."/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="media">Delta Media</SelectItem>
-                                        <SelectItem value="acumulada">Delta Acumulada</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label className="text-xs">Valor</Label>
-                                <Input
-                                    className="h-8 text-xs w-full"
-                                    value={deltaValueTxt}
-                                    onChange={e => setDeltaValueTxt(e.target.value)}
-                                    placeholder="4, 60, 1440…"
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {advancedUser && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <Label className="h-8 text-xs">Advanced input</Label>
-                                <Input
-                                    value={advancedEntrada}
-                                    onChange={e => setAdvancedEntrada(e.target.value)}
-                                    placeholder="..."
-                                />
-                            </div>
-
-                            <div className="space-y-1">
-                                <Label className="h-8 text-xs">Advanced output</Label>
-                                <Input
-                                    value={advancedSalida}
-                                    onChange={e => setAdvancedSalida(e.target.value)}
-                                    placeholder="..."
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Column 4: Analizar */}
-                <div className="space-y-3">
-                    <Button onClick={handleAnalyze} disabled={apiBusy} className="w-full">
-                        {apiBusy ? 'Analizando...' : 'Analizar'}
-
-                    </Button>
-
-                    {apiError && <span className="text-sm text-destructive">{apiError}</span>}
-                </div>
-            </div>
-        </div>
+    const selectedMatrixId = Number(seleccionAgreg || "-1");
+    const matrixAllowedForGraph = ALLOWED_GRAPH_MATRIX_IDS.includes(
+        selectedMatrixId as AllowedGraphMatrixId,
     );
 
+
+    return (
+        <div className="space-y-4">
+            <Tabs defaultValue="maps" className="w-full">
+                <TabsList className="w-full justify-start flex-wrap">
+                    <TabsTrigger value="maps">Maps</TabsTrigger>
+                    <TabsTrigger value="filter">Filter</TabsTrigger>
+                    <TabsTrigger value="matrix">Matrix</TabsTrigger>
+                    <TabsTrigger value="actions">Actions</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="maps" className="mt-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm">Maps</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <MapsControls
+                                MAPAS={MAPAS}
+                                selectedMaps={selectedMaps}
+                                setSelectedMaps={setSelectedMaps}
+                                stationsMaps={stationsMaps}
+                                setStationsMaps={setStationsMaps}
+                                instantesMaps={instantesMaps}
+                                setInstantesMaps={setInstantesMaps}
+                                deltaOutMin={deltaOutMin}
+                                useFilterForMaps={useFilterForMaps}
+                                onActiveStationsTargetKeyChange={onActiveStationsTargetKeyChange}
+                            />
+
+                            <AdvancedControls
+                                advancedUser={advancedUser}
+                                setAdvancedUser={setAdvancedUser}
+                                deltaMode={deltaMode}
+                                setDeltaMode={setDeltaMode}
+                                deltaValueTxt={deltaValueTxt}
+                                setDeltaValueTxt={setDeltaValueTxt}
+                                advancedEntrada={advancedEntrada}
+                                setAdvancedEntrada={setAdvancedEntrada}
+                                advancedSalida={advancedSalida}
+                                setAdvancedSalida={setAdvancedSalida}
+                            />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="filter" className="mt-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm">Filter</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <MapsAndGraphsFilterControls
+                                useFilterForMaps={useFilterForMaps}
+                                setUseFilterForMaps={setUseFilterForMaps}
+                                filterKind={filterKind}
+                                setFilterKind={setFilterKind}
+                                filterState={filterState}
+                                setFilterState={setFilterState}
+                                daysRange={daysRange}
+                                setDaysRange={setDaysRange}
+                                dateDiffInDays={dateDiffInDays}
+                            />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="matrix" className="mt-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm">Matrix</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <MatrixSelect
+                                matrices={[...MATRICES]}
+                                seleccionAgreg={seleccionAgreg}
+                                setSeleccionAgreg={setSeleccionAgreg}
+                            />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="actions" className="mt-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm">Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <Button onClick={handleAnalyze} disabled={apiBusy} className="w-full">
+                                {apiBusy ? "Analizando..." : "Analizar mapas"}
+                            </Button>
+
+                            <div className="space-y-2">
+                                <Label className="text-xs">Crear gráfica rápida</Label>
+
+                                <Autocomplete
+                                    size="small"
+                                    options={QUICK_GRAPHS}
+                                    getOptionLabel={(o) => o.label}
+                                    value={QUICK_GRAPHS.find((o) => o.key === quickGraph) ?? null}
+                                    onChange={(_, newValue) => setQuickGraph(newValue?.key ?? null)}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Tipo de gráfica..."
+                                            variant="outlined"
+                                            sx={{
+                                                "& .MuiInputBase-input": {fontSize: 12},
+                                                "& .MuiInputLabel-root": {fontSize: 12},
+                                            }}
+                                        />
+                                    )}
+                                    disabled={apiBusy || selectedMaps[0] !== "mapa_circulo" || !matrixAllowedForGraph}
+                                />
+
+                                <Input
+                                    className="h-8 text-xs w-full"
+                                    placeholder="Estaciones para gráficas (ej: 87;212)"
+                                    value={circleStationsForGraphs}
+                                    onChange={(e) => setCircleStationsForGraphs(e.target.value)}
+                                    disabled={apiBusy || selectedMaps[0] !== "mapa_circulo"}
+                                />
+
+                                <Button
+                                    onClick={() => {
+                                        if (!quickGraph) return;
+                                        handleCreateQuickGraphFromCircle(quickGraph);
+                                    }}
+                                    disabled={
+                                        apiBusy ||
+                                        selectedMaps[0] !== "mapa_circulo" ||
+                                        !matrixAllowedForGraph ||
+                                        !quickGraph ||
+                                        parseStationsSimple(circleStationsForGraphs).length === 0
+                                    }
+                                    className="w-full"
+                                    variant="outline"
+                                >
+                                    Crear
+                                </Button>
+                            </div>
+
+                            {apiError && <span className="text-sm text-destructive">{apiError}</span>}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
 
 }

@@ -30,9 +30,7 @@ type MainContentProps = {
     triggerRefresh?: number;
     mode: MainContentMode;
     onStationPick?: (p: { mapName?: string; station: number; data?: number | null }) => void;
-
 };
-
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
@@ -300,8 +298,8 @@ export default function MainContent({
                         maps={maps}
                         onStationPick={onStationPick}
                     />
-
                 )}
+
 
                 {mode === 'maps' && (
                     <VisualizationsPanel

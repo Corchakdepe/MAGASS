@@ -27,7 +27,6 @@ from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
 from bike_simulator5 import bike_simulator5
 
 
-
 def parse_mapa_spec(spec: str) -> tuple[list[int], list[int] | None, bool]:
     """
     spec: "0;10;20+1;15;26-L" o "0;1;2" o "0;1;2-L" o "0;1;2+3;4"
@@ -107,7 +106,6 @@ class StationDays(BaseModel):
     days: Union[str, List[int]]
 
 
-
 # Modelo del analysis con lo que pide sea para mapa, graph o filtro
 class AnalysisArgs(BaseModel):
     input_folder: str
@@ -129,8 +127,6 @@ class AnalysisArgs(BaseModel):
     mapa_voronoi: Optional[str] = None
     mapa_circulo: Optional[str] = None
     mapa_desplazamientos: Optional[str] = None
-
-
 
     filtrado_EstValor: Optional[str] = None
     filtrado_EstValorDias: Optional[str] = None
@@ -551,52 +547,74 @@ def run_analysis(args: AnalysisArgs) -> dict:
     # ===========================
     # <GraficobarrasEstacionMedio>
     if histograma_medio_estacion:
+        # spec: "est" o "est1;est2;...-dias"
         aux_cadena = histograma_medio_estacion.split("-")
-        est_id = int(aux_cadena[0])
+        if len(aux_cadena) < 2:
+            raise ValueError(
+                f"Cadena graf_barras_est_med inválida: {histograma_medio_estacion}"
+            )
 
-        if aux_cadena[1] == "all":
+        ests_str = aux_cadena[0]  # "87" o "87;212"
+        dias_str = aux_cadena[1]  # "all" o "8;9;10;11;12"
+
+        estaciones_ids = [int(s) for s in ests_str.split(";") if s.strip()]
+        if not estaciones_ids:
+            raise ValueError(
+                f"graf_barras_est_med sin estaciones: {histograma_medio_estacion}"
+            )
+
+        if dias_str == "all":
             dias = list(range(diasMatrizDeseada))
         else:
-            dias = list(map(int, aux_cadena[1].split(";")))
+            dias = list(map(int, dias_str.split(";")))
 
         titulo = auxiliar_ficheros.formatoArchivo(
-            f"GraficaMedia_Estacion{est_id}", "png"
+            f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
+            "png",
         )
-        eoc.HistogramaPorEstacion(est_id, dias, nombreGrafica=titulo)
+        # Si quieres seguir generando una imagen por estación, puedes
+        # llamar a eoc.HistogramaPorEstacion en un bucle, pero para
+        # el JSON calculamos directamente desde matrizDeseada.
 
         # horas 0..23
         x = list(range(24))
         idx = [h + d * 24 for d in dias for h in range(24)]
         hora_index = [h for d in dias for h in range(24)]
 
-        # media por HORA en esa estación
-        serie = (
-            pandas.Series(matrizDeseada.iloc[idx, est_id].values)
-            .groupby(hora_index)
-            .mean()
-            .reindex(x)
-            .tolist()
-        )
+        ys = {}
+        for est_id in estaciones_ids:
+            # media por HORA en esa estación
+            serie = (
+                pandas.Series(matrizDeseada.iloc[idx, est_id].values)
+                .groupby(hora_index)
+                .mean()
+                .reindex(x)
+                .tolist()
+            )
+            ys[f"Est_{est_id}"] = serie
 
         meta = {
             "type": "bar",
-            "title": f"Media Estación {est_id}",
+            "title": f"Media Estaciones {estaciones_ids}",
             "xLabel": "Hora",
             "yLabel": "Media",
+            "multiStation": True,
+            "stations": estaciones_ids,
+            "dias": dias,
         }
 
         write_series_csv(
             join(Constantes.RUTA_SALIDA, titulo),
             x=x,
-            ys={"mean": serie},
+            ys=ys,
             meta=meta,
         )
         charts.append({
-            "id": f"GraficaMedia_Estacion{est_id}",
+            "id": f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
             "kind": "graph",
             "format": "json",
             "x": x,
-            "series": {"mean": serie},
+            "series": ys,
             "meta": meta,
         })
 
@@ -612,11 +630,11 @@ def run_analysis(args: AnalysisArgs) -> dict:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "id": f"GraficaMedia_Estacion{est_id}",
+                    "id": f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
                     "kind": "graph",
                     "format": "json",
                     "x": x,
-                    "series": {"mean": serie},
+                    "series": ys,
                     "meta": meta,
                 },
                 f,
@@ -627,51 +645,71 @@ def run_analysis(args: AnalysisArgs) -> dict:
     # <GraficobarrasEstacionAcumulado>
     if histograma_acumulado_estacion:
         aux_cadena = histograma_acumulado_estacion.split("-")
-        est_id = int(aux_cadena[0])
+        if len(aux_cadena) < 2:
+            raise ValueError(
+                f"Cadena graf_barras_est_acum inválida: {histograma_acumulado_estacion}"
+            )
 
-        if aux_cadena[1] == "all":
+        ests_str = aux_cadena[0]  # "87" o "87;212"
+        dias_str = aux_cadena[1]  # "all" o "8;9;10;11;12"
+
+        estaciones_ids = [int(s) for s in ests_str.split(";") if s.strip()]
+        if not estaciones_ids:
+            raise ValueError(
+                f"graf_barras_est_acum sin estaciones: {histograma_acumulado_estacion}"
+            )
+
+        if dias_str == "all":
             dias = list(range(diasMatrizDeseada))
         else:
-            dias = list(map(int, aux_cadena[1].split(";")))
+            dias = list(map(int, dias_str.split(";")))
 
         titulo = auxiliar_ficheros.formatoArchivo(
-            f"GraficaAcumulado_Estacion{est_id}", "png"
+            f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
+            "png",
         )
-        eoc.HistogramaAcumulacion(est_id, dias, titulo)
+        # eoc.HistogramaAcumulacion sigue siendo válido si lo usas solo
+        # para generar una imagen por estación; aquí calculamos el JSON.
 
         x = list(range(24))
         idx = [h + d * 24 for d in dias for h in range(24)]
         hora_index = [h for d in dias for h in range(24)]
 
-        # suma por hora y acumulado
-        values = (
-            pandas.Series(matrizDeseada.iloc[idx, est_id].values)
-            .groupby(hora_index)
-            .sum()
-            .reindex(x)
-            .cumsum()
-            .tolist()
-        )
+        ys = {}
+        for est_id in estaciones_ids:
+            # suma por hora y acumulado
+            values = (
+                pandas.Series(matrizDeseada.iloc[idx, est_id].values)
+                .groupby(hora_index)
+                .sum()
+                .reindex(x)
+                .cumsum()
+                .tolist()
+            )
+            ys[f"Est_{est_id}"] = values
 
         meta = {
             "type": "line",
-            "title": f"Acumulado Estación {est_id}",
+            "title": f"Acumulado Estaciones {estaciones_ids}",
             "xLabel": "Hora",
             "yLabel": "Acumulado",
+            "multiStation": True,
+            "stations": estaciones_ids,
+            "dias": dias,
         }
 
         write_series_csv(
             join(Constantes.RUTA_SALIDA, titulo),
             x=x,
-            ys={"cum": values},
+            ys=ys,
             meta=meta,
         )
         charts.append({
-            "id": f"GraficaAcumulado_Estacion{est_id}",
+            "id": f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
             "kind": "graph",
             "format": "json",
             "x": x,
-            "series": {"cum": values},
+            "series": ys,
             "meta": meta,
         })
 
@@ -687,11 +725,11 @@ def run_analysis(args: AnalysisArgs) -> dict:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "id": f"GraficaAcumulado_Estacion{est_id}",
+                    "id": f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
                     "kind": "graph",
                     "format": "json",
                     "x": x,
-                    "series": {"cum": values},
+                    "series": ys,
                     "meta": meta,
                 },
                 f,
@@ -1319,9 +1357,6 @@ def run_analysis(args: AnalysisArgs) -> dict:
             }
         )
 
-
-
-
     # ===========================
     # 10) Filtrados (CSV)
     # ===========================
@@ -1446,5 +1481,3 @@ def run_analysis(args: AnalysisArgs) -> dict:
             print(f"[WARN] Error en Filtrado_PorcentajeEstaciones: {e}")
 
     return {"ok": True, "charts": charts, "maps": maps_json}
-
-
