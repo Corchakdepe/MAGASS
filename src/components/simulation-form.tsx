@@ -29,85 +29,104 @@ export default function SimulationForm({
                                                      simName,
                                                      setSimName,
                                                  }: StatisticsSimulationFormProps) {
-    return (
-        <div className="space-y-4">
-            {/* Simulation name */}
-            <div className="space-y-1">
-                <Label htmlFor="simName">Simulation name</Label>
-                <Input
-                    id="simName"
-                    type="text"
-                    value={simName}
-                    onChange={(e) => setSimName(e.target.value)}
-                    placeholder="e.g. Sevilla morning peak"
-                />
-            </div>
+   return (
+  <div className="space-y-4">
+    {/* Header */}
+    <div className="space-y-0.5">
+      <div className="text-xs font-semibold text-text-primary">Simulation parameters</div>
+      <div className="text-[11px] text-text-secondary">Name, stress, walking cost and Δ.</div>
+    </div>
 
-            {/* Stress slider */}
-            <div className="space-y-1">
-                <Label htmlFor="stress">Stress level (%)</Label>
-                <div className="flex items-center gap-3">
-                    <input
-                        id="stress"
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={stress}
-                        onChange={(e) => setStress(Number(e.target.value) || 0)}
-                        className="flex-1"
-                    />
-                    <span className="w-12 text-right text-sm">{stress}%</span>
-                </div>
-            </div>
+    <div className="h-px w-full bg-surface-3" />
 
-            {/* Walk cost slider */}
-            <div className="space-y-1">
-                <Label htmlFor="walkCost">Walk cost (%)</Label>
-                <div className="flex items-center gap-3">
-                    <input
-                        id="walkCost"
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={walkCost}
-                        onChange={(e) => setWalkCost(Number(e.target.value) || 0)}
-                        className="flex-1"
-                    />
-                    <span className="w-12 text-right text-sm">{walkCost}%</span>
-                </div>
-            </div>
+    {/* Simulation name */}
+    <div className="space-y-1">
+      <Label htmlFor="simName" className="text-[11px] text-text-secondary">
+        Simulation name
+      </Label>
+      <Input
+        id="simName"
+        type="text"
+        value={simName}
+        onChange={(e) => setSimName(e.target.value)}
+        placeholder="e.g. Sevilla morning peak"
+        className="h-9 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
+      />
+    </div>
 
-            {/* Delta as number input */}
-            <div className="space-y-1">
-                <Label htmlFor="delta">Delta (minutes)</Label>
-                <Input
-                    id="delta"
-                    type="number"
-                    //min={1}
-                    value={delta}
-                    //required
-                    onChange={(e) => setDelta(Number(e.target.value))}
-                />
-            </div>
+    {/* Stress slider */}
+    <div className="space-y-1">
+      <Label htmlFor="stress" className="text-[11px] text-text-secondary">
+        Stress level (%)
+      </Label>
+      <div className="flex items-center gap-3">
+        <input
+          id="stress"
+          type="range"
+          min={0}
+          max={100}
+          value={stress}
+          onChange={(e) => setStress(Number(e.target.value) || 0)}
+          className="flex-1 accent-accent"
+        />
+        <span className="w-12 text-right text-xs font-medium text-text-primary">
+          {stress}%
+        </span>
+      </div>
+    </div>
 
-            {/* Stress type select */}
-            <div className="space-y-1">
-                <Label>Stress type</Label>
-                <Select
-                    value={stressType}
-                    onValueChange={(v) => setStressType(v)}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select stress type"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="0">Ninguno</SelectItem>
-                        <SelectItem value="1">Bicicleta</SelectItem>
-                        <SelectItem value="2">Movimiento</SelectItem>
-                        <SelectItem value="3">Ambos</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
-    );
+    {/* Walk cost slider */}
+    <div className="space-y-1">
+      <Label htmlFor="walkCost" className="text-[11px] text-text-secondary">
+        Walk cost (%)
+      </Label>
+      <div className="flex items-center gap-3">
+        <input
+          id="walkCost"
+          type="range"
+          min={0}
+          max={100}
+          value={walkCost}
+          onChange={(e) => setWalkCost(Number(e.target.value) || 0)}
+          className="flex-1 accent-accent"
+        />
+        <span className="w-12 text-right text-xs font-medium text-text-primary">
+          {walkCost}%
+        </span>
+      </div>
+    </div>
+
+    {/* Delta as number input */}
+    <div className="space-y-1">
+      <Label htmlFor="delta" className="text-[11px] text-text-secondary">
+        Delta (minutes)
+      </Label>
+      <Input
+        id="delta"
+        type="number"
+        value={delta}
+        onChange={(e) => setDelta(Number(e.target.value))}
+        className="h-9 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
+      />
+    </div>
+
+    {/* Stress type select */}
+    <div className="space-y-1">
+      <Label className="text-[11px] text-text-secondary">Stress type</Label>
+      <Select value={stressType} onValueChange={(v) => setStressType(v)}>
+        <SelectTrigger className="h-9 text-xs bg-surface-1 border border-surface-3 focus:ring-2 focus:ring-accent/25 focus:border-accent/30">
+          <SelectValue placeholder="Select stress type" />
+        </SelectTrigger>
+
+        <SelectContent className="bg-surface-1 border border-surface-3 shadow-mac-panel">
+          <SelectItem value="0">Ninguno</SelectItem>
+          <SelectItem value="1">Bicicleta</SelectItem>
+          <SelectItem value="2">Movimiento</SelectItem>
+          <SelectItem value="3">Ambos</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  </div>
+);
+
 }

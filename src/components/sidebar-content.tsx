@@ -46,33 +46,57 @@ export default function SidebarContentComponent({
 
     return (
         <>
-            <SidebarHeader className="p-4">
-                <h2 className="text-xl font-semibold font-headline">BikeSim</h2>
+            <SidebarHeader className="p-4 border-b border-surface-3 bg-surface-1/85 backdrop-blur-md">
+                <div className="space-y-1">
+                    <h2 className="text-base font-semibold font-headline text-text-primary">
+                        BikeSim
+                    </h2>
+                    <div className="text-[11px] text-text-secondary">Navigation</div>
+                </div>
             </SidebarHeader>
-            <SidebarBody className="p-4">
-                <nav className="space-y-2">
-                    {menuItems.map(item => {
+
+            <SidebarBody className="p-3 bg-surface-1/70 backdrop-blur-md">
+                <nav className="space-y-1">
+                    {menuItems.map((item) => {
                         const Icon = item.icon;
+                        const active = isActive(item.path);
+
                         return (
                             <Button
                                 key={item.id}
-                                variant={isActive(item.path) ? 'default' : 'ghost'}
-                                className="w-full justify-start"
+                                variant="ghost"
+                                className={[
+                                    "w-full justify-start h-9 px-3",
+                                    "rounded-md",
+                                    "text-xs",
+                                    "transition-colors",
+                                    active
+                                        ? "bg-accent-soft text-accent hover:bg-accent-soft"
+                                        : "text-text-secondary hover:text-text-primary hover:bg-surface-0/70",
+                                    "focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
+                                ].join(" ")}
                                 onClick={() => router.push(item.path)}
                             >
-                                <Icon className="mr-2 h-4 w-4"/>
-                                {item.label}
+                                <Icon
+                                    className={["mr-2 h-4 w-4", active ? "text-accent" : "text-text-tertiary"].join(" ")}/>
+                                <span className="truncate">{item.label}</span>
                             </Button>
                         );
                     })}
                 </nav>
             </SidebarBody>
-            <SidebarFooter className="p-4 border-t">
-                <div className="space-y-1">
-                    <p className="text-[12px] font-bold text-xs truncate">{simulationName ?? 'No name'}</p>
-                    <p className="text-[8px] text-xs text-muted-foreground truncate">{currentFolder} </p>
+
+            <SidebarFooter className="p-4 border-t border-surface-3 bg-surface-1/85 backdrop-blur-md">
+                <div className="space-y-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-text-primary truncate">
+                        {simulationName ?? "No name"}
+                    </p>
+                    <p className="text-[11px] text-text-secondary truncate">
+                        {currentFolder ?? "—"}
+                    </p>
                 </div>
             </SidebarFooter>
         </>
     );
+
 }

@@ -78,65 +78,72 @@ export function MapsAndGraphsFilterControls({
                     id="use-filter-maps"
                     checked={useFilterForMaps}
                     onCheckedChange={(v) => setUseFilterForMaps(Boolean(v))}
-                    className="
-    border-brand-100
-    data-[state=checked]:border-brand-500
-    data-[state=checked]:bg-brand-500
-    data-[state=checked]:text-brand-50
-    focus-visible:outline-none
-    focus-visible:ring-2
-    focus-visible:ring-brand-400
-    focus-visible:ring-offset-2
-    focus-visible:ring-offset-background
-  "
+                    className={[
+                        "border-surface-3",
+                        "data-[state=checked]:border-accent/40",
+                        "data-[state=checked]:bg-accent",
+                        "data-[state=checked]:text-text-inverted",
+                        "focus-visible:outline-none",
+                        "focus-visible:ring-2 focus-visible:ring-accent/25",
+                        "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
+                    ].join(" ")}
                 />
+
                 <Label
                     htmlFor="use-filter-maps"
-                    className="cursor-pointer text-xs text-brand-700"
+                    className="cursor-pointer text-xs text-text-secondary"
                 >
                     Habilitar filtrado
                 </Label>
             </div>
 
             {useFilterForMaps && (
-                <Card className="border border-brand-100 bg-brand-50">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm text-brand-700">
+                <div
+                    className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3">
+                    <div className="mb-3">
+                        <div className="text-xs font-semibold text-text-primary">
                             Filtrado de estaciones
-                        </CardTitle>
-                        <CardDescription className="text-xs">
-                            Restringe los resultados por valor y rango de dÃ­as.
-                        </CardDescription>
-                    </CardHeader>
+                        </div>
+                        <div className="text-[11px] text-text-secondary">
+                            Restringe los resultados por valor y rango de días.
+                        </div>
+                    </div>
 
-                    <CardContent className="space-y-3">
+                    <div className="space-y-3">
+                        {/* Tipo de filtro */}
                         <div className="space-y-1">
-                            <Label className="text-xs text-brand-700">Tipo de filtro</Label>
+                            <Label className="text-[11px] text-text-secondary">Tipo de filtro</Label>
                             <select
-                                className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring"
+                                className={[
+                                    "h-8 w-full rounded-md px-2 text-xs",
+                                    "bg-surface-1 border border-surface-3",
+                                    "text-text-primary",
+                                    "focus-visible:outline-none",
+                                    "focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30",
+                                ].join(" ")}
                                 value={filterKind}
                                 onChange={(e) => setFilterKind(e.target.value as any)}
                             >
-                                <option value="EstValor">EstaciÃ³n valor (dÃ­a)</option>
-                                <option value="EstValorDias">EstaciÃ³n valor (mes)</option>
+                                <option value="EstValor">Estación valor (día)</option>
+                                <option value="EstValorDias">Estación valor (mes)</option>
                                 <option value="Horas">Horas</option>
                                 <option value="Porcentaje">Porcentaje</option>
                             </select>
                         </div>
 
+                        {/* Operador + valor */}
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
-                                <Label className="text-xs text-brand-700">Operador</Label>
+                                <Label className="text-[11px] text-text-secondary">Operador</Label>
                                 <Select
                                     value={filterState.operator}
-                                    onValueChange={(operator) =>
-                                        setFilterState((s) => ({...s, operator}))
-                                    }
+                                    onValueChange={(operator) => setFilterState((s) => ({...s, operator}))}
                                 >
-                                    <SelectTrigger className="h-8 w-full text-xs border-input bg-background">
-                                        <SelectValue placeholder="â‰¥ / â‰¤ / > / <"/>
+                                    <SelectTrigger
+                                        className="h-8 w-full text-xs bg-surface-1 border border-surface-3 focus:ring-2 focus:ring-accent/25 focus:border-accent/30">
+                                        <SelectValue placeholder="≥ / ≤ / > / <"/>
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-surface-1 border border-surface-3 shadow-mac-panel">
                                         {([">=", "<=", ">", "<"] as FilterOperator[]).map((op) => (
                                             <SelectItem key={op} value={op}>
                                                 {op}
@@ -147,21 +154,20 @@ export function MapsAndGraphsFilterControls({
                             </div>
 
                             <div className="space-y-1">
-                                <Label className="text-xs text-brand-700">Valor</Label>
+                                <Label className="text-[11px] text-text-secondary">Valor</Label>
                                 <Input
-                                    className="h-8 w-full text-xs border-input bg-background"
+                                    className="h-8 w-full text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     value={filterState.value}
-                                    onChange={(e) =>
-                                        setFilterState((s) => ({...s, value: e.target.value}))
-                                    }
+                                    onChange={(e) => setFilterState((s) => ({...s, value: e.target.value}))}
                                     placeholder="65"
                                 />
                             </div>
                         </div>
 
+                        {/* % del día */}
                         <div className="space-y-1">
-                            <Label htmlFor="dayPct" className="text-xs text-brand-700">
-                                % del dÃ­a
+                            <Label htmlFor="dayPct" className="text-[11px] text-text-secondary">
+                                % del día
                             </Label>
                             <div className="flex items-center gap-3">
                                 <input
@@ -170,32 +176,32 @@ export function MapsAndGraphsFilterControls({
                                     min={0}
                                     max={100}
                                     value={Number(filterState.dayPct || 0)}
-                                    onChange={(e) =>
-                                        setFilterState((s) => ({...s, dayPct: e.target.value}))
-                                    }
-                                    className="flex-1 accent-brand-500"
+                                    onChange={(e) => setFilterState((s) => ({...s, dayPct: e.target.value}))}
+                                    className="flex-1 accent-accent"
                                 />
-                                <span className="w-12 text-right text-xs">
-                  {filterState.dayPct || 0}%
-                </span>
+                                <span className="w-12 text-right text-xs text-text-primary">
+                {filterState.dayPct || 0}%
+              </span>
                             </div>
                         </div>
 
+                        {/* Días */}
                         <div className="space-y-1">
-                            <Label className="text-xs text-brand-700">DÃ­as</Label>
+                            <Label className="text-[11px] text-text-secondary">Días</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className="h-8 w-full justify-between px-2 text-xs border-input bg-background"
+                                        className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     >
                                         {!daysRange?.from || !daysRange?.to
-                                            ? "Todos los dÃ­as"
+                                            ? "Todos los días"
                                             : `${daysRange.from.toLocaleDateString()} - ${daysRange.to.toLocaleDateString()}`}
                                     </Button>
                                 </PopoverTrigger>
 
-                                <PopoverContent className="w-auto p-2">
+                                <PopoverContent
+                                    className="w-auto p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                                     <Calendar
                                         mode="range"
                                         selected={daysRange}
@@ -208,10 +214,7 @@ export function MapsAndGraphsFilterControls({
                                             }
 
                                             const toIdx = dateDiffInDays(range.to, range.from);
-                                            const daysStr = Array.from(
-                                                {length: toIdx + 1},
-                                                (_, i) => String(i),
-                                            ).join(";");
+                                            const daysStr = Array.from({length: toIdx + 1}, (_, i) => String(i)).join(";");
                                             setFilterState((s) => ({...s, days: daysStr}));
                                         }}
                                         initialFocus
@@ -220,44 +223,44 @@ export function MapsAndGraphsFilterControls({
                             </Popover>
                         </div>
 
+                        {/* Días excepción */}
                         <div className="space-y-1">
-                            <Label className="text-xs text-brand-700">DÃ­as excepciÃ³n</Label>
+                            <Label className="text-[11px] text-text-secondary">Días excepción</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className="h-8 w-full justify-between px-2 text-xs border-input bg-background"
+                                        className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     >
                                         {filterState.allowedFailDays
-                                            ? `Hasta ${filterState.allowedFailDays} dÃ­as`
+                                            ? `Hasta ${filterState.allowedFailDays} días`
                                             : "Sin excepciones"}
                                     </Button>
                                 </PopoverTrigger>
 
-                                <PopoverContent className="w-auto p-2">
+                                <PopoverContent
+                                    className="w-auto p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                                     <div className="space-y-2">
-                                        <Label className="text-[11px] text-brand-700">
-                                            NÃºmero mÃ¡ximo de dÃ­as con fallo
+                                        <Label className="text-[11px] text-text-secondary">
+                                            Número máximo de días con fallo
                                         </Label>
                                         <Input
                                             type="number"
                                             min={0}
-                                            className="h-8 w-full text-xs border-input bg-background"
+                                            className="h-8 w-full text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             value={filterState.allowedFailDays}
                                             onChange={(e) =>
-                                                setFilterState((s) => ({
-                                                    ...s,
-                                                    allowedFailDays: e.target.value,
-                                                }))
+                                                setFilterState((s) => ({...s, allowedFailDays: e.target.value}))
                                             }
                                         />
                                     </div>
                                 </PopoverContent>
                             </Popover>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
         </div>
     );
+
 }

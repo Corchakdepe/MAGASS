@@ -82,53 +82,57 @@ export function BottomPanel({
   }, [minHeight, maxHeight]);
 
   return (
-  <div
-    className="fixed bottom-0 right-0 z-50"
-    style={{ left: leftOffsetPx }}
-  >
-    {open && (
-      <div className="border-t border-brand-100 bg-brand-50/80">
-        {/* Drag handle */}
-        <div
-          className="h-2 cursor-row-resize bg-brand-100/70 hover:bg-brand-300/70 transition-colors"
-          onPointerDown={(e) => {
-            dragRef.current.dragging = true;
-            dragRef.current.startY = e.clientY;
-            dragRef.current.startH = contentHeight;
-            e.preventDefault();
-          }}
-        />
+      <div className="fixed bottom-4 right-4 w-[480px] rounded-xl overflow-hidden">
+          {open && (
+              <div
+                  className="border-t border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
+                  {/* Drag handle */}
+                  <div
+                      className="h-2 cursor-row-resize bg-surface-2/70 hover:bg-surface-2 transition-colors"
+                      onPointerDown={(e) => {
+                          dragRef.current.dragging = true;
+                          dragRef.current.startY = e.clientY;
+                          dragRef.current.startH = contentHeight;
+                          e.preventDefault();
+                      }}
+                  >
+                      {/* subtle grip */}
+                      <div className="h-full w-full flex items-center justify-center">
+                          <div className="h-[3px] w-10 rounded-full bg-surface-3/80"/>
+                      </div>
+                  </div>
 
-        {/* Content */}
-        <div
-          className="overflow-auto bg-card"
-          style={{ height: contentHeight }}
-        >
-          {children}
-        </div>
+                  {/* Content */}
+                  <div
+                      className="overflow-auto bg-surface-1"
+                      style={{height: contentHeight}}
+                  >
+                      {children}
+                  </div>
+              </div>
+          )}
+
+          {/* Bottom bar */}
+          <div className="bg-surface-1/85 backdrop-blur-md shadow-mac-toolbar">
+
+              <div className="h-[44px] px-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 overflow-x-auto min-w-0">
+                      {barLeft}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                      {barRight}
+                      <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-text-secondary hover:bg-surface-0/70"
+                          onClick={() => setOpen((v) => !v)}
+                      >
+                          {open ? "Hide" : "Show"}
+                      </Button>
+                  </div>
+              </div>
+          </div>
       </div>
-    )}
-
-    {/* Bottom bar */}
-    <div className="border-t border-brand-100 bg-brand-50/80">
-      <div className="h-[44px] px-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {barLeft}
-        </div>
-        <div className="flex items-center gap-2">
-          {barRight}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-brand-700 hover:bg-brand-100/60"
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? "Hide" : "Show"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
+  );
 }

@@ -1,24 +1,27 @@
 // components/main-content.tsx
-'use client';
 
-import {useEffect, useState} from 'react';
-import {Button} from '@/components/ui/button';
-import {RefreshCw} from 'lucide-react';
-import type {SimulationData, SimulationSummaryData} from '@/types/simulation';
-import type {MainContentMode} from '@/types/view-mode';
-import SummaryPanel from '@/components/summary-panel';
-import VisualizationsPanel from '@/components/visualizations-panel';
-import type {GraphItem} from '@/components/visualizations-panel';
-import {FiltersPanel} from '@/components/visualizationsFilters';
-import DashboardPanel from '@/components/dashboard-panel';
-import MapAnalysisCreator from '@/components/map-analysis-creator';
+"use client";
 
+import {useEffect, useState} from "react";
+
+import {Button} from "@/components/ui/button";
+import {RefreshCw} from "lucide-react";
+
+import type {SimulationData, SimulationSummaryData} from "@/types/simulation";
+import type {MainContentMode} from "@/types/view-mode";
+
+import SummaryPanel from "@/components/summary-panel";
+import VisualizationsPanel from "@/components/visualizations-panel";
+import type {GraphItem} from "@/components/visualizations-panel";
+import {FiltersPanel} from "@/components/visualizationsFilters";
+import DashboardPanel from "@/components/dashboard-panel";
+import MapAnalysisCreator from "@/components/map-analysis-creator";
 
 export type RawResultItem = {
     id: string;
     name: string;
-    kind: 'graph' | 'map' | 'matrix';
-    format: 'csv' | 'json' | 'html' | 'png';
+    kind: "graph" | "map" | "matrix";
+    format: "csv" | "json" | "html" | "png";
     url: string;
     api_full_url?: string;
     created?: string;
@@ -29,10 +32,14 @@ type MainContentProps = {
     simulationData: SimulationData | null;
     triggerRefresh?: number;
     mode: MainContentMode;
-    onStationPick?: (p: { mapName?: string; station: number; data?: number | null }) => void;
+    onStationPick?: (p: {
+        mapName?: string;
+        station: number;
+        data?: number | null;
+    }) => void;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
 
 const defaultSummary: SimulationSummaryData = {
     deltaMinutes: 0,
@@ -52,8 +59,9 @@ const defaultSummary: SimulationSummaryData = {
 };
 
 const parseSimulationData = (dataString: string): SimulationSummaryData => {
-    const cleaned = dataString.trim().replace(/^"|"$/g, '');
-    const values = cleaned.split(',').map(v => Number(v.trim()) || 0);
+    const cleaned = dataString.trim().replace(/^"|"$/g, "");
+    const values = cleaned.split(",").map((v) => Number(v.trim()) || 0);
+
     return {
         deltaMinutes: values[0] || 0,
         stressPercentage: values[1] || 0,
@@ -78,19 +86,16 @@ export default function MainContent({
                                         mode,
                                         onStationPick,
                                     }: MainContentProps) {
-
-    const [simulationData, setSimulationData] =
-        useState<SimulationData | null>(externalSimData);
-    const [simulationSummary, setSimulationSummary] =
-        useState<SimulationSummaryData>(defaultSummary);
+    const [simulationData, setSimulationData] = useState(externalSimData);
+    const [simulationSummary, setSimulationSummary] = useState(defaultSummary);
     const [latestFolder, setLatestFolder] = useState<string | null>(null);
     const [maps, setMaps] = useState<RawResultItem[]>([]);
-    const [chartsFromApi, setChartsFromApi] = useState<any[]>([]);
+    const [chartsFromApi, setChartsFromApi] = useState<RawResultItem[]>([]);
     const [graphs, setGraphs] = useState<GraphItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // aplica selecciÃ³n desde fuera (history / simulador)
+    // aplica selección desde fuera (history / simulador)
     useEffect(() => {
         if (externalSimData) {
             setSimulationData(externalSimData);
@@ -103,27 +108,36 @@ export default function MainContent({
     const fetchLatest = async () => {
         setIsLoading(true);
         setError(null);
+
         try {
             const listResponse = await fetch(`${API_BASE}/list-simulations`, {
-                cache: 'no-store',
+                cache: "no-store",
             });
-            if (!listResponse.ok) throw new Error('Failed to fetch simulations');
+            if (!listResponse.ok) throw new Error("Failed to fetch simulations");
+
             const listData = await listResponse.json();
 
-            if (Array.isArray(listData.simulations) && listData.simulations.length > 0) {
+            if (
+                Array.isArray(listData.simulations) &&
+                listData.simulations.length > 0
+            ) {
                 const latest = listData.simulations[0];
                 const latestFolderName = latest.simfolder ?? latest.name;
                 setLatestFolder(latestFolderName);
 
-                // solo auto-carga resumen si no hay selecciÃ³n externa
+                // solo auto-carga resumen si no hay selección externa
                 if (!externalSimData) {
                     let summary = defaultSummary;
-                    const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
-                        cache: 'no-store',
-                    });
+                    const summaryResponse = await fetch(
+                        `${API_BASE}/simulation-summary`,
+                        {
+                            cache: "no-store",
+                        }
+                    );
                     if (summaryResponse.ok) {
                         summary = parseSimulationData(await summaryResponse.text());
                     }
+
                     setSimulationSummary(summary);
 
                     const sim: SimulationData = {
@@ -132,33 +146,35 @@ export default function MainContent({
                         fileCount: latest.file_count,
                         simulationSummary: summary,
                         chartData: [],
-                        mapUrl: '',
-                        heatmapUrl: '',
-                        csvData: '',
-                        simName: '',
+                        mapUrl: "",
+                        heatmapUrl: "",
+                        csvData: "",
+                        simName: "",
                     };
+
                     setSimulationData(sim);
                 }
 
-                const runForFetch =
-                    externalSimData?.folder ?? latestFolderName;
+                const runForFetch = externalSimData?.folder ?? latestFolderName;
 
-                if (mode === 'analyticsGraphs') {
+                if (mode === "analyticsGraphs") {
                     const graphsRes = await fetch(
                         `${API_BASE}/results/list?run=${encodeURIComponent(
-                            runForFetch,
+                            runForFetch
                         )}&kind=graph`,
-                        {cache: 'no-store'},
+                        {cache: "no-store"}
                     );
+
                     if (graphsRes.ok) {
                         const {items} = await graphsRes.json();
                         const graphItems = (items as RawResultItem[])
                             .filter(
-                                x =>
-                                    x.kind === 'graph' &&
-                                    (x.format === 'csv' || x.format === 'json'),
+                                (x) =>
+                                    x.kind === "graph" &&
+                                    (x.format === "csv" || x.format === "json")
                             )
-                            .map(x => x as GraphItem);
+                            .map((x) => x as GraphItem);
+
                         setGraphs(graphItems);
                     } else {
                         setGraphs([]);
@@ -167,17 +183,20 @@ export default function MainContent({
                     setGraphs([]);
                 }
 
-                if (mode === 'analyticsMaps' || mode === 'maps') {
+                if (mode === "analyticsMaps" || mode === "maps") {
                     const mapsRes = await fetch(
                         `${API_BASE}/results/list?run=${encodeURIComponent(
-                            runForFetch,
+                            runForFetch
                         )}&kind=map`,
-                        {cache: 'no-store'},
+                        {cache: "no-store"}
                     );
+
                     if (mapsRes.ok) {
                         const {items} = await mapsRes.json();
                         const mapItems = (items as RawResultItem[]).filter(
-                            x => x.kind === 'map' && (x.format === 'html' || x.format === 'png'),
+                            (x) =>
+                                x.kind === "map" &&
+                                (x.format === "html" || x.format === "png")
                         );
                         setMaps(mapItems);
                     } else {
@@ -187,6 +206,7 @@ export default function MainContent({
                     setMaps([]);
                 }
 
+                // chartsFromApi placeholder: keep logic for future use
                 setChartsFromApi([]);
             } else {
                 setSimulationData(null);
@@ -197,7 +217,7 @@ export default function MainContent({
                 setChartsFromApi([]);
             }
         } catch (e: any) {
-            setError(e?.message ?? 'Failed to load simulation data');
+            setError(e?.message ?? "Failed to load simulation data");
         } finally {
             setIsLoading(false);
         }
@@ -211,118 +231,116 @@ export default function MainContent({
 
     if (isLoading && !simulationData) {
         return (
-            <div className="flex flex-col h-full">
-                <header className="flex items-center justify-between p-4 border-b bg-card">
-                    <h1 className="text-2xl font-bold font-headline">
-                        Gonzalo Bike Dashboard
-                    </h1>
-                </header>
-                <main className="flex-1 grid place-items-center">
-                    <div className="text-center">
-                        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2"/>
-                        <p className="text-muted-foreground">Loadingâ€¦</p>
-                    </div>
-                </main>
+            <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
+                <div className="flex items-center gap-2 text-sm text-text-secondary">
+                    <RefreshCw className="h-4 w-4 animate-spin text-accent"/>
+                    <span>Cargando resultados de simulación…</span>
+                </div>
             </div>
         );
     }
 
     if (error && !simulationData) {
         return (
-            <div className="flex flex-col h-full">
-                <header className="flex items-center justify-between p-4 border-b bg-card">
-                    <h1 className="text-2xl font-bold font-headline">
-                        Gonzalo Bike Dashboard
-                    </h1>
-                    <Button variant="secondary" onClick={fetchLatest}>
-                        <RefreshCw className="mr-2 h-4 w-4"/>
-                        Retry
-                    </Button>
-                </header>
-                <main className="flex-1 grid place-items-center">
-                    <div className="text-center text-red-600">
-                        <p className="font-semibold">Error</p>
-                        <p className="text-sm">{error}</p>
+            <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
+                <div
+                    className="flex flex-col items-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-3 shadow-sm">
+                    <div className="text-sm font-medium text-text-primary">
+                        Error al cargar datos
                     </div>
-                </main>
+                    <div className="text-xs text-text-secondary max-w-md text-center">
+                        {error}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-1 border-surface-3 text-text-primary hover:bg-surface-0"
+                        onClick={fetchLatest}
+                    >
+                        <RefreshCw className="mr-1 h-3 w-3"/>
+                        Reintentar
+                    </Button>
+                </div>
             </div>
         );
     }
 
-    const currentFolder = simulationData?.folder ?? latestFolder ?? '';
+    const currentFolder = simulationData?.folder ?? latestFolder ?? "";
 
     if (!simulationData && !currentFolder) {
         return (
-            <div className="flex flex-col h-full">
-                <header className="flex items-center justify-between p-4 border-b bg-card">
-                    <h1 className="text-2xl font-bold font-headline">
-                        Gonzalo Bike Dashboard
-                    </h1>
-                </header>
-                <main className="flex-1 grid place-items-center text-muted-foreground">
-                    <div className="text-center">
-                        <p className="text-lg font-medium mb-2">No simulation results yet</p>
-                        <p className="text-sm">Run a simulation to see results here</p>
+            <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
+                <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="text-sm font-semibold text-text-primary">
+                        No hay resultados de simulación todavía
                     </div>
-                </main>
+                    <div className="text-xs text-text-secondary max-w-sm">
+                        Ejecuta una simulación para ver aquí el resumen, los gráficos y los mapas asociados.
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="">
+            {/* Make inner content scroll instead of causing horizontal overflow */}
+                {/* Main mode‑based content, full‑width */}
+                {mode === "simulations" && (
 
+                            <SummaryPanel kind="simulation" summaryData={simulationSummary}/>
+                )}
+                {mode === "analyticsGraphs" && (
 
-            <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+                        <VisualizationsPanel
+                            mode={mode}
+                            apiBase={API_BASE}
+                            runId={currentFolder}
+                            simulationData={simulationData ?? null}
+                            graphs={graphs}
+                            maps={maps}
+                            chartsFromApi={chartsFromApi}
+                        />
 
-                {mode === 'simulations' && (
-                    <SummaryPanel kind="simulation" summaryData={simulationSummary}/>
                 )}
 
-                {mode === 'analyticsGraphs' && (
-                    <VisualizationsPanel
-                        mode={mode}
-                        apiBase={API_BASE}
-                        runId={currentFolder}
-                        simulationData={simulationData ?? null}
-                        graphs={graphs}
-                        maps={maps}
-                        chartsFromApi={chartsFromApi}
-                    />
+                {mode === "analyticsMaps" && (
+
+                        <MapAnalysisCreator
+                            runId={currentFolder}
+                            apiBase={API_BASE}
+                            maps={maps}
+                            onStationPick={onStationPick}
+                        />
+
                 )}
 
-                {mode === 'analyticsMaps' && (
-                    <MapAnalysisCreator
-                        runId={currentFolder}
-                        apiBase={API_BASE}
-                        maps={maps}
-                        onStationPick={onStationPick}
-                    />
+                {mode === "maps" && (
+
+                        <VisualizationsPanel
+                            mode={mode}
+                            apiBase={API_BASE}
+                            runId={currentFolder}
+                            simulationData={simulationData ?? null}
+                            graphs={graphs}
+                            maps={maps}
+                            chartsFromApi={chartsFromApi}
+                        />
+
                 )}
 
+                {mode === "filters" && currentFolder && (
 
-                {mode === 'maps' && (
-                    <VisualizationsPanel
-                        mode={mode}
-                        apiBase={API_BASE}
-                        runId={currentFolder}
-                        simulationData={simulationData ?? null}
-                        graphs={graphs}
-                        maps={maps}
-                        chartsFromApi={chartsFromApi}
-                    />
+                        <FiltersPanel apiBase={API_BASE} runId={currentFolder}/>
+
                 )}
 
-                {mode === 'filters' && currentFolder && (
-                    <FiltersPanel apiBase={API_BASE} runId={currentFolder}/>
+                {mode === "dashboard" && currentFolder && (
+
+                        <DashboardPanel apiBase={API_BASE} runId={currentFolder}/>
+
                 )}
 
-                {mode === 'dashboard' && currentFolder && (
-                    <DashboardPanel apiBase={API_BASE} runId={currentFolder}/>
-                )}
-
-
-            </main>
         </div>
     );
 }

@@ -5,6 +5,8 @@ import type {DateRange} from "react-day-picker";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
+import {Badge} from "@/components/ui/badge";
 
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
@@ -72,7 +74,7 @@ export type GraphsSelectorCardProps = {
 };
 
 function RangeLabel({range}: { range: DateRange | undefined }) {
-    if (!range?.from || !range?.to) return "Todos los dÃ­as";
+    if (!range?.from || !range?.to) return "Todos los días";
     return `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`;
 }
 
@@ -114,67 +116,110 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
     } = props;
 
     return (
-        <div className="space-y-3 rounded-xl border border-brand-100 bg-brand-50/80 p-3">
-            <div className="space-y-2">
-                <Label className="text-xs text-brand-700">GrÃ¡ficas</Label>
+        <div
+            className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-4">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="text-xs font-semibold text-text-primary">Gráficas</div>
+                    <div className="text-[11px] text-text-secondary">
+                        Selecciona gráficas y ajusta parámetros por gráfica.
+                    </div>
+                </div>
 
-                <Autocomplete
-                    multiple
-                    size="small"
-                    options={GRAFICAS}
-                    getOptionLabel={(option) => option.label}
-                    value={GRAFICAS.filter((g) => selectedCharts.includes(g.key))}
-                    onChange={(_, newValue) =>
-                        setSelectedCharts(newValue.map((g) => g.key))
-                    }
-                    disableCloseOnSelect
-                    sx={{
-                        width: "100%",
-                        "& .MuiInputBase-input": {fontSize: 12},
-                        "& .MuiInputLabel-root": {fontSize: 12},
-                        "& .MuiOutlinedInput-root": {
-                            backgroundColor: "hsl(var(--card))",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "hsl(var(--border))",
-                        },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "hsl(var(--ring))",
-                        },
-                    }}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            fullWidth
-                            label="Selecciona grÃ¡ficas..."
-                            variant="outlined"
-                        />
-                    )}
-                />
+                {useFilter ? (
+                    <div className="shrink-0 rounded-md bg-accent-soft px-2 py-1 text-[11px] text-accent">
+                        Filtro activo
+                    </div>
+                ) : null}
             </div>
 
-            <div className="mt-2 space-y-2">
+            {/* Multi-select: trigger + selected chips */}
+            <div className="space-y-2">
+                <Label className="text-[11px] text-text-secondary">Selección</Label>
+
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className={[
+                                "h-9 w-full justify-between px-2 text-xs",
+                                "bg-surface-1 border border-surface-3",
+                                "hover:bg-surface-0",
+                                "focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30",
+                            ].join(" ")}
+                        >
+            <span className="truncate text-left">
+              {selectedCharts.length === 0
+                  ? "Selecciona gráficas…"
+                  : `${selectedCharts.length} seleccionadas`}
+            </span>
+                            <span className="ml-2 text-text-tertiary">▾</span>
+                        </Button>
+                    </PopoverTrigger>
+
+                    <PopoverContent
+                        className="w-[340px] max-w-[90vw] p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
+                        <Command>
+                            <CommandInput placeholder="Buscar gráfica…" className="text-xs"/>
+                            <CommandEmpty>No hay resultados.</CommandEmpty>
+
+                            <CommandGroup>
+                                {GRAFICAS.map((g) => {
+                                    const checked = selectedCharts.includes(g.key);
+                                    return (
+                                        <CommandItem
+                                            key={g.key}
+                                            value={g.label}
+                                            onSelect={() => {
+                                                if (checked) setSelectedCharts(selectedCharts.filter((k) => k !== g.key));
+                                                else setSelectedCharts([...selectedCharts, g.key]);
+                                            }}
+                                            className="text-xs"
+                                        >
+                                            <div className="mr-2">
+                                                <Checkbox checked={checked}/>
+                                            </div>
+                                            <span className="truncate">{g.label}</span>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+
+                {selectedCharts.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                        {GRAFICAS.filter((g) => selectedCharts.includes(g.key)).map((g) => (
+                            <Badge
+                                key={g.key}
+                                variant="secondary"
+                                className="bg-surface-0 text-text-primary border border-surface-3"
+                            >
+                                {g.label}
+                            </Badge>
+                        ))}
+                    </div>
+                ) : null}
+            </div>
+
+            {/* Editors for each selected graph */}
+            <div className="space-y-3">
                 {GRAFICAS.map((g) => {
                     if (!selectedCharts.includes(g.key)) return null;
 
                     return (
-                        <div
-                            key={g.key}
-                            className=" rounded-md border border-brand-100 bg-card px-2 py-2"
-                        >
-                            <div className="mb-2 text-xs font-medium text-brand-700 ">
-                                {g.label}
-                            </div>
+                        <section key={g.key} className="rounded-lg border border-surface-3 bg-surface-0/70 p-3">
+                            <div className="text-xs font-semibold text-text-primary">{g.label}</div>
 
-                            {(g.key === "graf_barras_est_med" ||
-                                g.key === "graf_barras_est_acum") && (
-                                <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-2">
+                            {/* barras est */}
+                            {(g.key === "graf_barras_est_med" || g.key === "graf_barras_est_acum") && (
+                                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            Estaciones
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Estaciones</Label>
                                         <Input
-                                            className="h-7 w-full text-xs border-brand-100 bg-background focus-visible:border-brand-300 focus-visible:ring-brand-300"
+                                            className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             placeholder="87;212"
                                             value={barStations}
                                             onChange={(e) => setBarStations(e.target.value)}
@@ -183,19 +228,19 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            DÃ­as
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Días</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    className="h-7 w-full justify-between px-2 text-xs border-brand-100 bg-background hover:bg-brand-50"
+                                                    className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                                 >
-                                                    <RangeLabel range={barDaysRange}/>
+                                                    <span className="truncate"><RangeLabel range={barDaysRange}/></span>
+                                                    <span className="ml-2 text-text-tertiary">▾</span>
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-2">
+                                            <PopoverContent
+                                                className="w-auto p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                                                 <Calendar
                                                     mode="range"
                                                     selected={barDaysRange}
@@ -207,31 +252,31 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                                 />
                                             </PopoverContent>
                                         </Popover>
-                                    </div>
 
-                                    <div className="md:col-span-2 text-[10px] text-muted-foreground">
-                                        Valor enviado:{" "}
-                                        <code className="font-mono">{barDays}</code>
+                                        <div className="text-[10px] text-text-tertiary">
+                                            Valor enviado: <code className="font-mono">{barDays}</code>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
+                            {/* barras dia */}
                             {g.key === "graf_barras_dia" && (
-                                <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-2">
+                                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            DÃ­as
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Días</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    className="h-7 w-full justify-between px-2 text-xs border-brand-100 bg-background hover:bg-brand-50"
+                                                    className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                                 >
-                                                    <RangeLabel range={dayDaysRange}/>
+                                                    <span className="truncate"><RangeLabel range={dayDaysRange}/></span>
+                                                    <span className="ml-2 text-text-tertiary">▾</span>
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-2">
+                                            <PopoverContent
+                                                className="w-auto p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                                                 <Calendar
                                                     mode="range"
                                                     selected={dayDaysRange}
@@ -244,26 +289,21 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                             </PopoverContent>
                                         </Popover>
 
-                                        <div className="text-[10px] text-muted-foreground">
-                                            Valor enviado:{" "}
-                                            <code className="font-mono">{dayDays}</code>
+                                        <div className="text-[10px] text-text-tertiary">
+                                            Valor enviado: <code className="font-mono">{dayDays}</code>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         <div className="space-y-1">
-                                            <Label className="text-[11px] text-brand-700">
-                                                Modo
-                                            </Label>
-                                            <Select
-                                                value={dayMode}
-                                                onValueChange={(v) => setDayMode(v as "M" | "A")}
-                                            >
+                                            <Label className="text-[11px] text-text-secondary">Modo</Label>
+                                            <Select value={dayMode} onValueChange={(v) => setDayMode(v as "M" | "A")}>
                                                 <SelectTrigger
-                                                    className="h-7 w-full text-xs border-brand-100 bg-background focus:ring-brand-300 focus:border-brand-300">
+                                                    className="h-8 text-xs bg-surface-1 border border-surface-3 focus:ring-2 focus:ring-accent/25 focus:border-accent/30">
                                                     <SelectValue/>
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent
+                                                    className="bg-surface-1 border border-surface-3 shadow-mac-panel">
                                                     <SelectItem value="M">Media (M)</SelectItem>
                                                     <SelectItem value="A">Acum. (A)</SelectItem>
                                                 </SelectContent>
@@ -271,55 +311,46 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                         </div>
 
                                         <div className="flex items-center gap-2 pt-1">
-                                            <Checkbox
-                                                checked={dayFreq}
-                                                onCheckedChange={(v) =>
-                                                    setDayFreq(Boolean(v))
-                                                }
-                                            />
-                                            <span className="text-[11px] text-brand-700">
-                        Frecuencia (-Frec)
-                      </span>
+                                            <Checkbox checked={dayFreq}
+                                                      onCheckedChange={(v) => setDayFreq(Boolean(v))}/>
+                                            <span className="text-[11px] text-text-secondary">Frecuencia (-Frec)</span>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
+                            {/* linea comp est */}
                             {g.key === "graf_linea_comp_est" && (
-                                <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-2">
+                                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            Estaciones
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Estaciones</Label>
                                         <Input
-                                            className="h-7 w-full text-xs border-brand-100 bg-background focus-visible:border-brand-300 focus-visible:ring-brand-300"
+                                            className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             placeholder="87;212"
                                             value={lineStations}
-                                            onChange={(e) =>
-                                                setLineStations(e.target.value)
-                                            }
+                                            onChange={(e) => setLineStations(e.target.value)}
                                             disabled={useFilter}
                                         />
-                                        <div className="text-[10px] text-muted-foreground">
-                                            Usa "all" o patrones por estaciÃ³n separados por "#" (ej:
-                                            0;1#2;3).
+                                        <div className="text-[10px] text-text-tertiary">
+                                            Usa "all" o patrones por estación separados por "#" (ej: 0;1#2;3).
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            DÃ­as
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Días</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    className="h-7 w-full justify-between px-2 text-xs border-brand-100 bg-background hover:bg-brand-50"
+                                                    className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                                 >
-                                                    <RangeLabel range={lineDaysRange}/>
+                                                    <span className="truncate"><RangeLabel
+                                                        range={lineDaysRange}/></span>
+                                                    <span className="ml-2 text-text-tertiary">▾</span>
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-2">
+                                            <PopoverContent
+                                                className="w-auto p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                                                 <Calendar
                                                     mode="range"
                                                     selected={lineDaysRange}
@@ -332,40 +363,32 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                             </PopoverContent>
                                         </Popover>
 
-                                        <div className="text-[10px] text-muted-foreground">
-                                            Valor enviado:{" "}
-                                            <code className="font-mono">{lineDays}</code>
+                                        <div className="text-[10px] text-text-tertiary">
+                                            Valor enviado: <code className="font-mono">{lineDays}</code>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
+                            {/* linea comp mats */}
                             {g.key === "graf_linea_comp_mats" && (
-                                <div className="grid grid-cols-1 items-start gap-2 md:grid-cols-2">
+                                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            Î” y modo
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Δ y modo</Label>
                                         <div className="grid grid-cols-2 gap-2">
                                             <Input
-                                                className="h-7 w-full text-xs border-brand-100 bg-background focus-visible:border-brand-300 focus-visible:ring-brand-300"
-                                                placeholder="Î”"
+                                                className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
+                                                placeholder="Δ"
                                                 value={matsDelta}
-                                                onChange={(e) =>
-                                                    setMatsDelta(e.target.value)
-                                                }
+                                                onChange={(e) => setMatsDelta(e.target.value)}
                                             />
-                                            <Select
-                                                value={matsMode}
-                                                onValueChange={(v) =>
-                                                    setMatsMode(v as "M" | "A")
-                                                }
-                                            >
+                                            <Select value={matsMode} onValueChange={(v) => setMatsMode(v as "M" | "A")}>
                                                 <SelectTrigger
-                                                    className="h-7 w-full text-xs border-brand-100 bg-background focus:ring-brand-300 focus:border-brand-300">
+                                                    className="h-8 text-xs bg-surface-1 border border-surface-3 focus:ring-2 focus:ring-accent/25 focus:border-accent/30">
                                                     <SelectValue/>
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent
+                                                    className="bg-surface-1 border border-surface-3 shadow-mac-panel">
                                                     <SelectItem value="M">Media</SelectItem>
                                                     <SelectItem value="A">Acum.</SelectItem>
                                                 </SelectContent>
@@ -374,33 +397,29 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-brand-700">
-                                            Estaciones
-                                        </Label>
+                                        <Label className="text-[11px] text-text-secondary">Estaciones</Label>
                                         <Input
-                                            className="h-7 w-full text-xs border-brand-100 bg-background focus-visible:border-brand-300 focus-visible:ring-brand-300"
+                                            className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             placeholder="Est. matriz base (ej: 87;212)"
                                             value={matsStations1}
-                                            onChange={(e) =>
-                                                setMatsStations1(e.target.value)
-                                            }
+                                            onChange={(e) => setMatsStations1(e.target.value)}
                                             disabled={useFilter}
                                         />
                                         <Input
-                                            className="mt-1 h-7 w-full text-xs border-brand-100 bg-background focus-visible:border-brand-300 focus-visible:ring-brand-300"
+                                            className="mt-2 h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             placeholder="Est. matriz custom (ej: 0;1)"
                                             value={matsStations2}
-                                            onChange={(e) =>
-                                                setMatsStations2(e.target.value)
-                                            }
+                                            onChange={(e) => setMatsStations2(e.target.value)}
                                         />
                                     </div>
                                 </div>
                             )}
-                        </div>
+                        </section>
                     );
                 })}
             </div>
         </div>
     );
+
+
 }

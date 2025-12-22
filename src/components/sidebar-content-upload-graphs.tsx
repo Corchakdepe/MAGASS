@@ -67,16 +67,31 @@ export default function SidebarContentUploadMaps({
 
     return (
         <>
-            <SidebarHeader className="p-4">
-                <h2 className="text-xl font-semibold font-headline">Analysis</h2>
-                <h3 className="text-s font-light font-headline">
-                    Map creation parameters
-                </h3>
+            <SidebarHeader className="p-4 border-b border-surface-3 bg-surface-1/85 backdrop-blur-md">
+                <div className="space-y-1">
+                    <h2 className="text-base font-semibold font-headline text-text-primary">
+                        Analysis
+                    </h2>
+                    <p className="text-[11px] text-text-secondary">
+                        Map creation parameters
+                    </p>
+                </div>
             </SidebarHeader>
-            <SidebarBody className="p-4 space-y-6 overflow-y-auto">
-                {/* StatisticsForm debería exponer input_folder y output_folder */}
-                <StatisticsForm/>
+
+            <SidebarBody className="p-4 space-y-6 overflow-y-auto bg-surface-1/70 backdrop-blur-md">
+                {/* StatisticsForm should expose input_folder and output_folder */}
+                <div className="rounded-lg border border-surface-3 bg-surface-0/60 p-3">
+                    <StatisticsForm/>
+                </div>
             </SidebarBody>
+
+            {/* Optional footer area (kept empty to avoid nested panels unless you want a status row) */}
+            <SidebarFooter className="p-4 border-t border-surface-3 bg-surface-1/85 backdrop-blur-md">
+                <div className="text-[11px] text-text-secondary">
+                    {runId ? `Run: ${runId}` : "No run selected"}
+                </div>
+            </SidebarFooter>
         </>
     );
+
 }

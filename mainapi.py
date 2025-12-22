@@ -17,7 +17,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
 from Backend import Constantes
-
+from Frontend.analysis_models import AnalysisArgs,StationDays,SimulateArgs
+from Frontend.analysis_runner import run_analysis
+from Frontend.simulation_runner import run_simulation
 
 
 # ============================================

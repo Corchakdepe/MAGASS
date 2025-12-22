@@ -143,122 +143,123 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
         resetFlow();
     };
 
-   return (
-    <Card className="h-full flex flex-col justify-between bg-brand-50 border border-brand-100">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-bold text-brand-700">
-          Instantes (diff)
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex-1 flex flex-col justify-between pt-0">
+    return (
         <div>
-          <Popover
-            open={open}
-            onOpenChange={(v) => {
-              setOpen(v);
-              if (v) resetFlow();
-            }}
-          >
-            <PopoverTrigger asChild>
-              {/* BotÃ³n que imita el input con icono calendario */}
-              <button
-                id="instantes"
-                type="button"
-                className="w-full relative border border-input rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring flex items-center justify-between"
-              >
-                <span className="sr-only">Editar instantes</span>
-                <span className="truncate">
-                  {value ? `Î” = ${value}` : "Selecciona rango"}
-                </span>
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-brand-50">
-                  <CalendarIcon className="h-4 w-4 text-brand-600" />
-                </span>
-              </button>
-            </PopoverTrigger>
-
-            <PopoverContent className="w-auto p-3" align="end">
-              {/* Paso 1: rango de dÃ­as */}
-              {step === "date" && (
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-brand-700">
-                    Selecciona rango de dÃ­as
-                  </Label>
-                  <Calendar
-                    mode="range"
-                    selected={range as DateRange | undefined}
-                    onSelect={setRange}
-                    month={calendarMonth}
-                    onMonthChange={setCalendarMonth}
-                  />
-                </div>
-              )}
-
-              {/* Paso 2â€“3: horas */}
-              {step !== "date" && (
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-brand-700">
-                    {step === "fromTime" ? "Hora inicio" : "Hora fin"} ({clockView})
-                  </Label>
-                  <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <MultiSectionDigitalClock
-                      views={["hours", "minutes"]}
-                      value={step === "fromTime" ? fromTime : toTime}
-                      onChange={onClockChange}
-                      minutesStep={minutesStep}
-                      onViewChange={(v) =>
-                        setClockView(v as "hours" | "minutes")
-                      }
-                      referenceDate={dayjs().startOf("day")}
-                    />
-                  </LocalizationProvider>
-                </div>
-              )}
-
-              <div className="mt-3 flex justify-between gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => {
-                    if (step === "fromTime") {
-                      setStep("date");
-                      setClockView("hours");
-                      setRange(undefined as any);
-                    } else if (step === "toTime") {
-                      setStep("fromTime");
-                      setClockView("hours");
-                    }
-                  }}
+            <div className="mt-3 flex-1 flex flex-col justify-between">
+                <Popover
+                    open={open}
+                    onOpenChange={(v) => {
+                        setOpen(v);
+                        if (v) resetFlow();
+                    }}
                 >
-                  AtrÃ¡s
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => {
-                    setOpen(false);
-                    resetFlow();
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+                    <PopoverTrigger asChild>
+                        <button
+                            id="instantes"
+                            type="button"
+                            className={[
+                                "w-full h-9 rounded-md border border-surface-3 bg-surface-1",
+                                "px-3 text-xs text-text-primary",
+                                "flex items-center justify-between gap-2",
+                                "hover:bg-surface-0/70",
+                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30",
+                            ].join(" ")}
+                        >
+                            <span className="sr-only">Editar instantes</span>
 
-        {/* Footer: valor actual + chip redondo con nÃºmero */}
-        <div className="flex justify-between items-baseline mt-6">
-          <span className="text-foreground text-sm font-bold">
-            Valor actual: Î”={value || "â€”"}
-          </span>
-          <span className="bg-brand-200 text-brand-900 text-xs font-bold px-2.5 py-1 rounded-full">
-            {value || "0"}
-          </span>
+                            <span className="truncate text-text-secondary">
+          {value ? `Δ = ${value}` : "Selecciona rango"}
+        </span>
+                            <span
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-surface-3 bg-surface-0">
+          <CalendarIcon className="h-3.5 w-3.5 text-accent"/>
+        </span>
+                        </button>
+
+                    </PopoverTrigger>
+
+                    <PopoverContent
+                        className="w-auto p-3 bg-surface-1 border border-surface-3 shadow-mac-panel"
+                        align="end"
+                    >
+                        {step === "date" && (
+                            <div className="space-y-2">
+                                <Label className="text-xs font-medium text-text-primary">
+                                    Selecciona rango de días
+                                </Label>
+                                <Calendar
+                                    mode="range"
+                                    selected={range as DateRange | undefined}
+                                    onSelect={setRange}
+                                    month={calendarMonth}
+                                    onMonthChange={setCalendarMonth}
+                                />
+                            </div>
+                        )}
+
+                        {step !== "date" && (
+                            <div className="space-y-2">
+                                <Label className="text-xs font-medium text-text-primary">
+                                    {step === "fromTime" ? "Hora inicio" : "Hora fin"} ({clockView})
+                                </Label>
+
+                                <div className="rounded-md border border-surface-3 bg-surface-0/60 p-2">
+                                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                        <MultiSectionDigitalClock
+                                            views={["hours", "minutes"]}
+                                            value={step === "fromTime" ? fromTime : toTime}
+                                            onChange={onClockChange}
+                                            minutesStep={minutesStep}
+                                            onViewChange={(v) => setClockView(v as "hours" | "minutes")}
+                                            referenceDate={dayjs().startOf("day")}
+                                        />
+                                    </LocalizationProvider>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-3 flex justify-between gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-text-secondary hover:text-text-primary"
+                                onClick={() => {
+                                    if (step === "fromTime") {
+                                        setStep("date");
+                                        setClockView("hours");
+                                        setRange(undefined as any);
+                                    } else if (step === "toTime") {
+                                        setStep("fromTime");
+                                        setClockView("hours");
+                                    }
+                                }}
+                            >
+                                Atrás
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-text-secondary hover:text-text-primary"
+                                onClick={() => {
+                                    setOpen(false);
+                                    resetFlow();
+                                }}
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
+            </div>
+            <div className="pt-2">
+            <span
+                className="rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
+     Valor actual: {value || "0"}
+    </span>
+            </div>
         </div>
-      </CardContent>
-    </Card>
-  );
+    );
+
 }

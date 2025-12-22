@@ -93,54 +93,75 @@ export default function AppLayout({children}: AppLayoutProps) {
         });
     }, []);
 
-
     // Allow sidebar to clear the shared state (so Limpiar truly clears)
     const onClearSharedStations = useCallback(() => {
         setPickedStationsShared("");
     }, []);
 
     return (
-        <div className="flex min-h-screen w-full  ">
+        <div className="flex min-h-screen w-full bg-surface-0 text-text-primary overflow-hidden">
+            {/* LEFT + MAIN */}
             <SidebarProvider defaultOpen>
-                <Sidebar side="left">
-                    <SidebarContentComponent simulationName={simulationName ?? null}
-                                             currentFolder={currentRunId ?? null}/>
-                </Sidebar>
-
-                <SidebarInset>
-                    <div className="flex h-full w-full" style={{paddingBottom: showBottomPanel ? bottomOffset : 0}}>
-                        <div className="flex-1 flex flex-col">
-                            <MainContent
-                                simulationData={simulationData}
-                                triggerRefresh={refreshTrigger}
-                                mode={mode}
-                                onStationPick={onStationPick}
-                            />
-                            {children}
+                <div className="flex min-h-screen w-full flex-1 overflow-hidden">
+                    {/* Left sidebar (macOS-style) */}
+                    <Sidebar
+                        side="left"
+                        className="bg-surface-1/85 backdrop-blur-md border-r border-surface-3 shadow-sm"
+                    >
+                        <div className="h-full flex flex-col">
+                            <div className="px-3 py-2 border-b border-surface-3/80 bg-surface-0/40">
+                                <SidebarContentComponent
+                                    simulationName={simulationName ?? null}
+                                    currentFolder={currentRunId ?? null}
+                                />
+                            </div>
                         </div>
-                    </div>
-                </SidebarInset>
+                    </Sidebar>
+                    {/* Main content inset */}
+                    <SidebarInset className="flex-1 min-w-0 bg-surface-0/80">
+                        <div
+                            className="flex h-full w-full min-w-0"
+                            style={{paddingBottom: showBottomPanel ? bottomOffset : 0}}
+                        >
+                            <div className="flex-1 min-w-0 flex flex-col">
+                                {/* Content area */}
+                                            <MainContent
+                                                simulationData={simulationData}
+                                                triggerRefresh={refreshTrigger}
+                                                mode={mode}
+                                                onStationPick={onStationPick}
+                                            />
+                            </div>
+                        </div>
+                    </SidebarInset>
+                </div>
             </SidebarProvider>
 
+            {/* RIGHT SIDEBAR (rendered only when needed, never reserving space otherwise) */}
             {showRightSidebar && (
-                <SidebarProvider defaultOpen className="w-fit">
-                    <Sidebar side="right">
-                        <SidebarHistory
-                            onSimulationComplete={handleSimulationComplete}
-                            currentRunId={currentRunId}
-                            onRunIdChange={setCurrentRunId}
-                        />
-                    </Sidebar>
-                </SidebarProvider>
+                <div className="shrink-0 h-screen">
+                    <SidebarProvider defaultOpen className="h-full">
+                        <Sidebar
+                            side="right"
+                            className="bg-surface-1/85 backdrop-blur-md border-l border-surface-3 shadow-sm"
+                        >
+                                    <SidebarHistory
+                                        onSimulationComplete={handleSimulationComplete}
+                                        currentRunId={currentRunId}
+                                        onRunIdChange={setCurrentRunId}
+                                    />
+                        </Sidebar>
+                    </SidebarProvider>
+                </div>
             )}
 
+            {/* BOTTOM WORK AREA (unchanged behavior) */}
             {showBottomPanel && (
                 <BottomPanel
                     defaultOpen
                     leftOffsetPx={256}
                     onHeightChange={(h) => setBottomOffset(h)}
                 >
-                    <div className="p-4">
                         {panelMode === "maps" && (
                             <SidebarContentUploadMaps
                                 runId={currentRunId ?? undefined}
@@ -149,9 +170,7 @@ export default function AppLayout({children}: AppLayoutProps) {
                                 onClearExternalStationsMaps={onClearSharedStations}
                             />
                         )}
-
                         {panelMode === "graphs" && <GraphAnalysisSidebar runId={currentRunId ?? undefined}/>}
-                    </div>
                 </BottomPanel>
             )}
         </div>

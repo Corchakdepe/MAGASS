@@ -488,151 +488,224 @@ export default function StatisticsForm({
         selectedMatrixId as AllowedGraphMatrixId,
     );
 
-
     return (
         <div className="space-y-4">
             <Tabs defaultValue="maps" className="w-full">
-                <TabsList className="w-full justify-start flex-wrap">
-                    <TabsTrigger value="maps">Maps</TabsTrigger>
-                    <TabsTrigger value="filter">Filter</TabsTrigger>
-                    <TabsTrigger value="matrix">Matrix</TabsTrigger>
-                    <TabsTrigger value="actions">Actions</TabsTrigger>
-                </TabsList>
+                {/* Segmented control style tabs */}
+                <div
+                    className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-2">
+                    <TabsList className="flex w-full flex-wrap justify-start gap-2 bg-transparent p-0">
+                        {[
+                            {v: "maps", l: "Maps"},
+                            {v: "filter", l: "Filter"},
+                            {v: "matrix", l: "Matrix"},
+                            {v: "actions", l: "Actions"},
+                        ].map((t) => (
+                            <TabsTrigger
+                                key={t.v}
+                                value={t.v}
+                                className={[
+                                    "h-8 px-3 text-xs rounded-md border border-transparent",
+                                    "text-text-secondary hover:text-text-primary",
+                                    "data-[state=active]:text-accent data-[state=active]:font-semibold",
+                                    "data-[state=active]:bg-accent-soft data-[state=active]:border-accent/25",
+                                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25",
+                                    "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
+                                ].join(" ")}
+                            >
+                                {t.l}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </div>
 
+                {/* MAPS */}
                 <TabsContent value="maps" className="mt-3">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Maps</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <MapsControls
-                                MAPAS={MAPAS}
-                                selectedMaps={selectedMaps}
-                                setSelectedMaps={setSelectedMaps}
-                                stationsMaps={stationsMaps}
-                                setStationsMaps={setStationsMaps}
-                                instantesMaps={instantesMaps}
-                                setInstantesMaps={setInstantesMaps}
-                                deltaOutMin={deltaOutMin}
-                                useFilterForMaps={useFilterForMaps}
-                                onActiveStationsTargetKeyChange={onActiveStationsTargetKeyChange}
-                            />
+                    <div
+                        className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <div className="text-xs font-semibold text-text-primary">Mapas</div>
+                                <div className="text-[11px] text-text-secondary">
+                                    Select maps and configure parameters.
+                                </div>
+                            </div>
 
-                            <AdvancedControls
-                                advancedUser={advancedUser}
-                                setAdvancedUser={setAdvancedUser}
-                                deltaMode={deltaMode}
-                                setDeltaMode={setDeltaMode}
-                                deltaValueTxt={deltaValueTxt}
-                                setDeltaValueTxt={setDeltaValueTxt}
-                                advancedEntrada={advancedEntrada}
-                                setAdvancedEntrada={setAdvancedEntrada}
-                                advancedSalida={advancedSalida}
-                                setAdvancedSalida={setAdvancedSalida}
-                            />
-                        </CardContent>
-                    </Card>
+                            <div className="text-[11px] text-text-tertiary">
+                                Δ out: <span className="text-text-primary font-semibold">{deltaOutMin}</span> min
+                            </div>
+                        </div>
+
+                        <MapsControls
+                            MAPAS={MAPAS}
+                            selectedMaps={selectedMaps}
+                            setSelectedMaps={setSelectedMaps}
+                            stationsMaps={stationsMaps}
+                            setStationsMaps={setStationsMaps}
+                            instantesMaps={instantesMaps}
+                            setInstantesMaps={setInstantesMaps}
+                            deltaOutMin={deltaOutMin}
+                            useFilterForMaps={useFilterForMaps}
+                            onActiveStationsTargetKeyChange={onActiveStationsTargetKeyChange}
+                        />
+
+                        <AdvancedControls
+                            advancedUser={advancedUser}
+                            setAdvancedUser={setAdvancedUser}
+                            deltaMode={deltaMode}
+                            setDeltaMode={setDeltaMode}
+                            deltaValueTxt={deltaValueTxt}
+                            setDeltaValueTxt={setDeltaValueTxt}
+                            advancedEntrada={advancedEntrada}
+                            setAdvancedEntrada={setAdvancedEntrada}
+                            advancedSalida={advancedSalida}
+                            setAdvancedSalida={setAdvancedSalida}
+                        />
+                    </div>
                 </TabsContent>
 
+                {/* FILTER */}
                 <TabsContent value="filter" className="mt-3">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Filter</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <MapsAndGraphsFilterControls
-                                useFilterForMaps={useFilterForMaps}
-                                setUseFilterForMaps={setUseFilterForMaps}
-                                filterKind={filterKind}
-                                setFilterKind={setFilterKind}
-                                filterState={filterState}
-                                setFilterState={setFilterState}
-                                daysRange={daysRange}
-                                setDaysRange={setDaysRange}
-                                dateDiffInDays={dateDiffInDays}
-                            />
-                        </CardContent>
-                    </Card>
+                    <div
+                        className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3">
+                        <div className="mb-3">
+                            <div className="text-xs font-semibold text-text-primary">Filter</div>
+                            <div className="text-[11px] text-text-secondary">
+                                Restrict stations by value and day range.
+                            </div>
+                        </div>
+
+                        <MapsAndGraphsFilterControls
+                            useFilterForMaps={useFilterForMaps}
+                            setUseFilterForMaps={setUseFilterForMaps}
+                            filterKind={filterKind}
+                            setFilterKind={setFilterKind}
+                            filterState={filterState}
+                            setFilterState={setFilterState}
+                            daysRange={daysRange}
+                            setDaysRange={setDaysRange}
+                            dateDiffInDays={dateDiffInDays}
+                        />
+                    </div>
                 </TabsContent>
 
+                {/* MATRIX */}
                 <TabsContent value="matrix" className="mt-3">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Matrix</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <MatrixSelect
-                                matrices={[...MATRICES]}
-                                seleccionAgreg={seleccionAgreg}
-                                setSeleccionAgreg={setSeleccionAgreg}
-                            />
-                        </CardContent>
-                    </Card>
+                    <div
+                        className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-3">
+                        <div>
+                            <div className="text-xs font-semibold text-text-primary">Matrix</div>
+                            <div className="text-[11px] text-text-secondary">
+                                Choose aggregation matrix.
+                            </div>
+                        </div>
+
+                        <MatrixSelect
+                            matrices={[...MATRICES]}
+                            seleccionAgreg={seleccionAgreg}
+                            setSeleccionAgreg={setSeleccionAgreg}
+                        />
+                    </div>
                 </TabsContent>
 
+                {/* ACTIONS */}
                 <TabsContent value="actions" className="mt-3">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <Button onClick={handleAnalyze} disabled={apiBusy} className="w-full">
-                                {apiBusy ? "Analizando..." : "Analizar mapas"}
-                            </Button>
+                    <div
+                        className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <div className="text-xs font-semibold text-text-primary">Actions</div>
+                                <div className="text-[11px] text-text-secondary">
+                                    Run analysis and create quick graphs.
+                                </div>
+                            </div>
 
-                            <div className="space-y-2">
-                                <Label className="text-xs">Crear gráfica rápida</Label>
+                            {deltaLoading ? (
+                                <div className="text-[11px] text-text-tertiary">Δ loading…</div>
+                            ) : (
+                                <div className="text-[11px] text-text-tertiary">
+                                    Δ source: <span className="text-text-primary">{deltaAutoSource}</span>
+                                </div>
+                            )}
+                        </div>
 
-                                <Autocomplete
-                                    size="small"
-                                    options={QUICK_GRAPHS}
-                                    getOptionLabel={(o) => o.label}
-                                    value={QUICK_GRAPHS.find((o) => o.key === quickGraph) ?? null}
-                                    onChange={(_, newValue) => setQuickGraph(newValue?.key ?? null)}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Tipo de gráfica..."
-                                            variant="outlined"
-                                            sx={{
-                                                "& .MuiInputBase-input": {fontSize: 12},
-                                                "& .MuiInputLabel-root": {fontSize: 12},
-                                            }}
-                                        />
-                                    )}
+                        <Button
+                            onClick={handleAnalyze}
+                            disabled={apiBusy || selectedMaps.length === 0}
+                            className="w-full bg-accent text-text-inverted hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
+                        >
+                            {apiBusy ? "Analizando..." : "Analizar mapas"}
+                        </Button>
+
+                        <div className="rounded-lg border border-surface-3 bg-surface-0/60 p-3 space-y-3">
+                            <Label className="text-[11px] text-text-secondary">Crear gráfica rápida</Label>
+
+                            {/* Replace MUI Autocomplete with your MatrixSelect-like combobox component.
+                If you already created a QuickGraphSelect (Popover+Command), render it here. */}
+                            <div className="space-y-1">
+                                <Label className="text-[11px] text-text-secondary">Tipo de gráfica</Label>
+
+                                {/* TEMP fallback: simple select to avoid MUI while keeping logic identical */}
+                                <select
+                                    className={[
+                                        "h-9 w-full rounded-md px-2 text-xs",
+                                        "bg-surface-1 border border-surface-3",
+                                        "text-text-primary",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30",
+                                    ].join(" ")}
+                                    value={quickGraph ?? ""}
+                                    onChange={(e) => setQuickGraph((e.target.value as QuickGraphKey) || null)}
                                     disabled={apiBusy || selectedMaps[0] !== "mapa_circulo" || !matrixAllowedForGraph}
-                                />
+                                >
+                                    <option value="" disabled>
+                                        Tipo de gráfica...
+                                    </option>
+                                    {QUICK_GRAPHS.map((g) => (
+                                        <option key={g.key} value={g.key}>
+                                            {g.label}
+                                        </option>
+                                    ))}
+                                </select>
 
+                                <div className="text-[10px] text-text-tertiary">
+                                    Requiere mapa círculo y una matriz permitida.
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label className="text-[11px] text-text-secondary">
+                                    Estaciones para gráficas
+                                </Label>
                                 <Input
-                                    className="h-8 text-xs w-full"
+                                    className="h-9 text-xs w-full bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     placeholder="Estaciones para gráficas (ej: 87;212)"
                                     value={circleStationsForGraphs}
                                     onChange={(e) => setCircleStationsForGraphs(e.target.value)}
                                     disabled={apiBusy || selectedMaps[0] !== "mapa_circulo"}
                                 />
-
-                                <Button
-                                    onClick={() => {
-                                        if (!quickGraph) return;
-                                        handleCreateQuickGraphFromCircle(quickGraph);
-                                    }}
-                                    disabled={
-                                        apiBusy ||
-                                        selectedMaps[0] !== "mapa_circulo" ||
-                                        !matrixAllowedForGraph ||
-                                        !quickGraph ||
-                                        parseStationsSimple(circleStationsForGraphs).length === 0
-                                    }
-                                    className="w-full"
-                                    variant="outline"
-                                >
-                                    Crear
-                                </Button>
                             </div>
 
-                            {apiError && <span className="text-sm text-destructive">{apiError}</span>}
-                        </CardContent>
-                    </Card>
+                            <Button
+                                onClick={() => {
+                                    if (!quickGraph) return;
+                                    handleCreateQuickGraphFromCircle(quickGraph);
+                                }}
+                                disabled={
+                                    apiBusy ||
+                                    selectedMaps[0] !== "mapa_circulo" ||
+                                    !matrixAllowedForGraph ||
+                                    !quickGraph ||
+                                    parseStationsSimple(circleStationsForGraphs).length === 0
+                                }
+                                className="w-full"
+                                variant="outline"
+                            >
+                                Crear
+                            </Button>
+                        </div>
+
+                        {apiError && <span className="text-xs text-danger">{apiError}</span>}
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>
