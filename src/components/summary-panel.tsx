@@ -389,6 +389,5 @@ export default function SummaryPanel(props: SummaryPanelProps) {
       </div>
     );
   }
-
   return null;
 }
