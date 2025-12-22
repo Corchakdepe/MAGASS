@@ -1,7 +1,7 @@
 from tkinter import Menu
 
 from Backend import Constantes
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
 
 from Frontend.VentanaEstadisticas import VentanaEstadisticas

@@ -8,11 +8,7 @@ type BottomPanelProps = {
   barRight?: React.ReactNode;
   children: React.ReactNode;
   defaultOpen?: boolean;
-
-  // Sidebar offset so the panel doesn't go under it
   leftOffsetPx?: number; // e.g. 256
-
-  // Keep it usable
   minHeight?: number; // px
   onHeightChange?: (h: number) => void;
 };
@@ -29,16 +25,14 @@ export function BottomPanel({
   const [open, setOpen] = useState(defaultOpen);
 
   const barHeight = 44;
-  const safePadding = 16; // breathing room at top of viewport
+  const safePadding = 16;
 
   const [viewportH, setViewportH] = useState<number>(
     typeof window === "undefined" ? 900 : window.innerHeight,
   );
 
-  // Content height (resized by user)
   const [contentHeight, setContentHeight] = useState<number>(360);
 
-  // Max allowed = viewport - bottom bar - padding
   const maxHeight = useMemo(
     () => Math.max(minHeight, viewportH - barHeight - safePadding),
     [viewportH, barHeight, safePadding, minHeight],
@@ -50,7 +44,6 @@ export function BottomPanel({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // When viewport shrinks, keep the panel inside it
   useEffect(() => {
     setContentHeight((h) => Math.min(Math.max(h, minHeight), maxHeight));
   }, [maxHeight, minHeight]);
@@ -70,12 +63,8 @@ export function BottomPanel({
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (!dragRef.current.dragging) return;
-
-      // dragging up => increase height
       const dy = e.clientY - dragRef.current.startY;
       const next = dragRef.current.startH - dy;
-
-      // "No limits" except: keep inside viewport and not negative
       const clamped = Math.max(minHeight, Math.min(maxHeight, next));
       setContentHeight(Math.round(clamped));
     };
@@ -93,47 +82,53 @@ export function BottomPanel({
   }, [minHeight, maxHeight]);
 
   return (
-    <div
-      className="fixed bottom-0 right-0 z-50"
-      style={{ left: leftOffsetPx }} // key: prevents sidebar overlap
-    >
-      {open && (
-        <div className="border-t bg-background">
-          {/* Drag handle */}
-          <div
-            className="h-2 cursor-row-resize bg-muted/40 hover:bg-muted"
-            onPointerDown={(e) => {
-              dragRef.current.dragging = true;
-              dragRef.current.startY = e.clientY;
-              dragRef.current.startH = contentHeight;
-              e.preventDefault();
-            }}
-          />
+  <div
+    className="fixed bottom-0 right-0 z-50"
+    style={{ left: leftOffsetPx }}
+  >
+    {open && (
+      <div className="border-t border-brand-100 bg-brand-50/80">
+        {/* Drag handle */}
+        <div
+          className="h-2 cursor-row-resize bg-brand-100/70 hover:bg-brand-300/70 transition-colors"
+          onPointerDown={(e) => {
+            dragRef.current.dragging = true;
+            dragRef.current.startY = e.clientY;
+            dragRef.current.startH = contentHeight;
+            e.preventDefault();
+          }}
+        />
 
-          {/* Content */}
-          <div className="overflow-auto" style={{ height: contentHeight }}>
-            {children}
-          </div>
+        {/* Content */}
+        <div
+          className="overflow-auto bg-card"
+          style={{ height: contentHeight }}
+        >
+          {children}
         </div>
-      )}
+      </div>
+    )}
 
-      {/* Bottom bar */}
-      <div className="border-t bg-background">
-        <div className="h-[44px] px-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 overflow-x-auto">{barLeft}</div>
-          <div className="flex items-center gap-2">
-            {barRight}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? "Hide" : "Show"}
-            </Button>
-          </div>
+    {/* Bottom bar */}
+    <div className="border-t border-brand-100 bg-brand-50/80">
+      <div className="h-[44px] px-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {barLeft}
+        </div>
+        <div className="flex items-center gap-2">
+          {barRight}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-brand-700 hover:bg-brand-100/60"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? "Hide" : "Show"}
+          </Button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 }

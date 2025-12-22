@@ -1,9 +1,9 @@
 from Backend import Constantes
 from Backend.GuardarCargarDatos import GuardarCargarMatrices
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
 
-from Frontend.VentanaMenu import VentanaMenu
+from Frontend.BackUp.VentanaMenu import VentanaMenu
 
 from bike_simulator5 import bike_simulator5
 

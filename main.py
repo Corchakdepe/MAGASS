@@ -1,7 +1,7 @@
 import sys
 from Frontend import EjecutadorCMD
-from Frontend.EjecutadorExcel import EjecutadorExcel
-from Frontend.VentanaSeleccionHerramienta import VentanaSeleccionHerramienta
+from Frontend.BackUp.EjecutadorExcel import EjecutadorExcel
+from Frontend.BackUp.VentanaSeleccionHerramienta import VentanaSeleccionHerramienta
 
 
 def main_app():

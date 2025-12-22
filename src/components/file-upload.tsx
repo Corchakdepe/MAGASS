@@ -27,7 +27,7 @@ export default function FileUpload({ folderPath, setFolderPath }: FileUploadProp
         />
       </div>
 
-      {/* Si más adelante quieres subir ficheros reales, añade aquí un input type="file" */}
+      {/* Si mÃ¡s adelante quieres subir ficheros reales, aÃ±ade aquÃ­ un input type="file" */}
       <Button
         type="button"
         variant="outline"

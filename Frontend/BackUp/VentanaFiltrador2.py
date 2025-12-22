@@ -7,9 +7,9 @@ from Backend.Auxiliares import auxiliaresCalculos
 from Backend.Manipuladores import Agrupador
 from Backend.Manipuladores.Filtrador import Filtrador
 
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
-from tkinter import messagebox,Toplevel,Text,Button
+from tkinter import messagebox,Toplevel,Text
 import tkinter as tt
 
 # Clase que contiene la interfaz del filtrado de datos.

@@ -90,7 +90,7 @@ export default function MainContent({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // aplica selección desde fuera (history / simulador)
+    // aplica selecciÃ³n desde fuera (history / simulador)
     useEffect(() => {
         if (externalSimData) {
             setSimulationData(externalSimData);
@@ -115,7 +115,7 @@ export default function MainContent({
                 const latestFolderName = latest.simfolder ?? latest.name;
                 setLatestFolder(latestFolderName);
 
-                // solo auto-carga resumen si no hay selección externa
+                // solo auto-carga resumen si no hay selecciÃ³n externa
                 if (!externalSimData) {
                     let summary = defaultSummary;
                     const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
@@ -220,7 +220,7 @@ export default function MainContent({
                 <main className="flex-1 grid place-items-center">
                     <div className="text-center">
                         <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2"/>
-                        <p className="text-muted-foreground">Loading…</p>
+                        <p className="text-muted-foreground">Loadingâ€¦</p>
                     </div>
                 </main>
             </div>

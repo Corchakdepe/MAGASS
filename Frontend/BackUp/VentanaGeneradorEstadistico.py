@@ -4,7 +4,7 @@ import pandas as pd
 
 from Backend.Auxiliares import auxiliar_ficheros
 from Backend.OperacionesDeltas.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
 
 class VentanaGeneradorEstadistico(Ventana):

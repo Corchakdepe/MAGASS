@@ -17,14 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
 from Backend import Constantes
-from Frontend.EjecutadorCMD import (
-    run_simulation,
-    run_analysis,
-    run_simulador_estadistico,
-    run_restar_directorios,
-    AnalysisArgs,
-    SimulateArgs, StationDays,
-)
+
+
 
 # ============================================
 # CONFIGURATION

@@ -31,6 +31,7 @@ export async function analyzeGraphs(params: {
   matsStations1: string;
   matsStations2: string;
   matsMode: "M" | "A";
+
 }) {
   const filtroStr = params.useFilter
     ? buildFiltroFromUnified(params.filterKind, params.filterState, "_")
@@ -71,7 +72,7 @@ export async function analyzeGraphs(params: {
       matsMode: params.matsMode,
     });
 
-    if (arg == null) throw new Error(`Parámetros inválidos para la gráfica ${key}`);
+    if (arg == null) throw new Error(`ParÃ¡metros invÃ¡lidos para la grÃ¡fica ${key}`);
 
     const payload: any = { ...commonPayload, [key]: arg };
 
@@ -83,7 +84,7 @@ export async function analyzeGraphs(params: {
 
     const json = await res.json().catch(() => null);
     if (!res.ok) {
-      throw new Error(`Error analizando gráfica ${key}: ${res.status} ${(json as any)?.detail ?? ""}`);
+      throw new Error(`Error analizando grÃ¡fica ${key}: ${res.status} ${(json as any)?.detail ?? ""}`);
     }
     return json;
   });

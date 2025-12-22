@@ -1,14 +1,13 @@
+"use client";
+
 import * as React from "react";
 import {Autocomplete, TextField} from "@mui/material";
 
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 
-
-import {InstantesInput} from "@/components/instantes-input"; // adjust path
-// import { MAPAS } from "..."; // or pass MAPAS as prop
+import {InstantesInput} from "@/components/instantes-input";
+import {StationsSelector} from "@/components/StationsSelector";
 
 type MapKey =
     | "mapa_densidad"
@@ -16,28 +15,18 @@ type MapKey =
     | "mapa_voronoi"
     | "mapa_desplazamientos";
 
-type StationsTargetKey = 'mapa_densidad' | 'mapa_voronoi' | 'mapa_circulo';
-
-
-type InstantesKey =
-    | "mapa_densidad"
-    | "mapa_circulo"
-    | "mapa_voronoi"
-    | "mapa_desplazamientos_inst"
-    | "mapa_desplazamientos_d_ori"
-    | "mapa_desplazamientos_d_dst"
-    | "mapa_desplazamientos_mov"
-    | "mapa_desplazamientos_tipo";
+type StationsTargetKey = "mapa_densidad" | "mapa_voronoi" | "mapa_circulo";
 
 type MapOption = { label: string; arg: MapKey };
 
 export type MapsControlsProps = {
     MAPAS: MapOption[];
-
+    mapUserName: string;
+    setMapUserName: React.Dispatch<React.SetStateAction<string>>;
     selectedMaps: MapKey[];
     setSelectedMaps: React.Dispatch<React.SetStateAction<MapKey[]>>;
 
-    stationsMaps: Record<MapKey, string>; // optional (see note below)
+    stationsMaps: Record<MapKey, string>;
     setStationsMaps: React.Dispatch<React.SetStateAction<Record<MapKey, string>>>;
 
     instantesMaps: Record<string, string>;
@@ -47,6 +36,8 @@ export type MapsControlsProps = {
     useFilterForMaps: boolean;
 
     onActiveStationsTargetKeyChange?: (key: StationsTargetKey) => void;
+
+    onClearExternalStationsMaps?: () => void;
 };
 
 export function MapsControls({
@@ -60,16 +51,35 @@ export function MapsControls({
                                  deltaOutMin,
                                  useFilterForMaps,
                                  onActiveStationsTargetKeyChange,
+                                 onClearExternalStationsMaps,
+                                 mapUserName,
+                                 setMapUserName,
                              }: MapsControlsProps) {
+    const selectedMap = selectedMaps[0];
+
+    const setStationsFor = (key: MapKey, next: string) => {
+        setStationsMaps((prev) => ({...prev, [key]: next}));
+    };
+
+    const clearStationsFor = (key: MapKey) => {
+        setStationsMaps((prev) => ({...prev, [key]: ""}));
+        onClearExternalStationsMaps?.();
+    };
+
+    const setInstantesFor = (key: string, next: string) => {
+        setInstantesMaps((prev) => ({...prev, [key]: next}));
+    };
+
     return (
-        <>
-            {/* Map selector */}
+        <div className="space-y-3 rounded-xl border border-brand-100 bg-brand-50/80 p-3">
+            {/* Selector de mapa */}
             <div className="space-y-1">
+                <Label className="text-xs text-brand-700">Mapa</Label>
                 <Autocomplete
                     size="small"
                     options={MAPAS}
                     getOptionLabel={(option) => option.label}
-                    value={MAPAS.find((m) => m.arg === (selectedMaps[0] ?? "")) ?? null}
+                    value={MAPAS.find((m) => m.arg === (selectedMap ?? "")) ?? null}
                     onChange={(_, newValue) => {
                         if (!newValue) {
                             setSelectedMaps([]);
@@ -77,8 +87,11 @@ export function MapsControls({
                         }
                         const v = newValue.arg;
                         setSelectedMaps([v]);
-
-                        if (v === "mapa_densidad" || v === "mapa_voronoi" || v === "mapa_circulo") {
+                        if (
+                            v === "mapa_densidad" ||
+                            v === "mapa_voronoi" ||
+                            v === "mapa_circulo"
+                        ) {
                             onActiveStationsTargetKeyChange?.(v);
                         }
                     }}
@@ -91,300 +104,270 @@ export function MapsControls({
                             sx={{
                                 "& .MuiInputBase-input": {fontSize: 12},
                                 "& .MuiInputLabel-root": {fontSize: 12},
+                                "& .MuiOutlinedInput-root": {
+                                    backgroundColor: "hsl(var(--card))",
+                                },
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                    borderColor: "hsl(var(--border))",
+                                },
+                                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                    borderColor: "hsl(var(--ring))",
+                                },
                             }}
                         />
                     )}
                 />
             </div>
 
-            {/* Densidad */}
-            {selectedMaps[0] === "mapa_densidad" && (
-                <Card className="mt-2">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Mapa densidad</CardTitle>
-                    </CardHeader>
+            {/* Nombre del mapa */}
+            <div className="mt-2 space-y-1">
+                <Label className="text-xs text-brand-700">
+                    Nombre del mapa (opcional)
+                </Label>
+                <Input
+                    className="h-7 w-full text-xs border-input bg-background focus-visible:border-ring focus-visible:ring-ring"
+                    placeholder="Nombre descriptivo para el mapa"
+                    value={mapUserName}
+                    onChange={(e) => setMapUserName(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground">
+                    Se guardarÃ¡ junto a los ficheros como metadato â€œnameâ€.
+                </p>
+            </div>
 
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                            {/* Estaciones */}
-                            <div className="space-y-1">
-                                <Label className="text-xs">Estaciones</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        className="h-8 text-xs w-full"
-                                        value={stationsMaps["mapa_densidad"] ?? ""}
-                                        onChange={(e) =>
-                                            setStationsMaps((prev) => ({
-                                                ...prev,
-                                                mapa_densidad: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="1;15;26;48;..."
-                                        disabled={useFilterForMaps}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 text-[11px]"
-                                        onClick={() => setStationsMaps((prev) => ({...prev, mapa_densidad: ""}))}
-                                        disabled={useFilterForMaps}
-                                    >
-                                        Limpiar
-                                    </Button>
-                                </div>
-                            </div>
+            {/* Mapa densidad */}
+            {selectedMap === "mapa_densidad" && (
+                <div className="rounded-md border border-brand-100 bg-card px-3 py-2">
+                    <div className="mb-2 text-xs font-medium text-brand-700">
+                        Mapa densidad
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 items-start md:grid-cols-2">
+                        <StationsSelector
+                            mapKey="mapa_densidad"
+                            value={stationsMaps["mapa_densidad"] ?? ""}
+                            disabled={useFilterForMaps}
+                            onChange={(_, next) => setStationsFor("mapa_densidad", next)}
+                            onClear={() => clearStationsFor("mapa_densidad")}
+                        />
 
-                            {/* Instantes */}
-                            <div className="space-y-1">
-                                <InstantesInput
-                                    deltaOutMin={deltaOutMin}
-                                    value={instantesMaps["mapa_densidad"] ?? ""}
-                                    onChange={(val) => setInstantesMaps((prev) => ({...prev, mapa_densidad: val}))}
-                                />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <InstantesInput
+                            deltaOutMin={deltaOutMin}
+                            value={instantesMaps["mapa_densidad"] ?? ""}
+                            onChange={(val) => setInstantesFor("mapa_densidad", val)}
+                        />
+                    </div>
+                </div>
             )}
 
-            {/* Círculo */}
-            {selectedMaps[0] === "mapa_circulo" && (
-                <Card className="mt-2">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Mapa círculo</CardTitle>
-                    </CardHeader>
 
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-                            {/* Estaciones */}
-                            <div className="space-y-1">
-                                <Label className="text-xs">Estaciones</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        className="h-8 text-xs w-full"
-                                        value={stationsMaps["mapa_circulo"] ?? ""}
-                                        onChange={(e) =>
-                                            setStationsMaps((prev) => ({
-                                                ...prev,
-                                                mapa_circulo: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="1;15;26;48;..."
-                                        disabled={useFilterForMaps}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 text-[11px]"
-                                        onClick={() => setStationsMaps((prev) => ({...prev, mapa_circulo: ""}))}
-                                        disabled={useFilterForMaps}
-                                    >
-                                        Limpiar
-                                    </Button>
-                                </div>
-                            </div>
+            {selectedMap === "mapa_circulo" && (
+                <div className="rounded-md border border-brand-100 bg-card px-3 py-2">
+                    <div className="mb-2 text-xs font-medium text-brand-700">
+                        Mapa circulos
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 items-start md:grid-cols-2">
+                        <StationsSelector
+                            mapKey="mapa_circulo"
+                            value={stationsMaps["mapa_circulo"] ?? ""}
+                            disabled={useFilterForMaps}
+                            onChange={(_, next) => setStationsFor("mapa_circulo", next)}
+                            onClear={() => clearStationsFor("mapa_circulo")}
+                        />
 
-                            {/* Instantes */}
-                            <div className="space-y-1">
-
-                                <InstantesInput
-                                    deltaOutMin={deltaOutMin}
-                                    value={instantesMaps["mapa_circulo"] ?? ""}
-                                    onChange={(val) => setInstantesMaps((prev) => ({...prev, mapa_circulo: val}))}
-                                />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        <InstantesInput
+                            deltaOutMin={deltaOutMin}
+                            value={instantesMaps["mapa_circulo"] ?? ""}
+                            onChange={(val) => setInstantesFor("mapa_circulo", val)}
+                        />
+                    </div>
+                </div>
             )}
 
-            {/* Voronoi */}
-            {selectedMaps[0] === "mapa_voronoi" && (
-                <Card className="mt-2">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Mapa Voronoi</CardTitle>
-                    </CardHeader>
-
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                            <div className="space-y-1 md:col-span-2 xl:col-span-2">
-                                <Label className="text-xs">Instantes (Voronoi)</Label>
-                                <InstantesInput
-                                    value={instantesMaps["mapa_voronoi"] || ""}
-                                    onChange={(val) => setInstantesMaps((prev) => ({...prev, mapa_voronoi: val}))}
-                                    deltaOutMin={deltaOutMin}
-                                />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            {/* Mapa Voronoi */}
+            {selectedMap === "mapa_voronoi" && (
+                <div className="rounded-md border border-brand-100 bg-card px-3 py-2">
+                    <div className="mb-2 text-xs font-medium text-brand-700">
+                        Mapa Voronoi
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs text-brand-700">
+                            Instantes (Voronoi)
+                        </Label>
+                        <InstantesInput
+                            deltaOutMin={deltaOutMin}
+                            value={instantesMaps["mapa_voronoi"] ?? ""}
+                            onChange={(val) => setInstantesFor("mapa_voronoi", val)}
+                        />
+                    </div>
+                </div>
             )}
 
-            {/* Desplazamientos */}
-            {selectedMaps[0] === "mapa_desplazamientos" && (
-                <Card className="mt-2">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Mapa de desplazamientos</CardTitle>
-                    </CardHeader>
+            {/* Mapa de desplazamientos */}
+            {selectedMap === "mapa_desplazamientos" && (
+                <div className="space-y-3 rounded-md border border-brand-100 bg-card px-3 py-2">
+                    <div className="text-xs font-medium text-brand-700">
+                        Mapa de desplazamientos
+                    </div>
 
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                            {/* Instantes */}
-                            <div className="space-y-1">
-                                <Label className="text-xs">Instantes (índices de tiempo)</Label>
-                                <Input
-                                    className="h-8 text-xs w-full"
-                                    placeholder="Instantes (ej: 0;10;20)"
-                                    value={instantesMaps["mapa_desplazamientos_inst"] || ""}
-                                    onChange={(e) =>
-                                        setInstantesMaps((prev) => ({
-                                            ...prev,
-                                            mapa_desplazamientos_inst: e.target.value,
-                                        }))
-                                    }
-                                />
-                                <p className="text-[11px] text-muted-foreground">
-                                    Lista de índices de tiempo separados por “;”.
-                                </p>
-                            </div>
+                    <div className="space-y-1">
+                        <Label className="text-[11px] text-brand-700">
+                            Instantes
+                        </Label>
+                        <Input
+                            className="h-7 w-full text-xs border-input bg-background focus-visible:border-ring focus-visible:ring-ring"
+                            placeholder="0;1;2;3;..."
+                            value={instantesMaps["mapa_desplazamientos_inst"] ?? ""}
+                            onChange={(e) =>
+                                setInstantesFor("mapa_desplazamientos_inst", e.target.value)
+                            }
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                            Lista de tiempo
+                        </p>
+                    </div>
 
-                            {/* Ventanas */}
-                            <div className="space-y-1">
-                                <Label className="text-xs">Ventana temporal (Δ = {deltaOutMin} min)</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        <div className="space-y-1">
+                            <Label className="text-[11px] text-brand-700">
+                                Venta de tiempo
+                            </Label>
+                            <Input
+                                className="h-7 w-full text-xs border-input bg-background focus-visible:border-ring focus-visible:ring-ring"
+                                placeholder="0;15;30;60..."
+                                value={instantesMaps["mapa_desplazamientos_d_ori"] ?? ""}
+                                onChange={(e) =>
+                                    setInstantesFor(
+                                        "mapa_desplazamientos_d_ori",
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <Label className="text-[11px] text-brand-700">
+                                Ventana temporal destino
+                            </Label>
+                            <Input
+                                className="h-7 w-full text-xs border-input bg-background focus-visible:border-ring focus-visible:ring-ring"
+                                placeholder="0;15;30;60..."
+                                value={instantesMaps["mapa_desplazamientos_d_dst"] ?? ""}
+                                onChange={(e) =>
+                                    setInstantesFor(
+                                        "mapa_desplazamientos_d_dst",
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        <div className="space-y-1">
+                            <Label className="text-[11px] text-brand-700">
+                                Movimiento
+                            </Label>
+                            <Autocomplete
+                                size="small"
+                                options={[
+                                    {label: "Entradas (dejar bici)", value: "1"},
+                                    {label: "Salidas (coger bici)", value: "-1"},
+                                ]}
+                                getOptionLabel={(opt) => opt.label}
+                                value={
+                                    [
+                                        {label: "Entradas (dejar bici)", value: "1"},
+                                        {label: "Salidas (coger bici)", value: "-1"},
+                                    ].find(
+                                        (o) =>
+                                            o.value ===
+                                            (instantesMaps["mapa_desplazamientos_mov"] ?? ""),
+                                    ) ?? null
+                                }
+                                onChange={(_, nv) =>
+                                    setInstantesFor(
+                                        "mapa_desplazamientos_mov",
+                                        nv?.value ?? "",
+                                    )
+                                }
+                                renderInput={(params) => (
                                     <TextField
+                                        {...params}
                                         fullWidth
-                                        size="small"
-                                        label="Δ origen"
-                                        select
-                                        SelectProps={{native: true}}
-                                        value={instantesMaps["mapa_desplazamientos_d_ori"] || ""}
-                                        onChange={(e) =>
-                                            setInstantesMaps((prev) => ({
-                                                ...prev,
-                                                mapa_desplazamientos_d_ori: e.target.value,
-                                            }))
-                                        }
+                                        label="Movimiento"
+                                        variant="outlined"
                                         sx={{
                                             "& .MuiInputBase-input": {fontSize: 12},
                                             "& .MuiInputLabel-root": {fontSize: 12},
+                                            "& .MuiOutlinedInput-root": {
+                                                backgroundColor: "hsl(var(--background))",
+                                            },
+                                            "& .MuiOutlinedInput-notchedOutline": {
+                                                borderColor: "hsl(var(--border))",
+                                            },
+                                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                                borderColor: "hsl(var(--ring))",
+                                            },
                                         }}
-                                    >
-                                        <option value="">Sin ventana</option>
-                                        <option value="1">15 min</option>
-                                        <option value="2">30 min</option>
-                                        <option value="4">1 h</option>
-                                        <option value="8">2 h</option>
-                                    </TextField>
+                                    />
+                                )}
+                            />
+                        </div>
 
+                        <div className="space-y-1">
+                            <Label className="text-[11px] text-brand-700">Tipo</Label>
+                            <Autocomplete
+                                size="small"
+                                options={[
+                                    {label: "Reales", value: "1"},
+                                    {label: "Ficticios", value: "0"},
+                                    {label: "Todos", value: ""},
+                                ]}
+                                getOptionLabel={(opt) => opt.label}
+                                value={
+                                    [
+                                        {label: "Reales", value: "1"},
+                                        {label: "Ficticios", value: "0"},
+                                        {label: "Todos", value: ""},
+                                    ].find(
+                                        (o) =>
+                                            o.value ===
+                                            (instantesMaps["mapa_desplazamientos_tipo"] ?? ""),
+                                    ) ?? null
+                                }
+                                onChange={(_, nv) =>
+                                    setInstantesFor(
+                                        "mapa_desplazamientos_tipo",
+                                        nv?.value ?? "",
+                                    )
+                                }
+                                renderInput={(params) => (
                                     <TextField
+                                        {...params}
                                         fullWidth
-                                        size="small"
-                                        label="Δ destino"
-                                        select
-                                        SelectProps={{native: true}}
-                                        value={instantesMaps["mapa_desplazamientos_d_dst"] || ""}
-                                        onChange={(e) =>
-                                            setInstantesMaps((prev) => ({
-                                                ...prev,
-                                                mapa_desplazamientos_d_dst: e.target.value,
-                                            }))
-                                        }
+                                        label="Tipo"
+                                        variant="outlined"
                                         sx={{
                                             "& .MuiInputBase-input": {fontSize: 12},
                                             "& .MuiInputLabel-root": {fontSize: 12},
+                                            "& .MuiOutlinedInput-root": {
+                                                backgroundColor: "hsl(var(--background))",
+                                            },
+                                            "& .MuiOutlinedInput-notchedOutline": {
+                                                borderColor: "hsl(var(--border))",
+                                            },
+                                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                                                borderColor: "hsl(var(--ring))",
+                                            },
                                         }}
-                                    >
-                                        <option value="">Sin ventana</option>
-                                        <option value="1">15 min</option>
-                                        <option value="2">30 min</option>
-                                        <option value="4">1 h</option>
-                                        <option value="8">2 h</option>
-                                    </TextField>
-                                </div>
-                            </div>
-
-                            {/* Movimiento / tipo */}
-                            <div className="space-y-1">
-                                <Label className="text-xs">Movimiento y tipo</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <Autocomplete
-                                        size="small"
-                                        options={[
-                                            {label: "Entradas (dejar bici)", value: "1"},
-                                            {label: "Salidas (coger bici)", value: "-1"},
-                                        ]}
-                                        getOptionLabel={(opt) => opt.label}
-                                        value={
-                                            [
-                                                {label: "Entradas (dejar bici)", value: "1"},
-                                                {label: "Salidas (coger bici)", value: "-1"},
-                                            ].find((o) => o.value === (instantesMaps["mapa_desplazamientos_mov"] || "")) ??
-                                            null
-                                        }
-                                        onChange={(_, nv) =>
-                                            setInstantesMaps((prev) => ({
-                                                ...prev,
-                                                mapa_desplazamientos_mov: nv?.value ?? "",
-                                            }))
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                fullWidth
-                                                label="Entrada / salida"
-                                                variant="outlined"
-                                                sx={{
-                                                    "& .MuiInputBase-input": {fontSize: 12},
-                                                    "& .MuiInputLabel-root": {fontSize: 12},
-                                                }}
-                                            />
-                                        )}
                                     />
-
-                                    <Autocomplete
-                                        size="small"
-                                        options={[
-                                            {label: "Reales", value: "1"},
-                                            {label: "Ficticios", value: "0"},
-                                            {label: "Todos", value: ""},
-                                        ]}
-                                        getOptionLabel={(opt) => opt.label}
-                                        value={
-                                            [
-                                                {label: "Reales", value: "1"},
-                                                {label: "Ficticios", value: "0"},
-                                                {label: "Todos", value: ""},
-                                            ].find((o) => o.value === (instantesMaps["mapa_desplazamientos_tipo"] ?? "")) ??
-                                            null
-                                        }
-                                        onChange={(_, nv) =>
-                                            setInstantesMaps((prev) => ({
-                                                ...prev,
-                                                mapa_desplazamientos_tipo: nv?.value ?? "",
-                                            }))
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                fullWidth
-                                                label="Tipo"
-                                                variant="outlined"
-                                                sx={{
-                                                    "& .MuiInputBase-input": {fontSize: 12},
-                                                    "& .MuiInputLabel-root": {fontSize: 12},
-                                                }}
-                                            />
-                                        )}
-                                    />
-                                </div>
-                            </div>
+                                )}
+                            />
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
-        </>
+        </div>
     );
+
 }

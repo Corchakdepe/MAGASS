@@ -1,12 +1,12 @@
 from Backend import Constantes
 
 from Backend.GuardarCargarDatos import GuardarCargarMatrices
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
 
-from Frontend.VentanaAnalizador import VentanaAnalizador
-from Frontend.VentanaGeneradorEstadistico import VentanaGeneradorEstadistico
-from Frontend.VentanaSimulador import VentanaSimulador
+from Frontend.BackUp.VentanaAnalizador import VentanaAnalizador
+from Frontend.BackUp.VentanaGeneradorEstadistico import VentanaGeneradorEstadistico
+from Frontend.BackUp.VentanaSimulador import VentanaSimulador
 
 
 class VentanaSeleccionHerramienta(Ventana):

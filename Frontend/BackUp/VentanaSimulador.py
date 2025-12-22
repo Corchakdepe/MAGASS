@@ -5,7 +5,7 @@ import pandas as pd
 from Backend import Constantes
 from Backend.Auxiliares import auxiliar_ficheros, Extractor
 from Backend.GuardarCargarDatos import GuardarCargarMatrices
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
 from bike_simulator5 import bike_simulator5
 

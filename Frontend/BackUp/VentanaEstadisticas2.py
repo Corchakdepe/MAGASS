@@ -5,10 +5,10 @@ from Backend.Auxiliares import auxiliaresCalculos
 from Backend.Manipuladores import Agrupador
 
 from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
-from Frontend.Ventana import Ventana
+from Frontend.BackUp.Ventana import Ventana
 import customtkinter as tk
 import tkinter as tt
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 
 
 class VentanaEstadisticas2(Ventana):
