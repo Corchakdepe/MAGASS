@@ -8,8 +8,8 @@ import SidebarContentUploadMaps from '@/components/sidebar-content-upload-maps';
 import GraphAnalysisSidebar from '@/components/graph-analysis-sidebar';
 import {Button} from '@/components/ui/button';
 import type {SimulationData} from '@/types/simulation';
+import {API_BASE} from "@/lib/analysis/constants";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
 type SidebarHistoryProps = {
     onSimulationComplete?: (data: SimulationData) => void;

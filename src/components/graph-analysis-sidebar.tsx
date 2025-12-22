@@ -17,15 +17,8 @@ import {usePersistentState} from "@/hooks/usePersistentState";
 import type {FilterKind, UnifiedFilterState} from "@/types/analysis";
 import {MATRICES} from "@/lib/analysis/constants";
 import {analyzeGraphs} from "@/lib/analysis/graphs/api";
+import { GraficaKey, GraficaDef } from "@/lib/analysis/graphs/types"
 
-type GraficaKey =
-    | "graf_barras_est_med"
-    | "graf_barras_est_acum"
-    | "graf_barras_dia"
-    | "graf_linea_comp_est"
-    | "graf_linea_comp_mats";
-
-type GraficaDef = { label: string; key: GraficaKey };
 
 const GRAFICAS: GraficaDef[] = [
     {label: "Barras por estación (media)", key: "graf_barras_est_med"},

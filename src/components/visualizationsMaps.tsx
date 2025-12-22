@@ -33,64 +33,18 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {useToast} from "@/hooks/use-toast";
+import {safeParse} from "@/lib/analysis/parsers"
+import {lsKey, prettyMapName} from "@/lib/analysis/maps/builders"
+import {VisualizationMapsProps, PersistedState} from "@/lib/analysis/maps/types"
 
-const prettyMapName = (raw: string) => {
-    let s = raw.replace(/^\d{8}_\d{6}_/, "");
-    s = s.replace(/_/g, " ");
-    s = s.replace(/([a-z])([A-Z])/g, "$1 $2");
-
-    const m = s.match(/^(.+?)\s+instante(\d+)D(\d+)/);
-    if (m) {
-        const base = m[1].trim();
-        const inst = m[2];
-        const delta = m[3];
-        const baseWithDe = base.replace(/^Mapa\s+/i, "Mapa de ");
-        return `${baseWithDe} instante ${inst} Delta ${delta}`;
-    }
-
-    return s.trim().replace(/^Mapa\s+/i, "Mapa de ");
-};
-
-type VisualizationMapsProps = {
-    runId: string;
-    apiBase: string;
-    maps: RawResultItem[];
-    onStationPick?: (p: { mapName?: string; station: number; data?: number | null }) => void;
-};
-
-type PersistedState = {
-    selectedMapId?: string;
-    favoritesIds: string[];
-    historyOpen?: boolean;
-    searchText: string;
-    onlyFavorites: boolean;
-    kindFilter: string; // "" = all
-    formatFilter: string; // "" = all
-};
-
-function lsKey(runId: string) {
-    return `viz_maps:${runId}`;
-}
-
-function safeParse<T>(s: string | null): T | null {
-    if (!s) return null;
-    try {
-        return JSON.parse(s) as T;
-    } catch {
-        return null;
-    }
-}
 
 export default function VisualizationMaps({runId, apiBase, maps, onStationPick}: VisualizationMapsProps) {
     const {toast} = useToast();
     const iframeRef = useRef<HTMLIFrameElement | null>(null);
-
     const [pickerOpen, setPickerOpen] = useState(false);
-
     const [iframeLoading, setIframeLoading] = useState(true);
     const [iframeError, setIframeError] = useState<string | null>(null);
     const [iframeReloadKey, setIframeReloadKey] = useState(0);
-
     const [persisted, setPersisted] = useState<PersistedState>({
         selectedMapId: undefined,
         favoritesIds: [],
@@ -101,52 +55,22 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
         formatFilter: "",
     });
     const [hydrated, setHydrated] = useState(false);
-
-    useEffect(() => {
-        const saved = safeParse<PersistedState>(localStorage.getItem(lsKey(runId)));
-        if (saved) {
-            setPersisted({
-                selectedMapId: saved.selectedMapId,
-                favoritesIds: saved.favoritesIds ?? [],
-                historyOpen: saved.historyOpen ?? false,
-                searchText: saved.searchText ?? "",
-                onlyFavorites: saved.onlyFavorites ?? false,
-                kindFilter: saved.kindFilter ?? "",
-                formatFilter: saved.formatFilter ?? "",
-            });
-            setPickerOpen(Boolean(saved.historyOpen));
-        } else {
-            setPersisted((p) => ({...p, favoritesIds: []}));
-            setPickerOpen(false);
-        }
-        setHydrated(true);
-    }, [runId]);
-
-    useEffect(() => {
-        if (!hydrated) return;
-        localStorage.setItem(lsKey(runId), JSON.stringify({...persisted, historyOpen: pickerOpen}));
-    }, [persisted, pickerOpen, hydrated, runId]);
-
     const orderedMaps = useMemo(() => {
         const copy = [...(maps ?? [])];
         copy.sort((a, b) => String(a.created ?? "").localeCompare(String(b.created ?? "")));
         return copy;
     }, [maps]);
-
     const allKinds = useMemo(() => {
         const s = new Set<string>();
         orderedMaps.forEach((m) => s.add(String(m.kind ?? "")));
         return Array.from(s).filter(Boolean).sort();
     }, [orderedMaps]);
-
     const allFormats = useMemo(() => {
         const s = new Set<string>();
         orderedMaps.forEach((m) => s.add(String(m.format ?? "")));
         return Array.from(s).filter(Boolean).sort();
     }, [orderedMaps]);
-
     const favoritesSet = useMemo(() => new Set(persisted.favoritesIds), [persisted.favoritesIds]);
-
     const filteredMaps = useMemo(() => {
         const q = persisted.searchText.trim().toLowerCase();
 
@@ -164,9 +88,7 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
             return name.includes(q) || pretty.includes(q) || kind.includes(q) || id.includes(q);
         });
     }, [orderedMaps, persisted.searchText, persisted.onlyFavorites, persisted.kindFilter, persisted.formatFilter, favoritesSet]);
-
     const [selectedIndex, setSelectedIndex] = useState(0);
-
     const selectIndex = (idx: number) => {
         setSelectedIndex(idx);
         const m = filteredMaps[idx];
@@ -175,53 +97,11 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
             setPersisted((p) => (p.selectedMapId === id ? p : {...p, selectedMapId: id}));
         }
     };
-
-    useEffect(() => {
-        if (!hydrated) return;
-
-        if (!filteredMaps.length) {
-            setSelectedIndex(0);
-            return;
-        }
-
-        if (persisted.selectedMapId) {
-            const idx = filteredMaps.findIndex((m) => String(m.id) === String(persisted.selectedMapId));
-            if (idx >= 0) {
-                setSelectedIndex(idx);
-                return;
-            }
-        }
-
-        setSelectedIndex(filteredMaps.length - 1);
-    }, [hydrated, runId, filteredMaps, persisted.selectedMapId]);
-
-    useEffect(() => {
-        const handler = (ev: MessageEvent) => {
-            const msg = ev.data;
-            if (!msg || (msg.type !== "MAPSTATIONCLICK" && msg.type !== "MAP_STATION_CLICK")) return;
-
-            onStationPick?.({
-                mapName: msg.mapName,
-                station: Number(msg.station),
-                data: msg.data ?? null,
-            });
-
-            toast({
-                title: "Station selected",
-                description: `Station ${String(msg.station)}${msg.data != null ? ` · ${String(msg.data)}` : ""}`,
-            });
-        };
-
-        window.addEventListener("message", handler);
-        return () => window.removeEventListener("message", handler);
-    }, [onStationPick, toast]);
-
     const sendToMap = (message: any) => {
         const win = iframeRef.current?.contentWindow;
         if (!win) return;
         win.postMessage(message, "*");
     };
-
     const toggleFavorite = (id: string) => {
         setPersisted((p) => {
             const set = new Set(p.favoritesIds);
@@ -230,7 +110,6 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
             return {...p, favoritesIds: Array.from(set)};
         });
     };
-
     const copyToClipboard = async (txt: string, label: string) => {
         try {
             await navigator.clipboard.writeText(txt);
@@ -239,7 +118,14 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
             toast({title: "Copy failed", description: "Clipboard not available."});
         }
     };
-
+    const active = filteredMaps[selectedIndex];
+    const href = active.api_full_url ?? `${apiBase}${active.url}`;
+    const isHtml = active.format === "html";
+    const displayName = prettyMapName(active.name);
+    const canPrev = selectedIndex > 0;
+    const canNext = selectedIndex < filteredMaps.length - 1;
+    const activeId = String(active.id);
+    const isFav = favoritesSet.has(activeId);
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
@@ -282,17 +168,67 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [filteredMaps, selectedIndex, apiBase]);
+    useEffect(() => {
+        const saved = safeParse<PersistedState>(localStorage.getItem(lsKey(runId)));
+        if (saved) {
+            setPersisted({
+                selectedMapId: saved.selectedMapId,
+                favoritesIds: saved.favoritesIds ?? [],
+                historyOpen: saved.historyOpen ?? false,
+                searchText: saved.searchText ?? "",
+                onlyFavorites: saved.onlyFavorites ?? false,
+                kindFilter: saved.kindFilter ?? "",
+                formatFilter: saved.formatFilter ?? "",
+            });
+            setPickerOpen(Boolean(saved.historyOpen));
+        } else {
+            setPersisted((p) => ({...p, favoritesIds: []}));
+            setPickerOpen(false);
+        }
+        setHydrated(true);
+    }, [runId]);
+    useEffect(() => {
+        if (!hydrated) return;
+        localStorage.setItem(lsKey(runId), JSON.stringify({...persisted, historyOpen: pickerOpen}));
+    }, [persisted, pickerOpen, hydrated, runId]);
+    useEffect(() => {
+        if (!hydrated) return;
 
-    if (!orderedMaps || orderedMaps.length === 0) {
-        return (
-            <section className="space-y-2">
-                <div className="text-sm font-semibold text-text-primary">Analytics Maps Creator</div>
-                <p className="text-xs text-text-secondary">No map results found for this run.</p>
-            </section>
-        );
-    }
+        if (!filteredMaps.length) {
+            setSelectedIndex(0);
+            return;
+        }
 
-    const active = filteredMaps[selectedIndex];
+        if (persisted.selectedMapId) {
+            const idx = filteredMaps.findIndex((m) => String(m.id) === String(persisted.selectedMapId));
+            if (idx >= 0) {
+                setSelectedIndex(idx);
+                return;
+            }
+        }
+
+        setSelectedIndex(filteredMaps.length - 1);
+    }, [hydrated, runId, filteredMaps, persisted.selectedMapId]);
+    useEffect(() => {
+        const handler = (ev: MessageEvent) => {
+            const msg = ev.data;
+            if (!msg || (msg.type !== "MAPSTATIONCLICK" && msg.type !== "MAP_STATION_CLICK")) return;
+
+            onStationPick?.({
+                mapName: msg.mapName,
+                station: Number(msg.station),
+                data: msg.data ?? null,
+            });
+
+            toast({
+                title: "Station selected",
+                description: `Station ${String(msg.station)}${msg.data != null ? ` · ${String(msg.data)}` : ""}`,
+            });
+        };
+
+        window.addEventListener("message", handler);
+        return () => window.removeEventListener("message", handler);
+    }, [onStationPick, toast]);
     if (!active) {
         return (
             <section className="w-full space-y-3">
@@ -324,16 +260,17 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
             </section>
         );
     }
+    if (!orderedMaps || orderedMaps.length === 0) {
+        return (
+            <section className="space-y-2">
+                <div className="text-sm font-semibold text-text-primary">Analytics Maps Creator</div>
+                <p className="text-xs text-text-secondary">No map results found for this run.</p>
+            </section>
+        );
+    }
 
-    const href = active.api_full_url ?? `${apiBase}${active.url}`;
-    const isHtml = active.format === "html";
-    const displayName = prettyMapName(active.name);
-
-    const canPrev = selectedIndex > 0;
-    const canNext = selectedIndex < filteredMaps.length - 1;
-
-    const activeId = String(active.id);
-    const isFav = favoritesSet.has(activeId);
+    {/* TODO meter Header, Viewer, Footer en componentes aislados y llamarlos aqui, así se puede rec */
+    }
 
     return (
         <section className="w-full space-y-3">
@@ -487,88 +424,88 @@ export default function VisualizationMaps({runId, apiBase, maps, onStationPick}:
                 </div>
 
                 {/* Viewer */}
-                    {isHtml ? (
-                        <div
-                            className="relative h-full w-full overflow-hidden rounded-md border border-surface-3 bg-surface-0/60">
-                            {iframeLoading && (
-                                <div className="absolute inset-0 z-10 p-4">
-                                    <div
-                                        className="h-full w-full rounded-md bg-surface-1/70 backdrop-blur-sm border border-surface-3 flex flex-col gap-3 p-4">
-                                        <div className="h-4 w-1/3 rounded bg-surface-2 animate-pulse"/>
-                                        <div className="h-3 w-2/3 rounded bg-surface-2 animate-pulse"/>
-                                        <div className="flex-1 rounded bg-surface-2 animate-pulse"/>
-                                        <div className="h-8 w-28 rounded bg-surface-2 animate-pulse"/>
-                                        <div className="text-xs text-text-secondary">Loading preview…</div>
+                {isHtml ? (
+                    <div
+                        className="relative h-full w-full overflow-hidden rounded-md border border-surface-3 bg-surface-0/60">
+                        {iframeLoading && (
+                            <div className="absolute inset-0 z-10 p-4">
+                                <div
+                                    className="h-full w-full rounded-md bg-surface-1/70 backdrop-blur-sm border border-surface-3 flex flex-col gap-3 p-4">
+                                    <div className="h-4 w-1/3 rounded bg-surface-2 animate-pulse"/>
+                                    <div className="h-3 w-2/3 rounded bg-surface-2 animate-pulse"/>
+                                    <div className="flex-1 rounded bg-surface-2 animate-pulse"/>
+                                    <div className="h-8 w-28 rounded bg-surface-2 animate-pulse"/>
+                                    <div className="text-xs text-text-secondary">Loading preview…</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {iframeError && (
+                            <div className="absolute inset-0 z-20 grid place-items-center p-4">
+                                <div
+                                    className="w-full max-w-md rounded-md border border-surface-3 bg-surface-1 p-4 space-y-2 shadow-mac-panel">
+                                    <div className="text-sm font-semibold text-text-primary">Preview failed</div>
+                                    <div className="text-xs text-text-secondary break-words">{iframeError}</div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            className="bg-surface-1 border border-surface-3 hover:bg-surface-0"
+                                            onClick={() => {
+                                                setIframeError(null);
+                                                setIframeLoading(true);
+                                                setIframeReloadKey((k) => k + 1);
+                                            }}
+                                        >
+                                            <RefreshCw className="h-4 w-4 mr-2"/>
+                                            Retry
+                                        </Button>
+
+                                        <Button
+                                            variant="outline"
+                                            className="bg-surface-1 border border-surface-3 hover:bg-surface-0"
+                                            onClick={() => window.open(href, "_blank", "noreferrer")}
+                                        >
+                                            <MapPlus className="h-4 w-4 mr-2"/>
+                                            Open
+                                        </Button>
                                     </div>
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            {iframeError && (
-                                <div className="absolute inset-0 z-20 grid place-items-center p-4">
-                                    <div
-                                        className="w-full max-w-md rounded-md border border-surface-3 bg-surface-1 p-4 space-y-2 shadow-mac-panel">
-                                        <div className="text-sm font-semibold text-text-primary">Preview failed</div>
-                                        <div className="text-xs text-text-secondary break-words">{iframeError}</div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                className="bg-surface-1 border border-surface-3 hover:bg-surface-0"
-                                                onClick={() => {
-                                                    setIframeError(null);
-                                                    setIframeLoading(true);
-                                                    setIframeReloadKey((k) => k + 1);
-                                                }}
-                                            >
-                                                <RefreshCw className="h-4 w-4 mr-2"/>
-                                                Retry
-                                            </Button>
-
-                                            <Button
-                                                variant="outline"
-                                                className="bg-surface-1 border border-surface-3 hover:bg-surface-0"
-                                                onClick={() => window.open(href, "_blank", "noreferrer")}
-                                            >
-                                                <MapPlus className="h-4 w-4 mr-2"/>
-                                                Open
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <iframe
-                                key={`${activeId}:${iframeReloadKey}`}
-                                ref={iframeRef}
-                                src={href}
-                                className="h-full w-full"
-                                loading="lazy"
-                                title={displayName}
-                                onLoad={() => {
-                                    setIframeLoading(false);
-                                    setIframeError(null);
-                                }}
-                                onError={() => {
-                                    setIframeLoading(false);
-                                    setIframeError("Iframe failed to load (network/CSP/content).");
-                                }}
-                            />
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            <p className="text-xs text-text-secondary">
-                                This result is not HTML, so it can’t be previewed in an iframe.
-                            </p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-fit bg-surface-1 border border-surface-3 hover:bg-surface-0"
-                                onClick={() => window.open(href, "_blank", "noreferrer")}
-                            >
-                                <MapPlus className="h-4 w-4 mr-2"/>
-                                Open result
-                            </Button>
-                        </div>
-                    )}
+                        <iframe
+                            key={`${activeId}:${iframeReloadKey}`}
+                            ref={iframeRef}
+                            src={href}
+                            className="h-full w-full"
+                            loading="lazy"
+                            title={displayName}
+                            onLoad={() => {
+                                setIframeLoading(false);
+                                setIframeError(null);
+                            }}
+                            onError={() => {
+                                setIframeLoading(false);
+                                setIframeError("Iframe failed to load (network/CSP/content).");
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        <p className="text-xs text-text-secondary">
+                            This result is not HTML, so it can’t be previewed in an iframe.
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-fit bg-surface-1 border border-surface-3 hover:bg-surface-0"
+                            onClick={() => window.open(href, "_blank", "noreferrer")}
+                        >
+                            <MapPlus className="h-4 w-4 mr-2"/>
+                            Open result
+                        </Button>
+                    </div>
+                )}
 
             </div>
 

@@ -3,7 +3,6 @@
 import * as React from "react";
 import {useEffect, useState} from "react";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {useRouter} from "next/navigation";
 import {usePersistentState} from "@/hooks/usePersistentState";
 import {MapsControls} from "@/components/MapsControls/MapsControls";
@@ -13,8 +12,6 @@ import {AdvancedControls} from "@/components/AdvancedControls";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
-import Autocomplete from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
 import type {DateRange} from "react-day-picker";
 import type {
     MapKey,

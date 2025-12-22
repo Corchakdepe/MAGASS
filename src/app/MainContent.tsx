@@ -7,13 +7,13 @@ import { RefreshCw } from 'lucide-react';
 import MainContent from '@/components/main-content';
 import type { SimulationData, SimulationSummaryData } from '@/types/simulation';
 import type { MainContentMode } from '@/types/view-mode';
+import {API_BASE} from "@/lib/analysis/constants";
 
 type AppMainContentProps = {
   mode?: MainContentMode;
   triggerRefresh?: number;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
 const defaultSummary: SimulationSummaryData = {
   deltaMinutes: 0,

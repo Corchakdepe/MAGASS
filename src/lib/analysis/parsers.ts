@@ -41,3 +41,15 @@ export function parseStationsSimple(input: string): number[] {
 export function formatStationsCanonical(nums: number[]) {
   return nums.join(";");
 }
+
+export function safeParse<T>(s: string | null): T | null {
+    if (!s) return null;
+    try {
+        return JSON.parse(s) as T;
+    } catch {
+        return null;
+    }
+}
+
+
+

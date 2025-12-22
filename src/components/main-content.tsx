@@ -16,6 +16,8 @@ import type {GraphItem} from "@/components/visualizations-panel";
 import {FiltersPanel} from "@/components/visualizationsFilters";
 import DashboardPanel from "@/components/dashboard-panel";
 import MapAnalysisCreator from "@/components/map-analysis-creator";
+import { API_BASE  } from "@/lib/analysis/constants";
+
 
 export type RawResultItem = {
     id: string;
@@ -39,7 +41,6 @@ type MainContentProps = {
     }) => void;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
 
 const defaultSummary: SimulationSummaryData = {
     deltaMinutes: 0,
