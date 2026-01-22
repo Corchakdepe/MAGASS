@@ -12,6 +12,7 @@ import {AdvancedControls} from "@/components/AdvancedControls";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
+import {useLanguage} from "@/contexts/LanguageContext";
 import type {DateRange} from "react-day-picker";
 import type {
     MapKey,
@@ -28,12 +29,6 @@ type QuickGraphKey =
     | "graf_barras_est_med"
     | "graf_barras_est_acum"
     | "graf_linea_comp_est";
-
-const QUICK_GRAPHS: { label: string; key: QuickGraphKey }[] = [
-    {label: "Barras por estación (media)", key: "graf_barras_est_med"},
-    {label: "Barras por estación (acumulada)", key: "graf_barras_est_acum"},
-    {label: "Líneas comparar estaciones", key: "graf_linea_comp_est"},
-];
 
 const ALLOWED_GRAPH_MATRIX_IDS = [-1, 0, 1, 9, 10, 11, 12, 13] as const;
 type AllowedGraphMatrixId = (typeof ALLOWED_GRAPH_MATRIX_IDS)[number];
@@ -77,7 +72,15 @@ export default function StatisticsForm({
                                            activeStationsTargetKey,
                                            onActiveStationsTargetKeyChange,
                                        }: MapAnalysisSidebarProps) {
+    const {t} = useLanguage();
     const router = useRouter();
+
+    // Quick-graph options (translated)
+    const QUICK_GRAPHS: { label: string; key: QuickGraphKey }[] = [
+        {label: t('barsPerStationAverage'), key: "graf_barras_est_med"},
+        {label: t('barsPerStationCumulative'), key: "graf_barras_est_acum"},
+        {label: t('linesCompareStations'), key: "graf_linea_comp_est"},
+    ];
 
     // -------------------------
     // Persistent UI state
@@ -322,7 +325,7 @@ export default function StatisticsForm({
     // -------------------------
     const handleAnalyze = async () => {
         if (!runId) {
-            setApiError("Selecciona una simulación en el historial antes de analizar.");
+            setApiError(t('selectSimulationBeforeAnalyzing'));
             return;
         }
         if (apiBusy || selectedMaps.length === 0) return;
@@ -372,7 +375,7 @@ export default function StatisticsForm({
             const json = await res.json().catch(() => null);
             if (!res.ok) {
                 throw new Error(
-                    `Error analizando mapa ${apiKey}: ${res.status} ${(json as any)?.detail ?? ""}`,
+                    `${t('errorAnalyzingMap')} ${apiKey}: ${res.status} ${(json as any)?.detail ?? ""}`,
                 );
             }
             return json;
@@ -381,7 +384,7 @@ export default function StatisticsForm({
         try {
             await Promise.all(mapRequests);
         } catch (e: any) {
-            setApiError(e?.message ?? "Error inesperado");
+            setApiError(e?.message ?? t('unexpectedError'));
         } finally {
             setApiBusy(false);
         }
@@ -389,28 +392,28 @@ export default function StatisticsForm({
 
     const handleCreateQuickGraphFromCircle = async (graphKey: QuickGraphKey) => {
         if (!runId) {
-            setApiError("Selecciona una simulación en el historial antes de crear gráficas.");
+            setApiError(t('selectSimulationBeforeCreatingGraphs'));
             return;
         }
         if (apiBusy) return;
 
         const stationIds = parseStationsSimple(circleStationsForGraphs);
         if (!stationIds.length) {
-            setApiError("Selecciona estaciones en el mapa (o escríbelas) antes de crear la gráfica.");
+            setApiError(t('selectStationsBeforeCreatingGraph'));
             return;
         }
 
         const selectedMatrixId = Number(seleccionAgreg || "-1");
         if (!ALLOWED_GRAPH_MATRIX_IDS.includes(selectedMatrixId as AllowedGraphMatrixId)) {
             setApiError(
-                `Para crear esta gráfica, la matriz debe ser una de: ${ALLOWED_GRAPH_MATRIX_IDS.join(", ")}.`,
+                `${t('matrixMustBeOneOf')}: ${ALLOWED_GRAPH_MATRIX_IDS.join(", ")}.`,
             );
             return;
         }
 
         const arg = buildQuickGraphArg(graphKey, stationIds);
         if (!arg) {
-            setApiError("Parámetros inválidos para la gráfica.");
+            setApiError(t('invalidGraphParameters'));
             return;
         }
 
@@ -459,13 +462,13 @@ export default function StatisticsForm({
             const json = await res.json().catch(() => null);
             if (!res.ok) {
                 throw new Error(
-                    `Error creando gráfica: ${res.status} ${JSON.stringify((json as any)?.detail ?? json)}`,
+                    `${t('errorCreatingGraph')}: ${res.status} ${JSON.stringify((json as any)?.detail ?? json)}`,
                 );
             }
 
             router.push("/analyticsGraphCreator");
         } catch (e: any) {
-            setApiError(e?.message ?? "Error inesperado al crear la gráfica.");
+            setApiError(e?.message ?? t('unexpectedErrorCreatingGraph'));
         } finally {
             setApiBusy(false);
         }
@@ -477,7 +480,7 @@ export default function StatisticsForm({
     const uiHydrated = selectedMapsHydrated && stationsHydrated && labelsHydrated && filterHydrated;
 
     if (!uiHydrated) {
-        return <div className="p-3 text-xs text-muted-foreground">Loading…</div>;
+        return <div className="p-3 text-xs text-muted-foreground">{t('loading')}</div>;
     }
 
     const selectedMatrixId = Number(seleccionAgreg || "-1");
@@ -493,14 +496,14 @@ export default function StatisticsForm({
                     className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-2">
                     <TabsList className="flex w-full flex-wrap justify-start gap-2 bg-transparent p-0">
                         {[
-                            {v: "maps", l: "Maps"},
-                            {v: "filter", l: "Filter"},
-                            {v: "matrix", l: "Matrix"},
-                            {v: "actions", l: "Actions"},
-                        ].map((t) => (
+                            {v: "maps", l: t('maps')},
+                            {v: "filter", l: t('filter')},
+                            {v: "matrix", l: t('matrix')},
+                            {v: "actions", l: t('actions')},
+                        ].map((tab) => (
                             <TabsTrigger
-                                key={t.v}
-                                value={t.v}
+                                key={tab.v}
+                                value={tab.v}
                                 className={[
                                     "h-8 px-3 text-xs rounded-md border border-transparent",
                                     "text-text-secondary hover:text-text-primary",
@@ -510,7 +513,7 @@ export default function StatisticsForm({
                                     "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
                                 ].join(" ")}
                             >
-                                {t.l}
+                                {tab.l}
                             </TabsTrigger>
                         ))}
                     </TabsList>
@@ -522,14 +525,14 @@ export default function StatisticsForm({
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-4">
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <div className="text-xs font-semibold text-text-primary">Mapas</div>
+                                <div className="text-xs font-semibold text-text-primary">{t('maps')}</div>
                                 <div className="text-[11px] text-text-secondary">
-                                    Select maps and configure parameters.
+                                    {t('selectMapsAndConfigureParameters')}
                                 </div>
                             </div>
 
                             <div className="text-[11px] text-text-tertiary">
-                                Δ out: <span className="text-text-primary font-semibold">{deltaOutMin}</span> min
+                                Δ out: <span className="text-text-primary font-semibold">{deltaOutMin}</span> {t('min')}
                             </div>
                         </div>
 
@@ -566,9 +569,9 @@ export default function StatisticsForm({
                     <div
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3">
                         <div className="mb-3">
-                            <div className="text-xs font-semibold text-text-primary">Filter</div>
+                            <div className="text-xs font-semibold text-text-primary">{t('filter')}</div>
                             <div className="text-[11px] text-text-secondary">
-                                Restrict stations by value and day range.
+                                {t('restrictStationsByValueAndDayRange')}
                             </div>
                         </div>
 
@@ -591,9 +594,9 @@ export default function StatisticsForm({
                     <div
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-3">
                         <div>
-                            <div className="text-xs font-semibold text-text-primary">Matrix</div>
+                            <div className="text-xs font-semibold text-text-primary">{t('matrix')}</div>
                             <div className="text-[11px] text-text-secondary">
-                                Choose aggregation matrix.
+                                {t('chooseAggregationMatrix')}
                             </div>
                         </div>
 
@@ -611,17 +614,17 @@ export default function StatisticsForm({
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-4">
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <div className="text-xs font-semibold text-text-primary">Actions</div>
+                                <div className="text-xs font-semibold text-text-primary">{t('actions')}</div>
                                 <div className="text-[11px] text-text-secondary">
-                                    Run analysis and create quick graphs.
+                                    {t('runAnalysisAndCreateQuickGraphs')}
                                 </div>
                             </div>
 
                             {deltaLoading ? (
-                                <div className="text-[11px] text-text-tertiary">Δ loading…</div>
+                                <div className="text-[11px] text-text-tertiary">{t('deltaLoading')}</div>
                             ) : (
                                 <div className="text-[11px] text-text-tertiary">
-                                    Δ source: <span className="text-text-primary">{deltaAutoSource}</span>
+                                    {t('deltaSource')}: <span className="text-text-primary">{deltaAutoSource}</span>
                                 </div>
                             )}
                         </div>
@@ -631,18 +634,15 @@ export default function StatisticsForm({
                             disabled={apiBusy || selectedMaps.length === 0}
                             className="w-full bg-accent text-text-inverted hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
                         >
-                            {apiBusy ? "Analizando..." : "Analizar mapas"}
+                            {apiBusy ? t('analyzing') : t('analyzeMaps')}
                         </Button>
 
                         <div className="rounded-lg border border-surface-3 bg-surface-0/60 p-3 space-y-3">
-                            <Label className="text-[11px] text-text-secondary">Crear gráfica rápida</Label>
+                            <Label className="text-[11px] text-text-secondary">{t('createQuickGraph')}</Label>
 
-                            {/* Replace MUI Autocomplete with your MatrixSelect-like combobox component.
-                If you already created a QuickGraphSelect (Popover+Command), render it here. */}
                             <div className="space-y-1">
-                                <Label className="text-[11px] text-text-secondary">Tipo de gráfica</Label>
+                                <Label className="text-[11px] text-text-secondary">{t('graphType')}</Label>
 
-                                {/* TEMP fallback: simple select to avoid MUI while keeping logic identical */}
                                 <select
                                     className={[
                                         "h-9 w-full rounded-md px-2 text-xs",
@@ -655,7 +655,7 @@ export default function StatisticsForm({
                                     disabled={apiBusy || selectedMaps[0] !== "mapa_circulo" || !matrixAllowedForGraph}
                                 >
                                     <option value="" disabled>
-                                        Tipo de gráfica...
+                                        {t('graphTypePlaceholder')}
                                     </option>
                                     {QUICK_GRAPHS.map((g) => (
                                         <option key={g.key} value={g.key}>
@@ -665,17 +665,17 @@ export default function StatisticsForm({
                                 </select>
 
                                 <div className="text-[10px] text-text-tertiary">
-                                    Requiere mapa círculo y una matriz permitida.
+                                    {t('requiresCircleMapAndAllowedMatrix')}
                                 </div>
                             </div>
 
                             <div className="space-y-1">
                                 <Label className="text-[11px] text-text-secondary">
-                                    Estaciones para gráficas
+                                    {t('stationsForGraphs')}
                                 </Label>
                                 <Input
                                     className="h-9 text-xs w-full bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
-                                    placeholder="Estaciones para gráficas (ej: 87;212)"
+                                    placeholder={t('stationsForGraphsPlaceholder')}
                                     value={circleStationsForGraphs}
                                     onChange={(e) => setCircleStationsForGraphs(e.target.value)}
                                     disabled={apiBusy || selectedMaps[0] !== "mapa_circulo"}
@@ -697,7 +697,7 @@ export default function StatisticsForm({
                                 className="w-full"
                                 variant="outline"
                             >
-                                Crear
+                                {t('create')}
                             </Button>
                         </div>
 
@@ -707,5 +707,4 @@ export default function StatisticsForm({
             </Tabs>
         </div>
     );
-
 }

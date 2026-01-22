@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ======================
 // Tipos y helpers filtro
@@ -110,6 +111,7 @@ function prettyLabelFromFilename(name: string) {
 }
 
 export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
+  const { t } = useLanguage();
   const { toast } = useToast();
 
   const [files, setFiles] = useState<RawResultItem[]>([]);
@@ -179,13 +181,13 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
       )}`
     : null;
 
-  const rightTitle = selectedFile ? prettyLabelFromFilename(selectedFile.name) : 'Resultado del filtro';
+  const rightTitle = selectedFile ? prettyLabelFromFilename(selectedFile.name) : t('filterResult');
 
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <ChartSpline className="h-5 w-5 text-xl" />
-        <h2 className="text-xl font-semibold right-1">Filter Files</h2>
+        <h2 className="text-xl font-semibold right-1">{t('filterFiles')}</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[260px,1fr] gap-4">
@@ -193,7 +195,7 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
         <div className="border rounded p-2 max-h-72 overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs text-muted-foreground">
-              {loading ? 'Cargando…' : `${files.length} fichero(s)`}
+              {loading ? t('loading') : `${files.length} ${t('files')}`}
             </div>
           </div>
 
@@ -220,7 +222,7 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
             })}
             {files.length === 0 && !loading && (
               <li className="text-xs text-muted-foreground px-2 py-1">
-                No hay ficheros de filtrado para este run.
+                {t('noFilterFilesForRun')}
               </li>
             )}
           </ul>
@@ -234,13 +236,13 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
                 <div className="min-w-0">
                   <CardTitle className="text-sm truncate">{rightTitle}</CardTitle>
                   <div className="text-[11px] text-muted-foreground truncate">
-                    {selectedFile?.name ?? 'Selecciona un fichero para ver el resultado.'}
+                    {selectedFile?.name ?? t('selectFileToViewResult')}
                   </div>
                 </div>
 
                 {downloadUrl && (
                   <a href={downloadUrl} download className="text-xs underline text-primary">
-                    Download
+                    {t('download')}
                   </a>
                 )}
               </div>
@@ -249,32 +251,32 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
             <CardContent className="space-y-4 text-sm">
               {!selectedFile && (
                 <p className="text-muted-foreground">
-                  Selecciona un fichero de filtrado para ver sus resultados.
+                  {t('selectFilterFileToViewResults')}
                 </p>
               )}
 
               {selectedFile && stationsResult && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p>Estaciones que cumplen el filtro: {stationsResult.stations.length}</p>
+                    <p>{t('stationsMeetingFilter')}: {stationsResult.stations.length}</p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(stationsResult.stations.join(';'));
-                          toast({ title: 'Copiado', description: 'IDs copiados al portapapeles.' });
+                          toast({ title: t('copied'), description: t('idsCopiedToClipboard') });
                         } catch {
                           toast({
                             variant: 'destructive',
-                            title: 'Error',
-                            description: 'No se pudo copiar al portapapeles.',
+                            title: t('error'),
+                            description: t('couldNotCopyToClipboard'),
                           });
                         }
                       }}
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copiar IDs
+                      {t('copyIDs')}
                     </Button>
                   </div>
 
@@ -287,25 +289,25 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
               {selectedFile && hoursResult && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p>Horas/instantes que cumplen el filtro: {hoursResult.hours.length}</p>
+                    <p>{t('hoursMeetingFilter')}: {hoursResult.hours.length}</p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(hoursResult.hours.join(';'));
-                          toast({ title: 'Copiado', description: 'Horas copiadas al portapapeles.' });
+                          toast({ title: t('copied'), description: t('hoursCopiedToClipboard') });
                         } catch {
                           toast({
                             variant: 'destructive',
-                            title: 'Error',
-                            description: 'No se pudo copiar al portapapeles.',
+                            title: t('error'),
+                            description: t('couldNotCopyToClipboard'),
                           });
                         }
                       }}
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copiar
+                      {t('copy')}
                     </Button>
                   </div>
 
@@ -318,7 +320,7 @@ export function FiltersPanel({ apiBase, runId }: FiltersPanelProps) {
               {selectedFile && percentResult && (
                 <div className="space-y-2">
                   <p className="text-muted-foreground text-xs">
-                    Porcentaje de tiempo que el conjunto cumple la condición
+                    {t('percentageTimeMeetingCondition')}
                   </p>
                   <div className="text-3xl font-semibold">
                     {percentResult.percent.toFixed(2)}%
@@ -344,24 +346,6 @@ type SidebarFiltersProps = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://127.0.0.1:8000';
 
-const MATRICES = [
-  { label: 'Matriz externa (usuario)', id: -1 },
-  { label: 'Ocupación', id: 0 },
-  { label: 'Ocupación relativa', id: 1 },
-  { label: 'Km coger', id: 2 },
-  { label: 'Km dejar', id: 3 },
-  { label: 'Peticiones resueltas coger', id: 4 },
-  { label: 'Peticiones resueltas dejar', id: 5 },
-  { label: 'Peticiones no resueltas coger', id: 6 },
-  { label: 'Peticiones no resueltas dejar', id: 7 },
-  { label: 'Km ficticios coger', id: 8 },
-  { label: 'Km ficticios dejar', id: 9 },
-  { label: 'Ficticias resueltas coger', id: 10 },
-  { label: 'Ficticias resueltas dejar', id: 11 },
-  { label: 'Ficticias no resueltas coger', id: 12 },
-  { label: 'Ficticias no resueltas dejar', id: 13 },
-];
-
 const DEFAULT_KIND: FilterKind = 'EstValorDias';
 const DEFAULT_STATE: UnifiedFilterState = {
   operator: '>=',
@@ -377,7 +361,26 @@ export default function VisualizationsFilters({
   onSimulationComplete,
   runId,
 }: SidebarFiltersProps) {
+  const { t } = useLanguage();
   const { toast } = useToast();
+
+  const MATRICES = [
+    { label: t('externalMatrixUser'), id: -1 },
+    { label: t('occupation'), id: 0 },
+    { label: t('relativeOccupation'), id: 1 },
+    { label: t('kmPickup'), id: 2 },
+    { label: t('kmDropoff'), id: 3 },
+    { label: t('resolvedRequestsPickup'), id: 4 },
+    { label: t('resolvedRequestsDropoff'), id: 5 },
+    { label: t('unresolvedRequestsPickup'), id: 6 },
+    { label: t('unresolvedRequestsDropoff'), id: 7 },
+    { label: t('fictionalKmPickup'), id: 8 },
+    { label: t('fictionalKmDropoff'), id: 9 },
+    { label: t('fictionalResolvedPickup'), id: 10 },
+    { label: t('fictionalResolvedDropoff'), id: 11 },
+    { label: t('fictionalUnresolvedPickup'), id: 12 },
+    { label: t('fictionalUnresolvedDropoff'), id: 13 },
+  ];
 
   const [isRunning, setIsRunning] = useState(false);
 
@@ -410,26 +413,26 @@ export default function VisualizationsFilters({
     if (isValid) return null;
 
     if (filterKind === 'EstValor' || filterKind === 'EstValorDias') {
-      return 'Completa Valor, % del día y Días excepción.';
+      return t('completeValueDayPercentExceptionDays');
     }
     if (filterKind === 'Horas') {
-      return 'Completa Valor y % estaciones.';
+      return t('completeValueStationsPercent');
     }
     if (filterKind === 'Porcentaje') {
-      return 'Completa Valor y la lista de estaciones.';
+      return t('completeValueStationsList');
     }
-    return 'Completa los campos requeridos.';
-  }, [filterKind, isValid]);
+    return t('completeRequiredFields');
+  }, [filterKind, isValid, t]);
 
   const handleCopyFiltro = async () => {
     try {
-      await navigator.clipboard.writeText(compiledFiltro); // Clipboard.writeText() [web:30]
-      toast({ title: 'Copiado', description: 'Filtro copiado al portapapeles.' });
+      await navigator.clipboard.writeText(compiledFiltro);
+      toast({ title: t('copied'), description: t('filterCopiedToClipboard') });
     } catch {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'No se pudo copiar al portapapeles.',
+        title: t('error'),
+        description: t('couldNotCopyToClipboard'),
       });
     }
   };
@@ -444,8 +447,8 @@ export default function VisualizationsFilters({
     if (!runId) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'runId no disponible.',
+        title: t('error'),
+        description: t('runIdNotAvailable'),
       });
       return;
     }
@@ -453,8 +456,8 @@ export default function VisualizationsFilters({
     if (!isValid) {
       toast({
         variant: 'destructive',
-        title: 'Filtro incompleto',
-        description: validationMessage ?? 'Completa los campos requeridos.',
+        title: t('incompleteFilter'),
+        description: validationMessage ?? t('completeRequiredFields'),
       });
       return;
     }
@@ -484,14 +487,14 @@ export default function VisualizationsFilters({
       onSimulationComplete(result);
 
       toast({
-        title: 'Filtro ejecutado',
-        description: 'El análisis con filtrado ha finalizado correctamente.',
+        title: t('filterExecuted'),
+        description: t('filterAnalysisCompleted'),
       });
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Filter analysis failed',
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('filterAnalysisFailed'),
       });
     } finally {
       setIsRunning(false);
@@ -501,8 +504,8 @@ export default function VisualizationsFilters({
   return (
     <>
       <SidebarHeader className="p-4">
-        <h2 className="text-xl font-semibold font-headline">Filtrados</h2>
-        <h3 className="text-s font-light font-headline">Parámetros de filtrado</h3>
+        <h2 className="text-xl font-semibold font-headline">{t('filters')}</h2>
+        <h3 className="text-s font-light font-headline">{t('filterParameters')}</h3>
       </SidebarHeader>
 
       <SidebarBody className="p-4 space-y-4 overflow-y-auto text-sm">
@@ -510,7 +513,7 @@ export default function VisualizationsFilters({
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleReset} disabled={isRunning}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Reset
+            {t('reset')}
           </Button>
 
           <Button
@@ -520,7 +523,7 @@ export default function VisualizationsFilters({
             disabled={compiledFiltro === '_' || isRunning}
           >
             <Copy className="h-4 w-4 mr-2" />
-            Copy filtro
+            {t('copyFilter')}
           </Button>
         </div>
 
@@ -528,7 +531,7 @@ export default function VisualizationsFilters({
         <div className="border rounded p-2 bg-muted/30">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[11px] text-muted-foreground">Filtro generado</div>
+              <div className="text-[11px] text-muted-foreground">{t('generatedFilter')}</div>
               <div className="font-mono text-xs break-all">{compiledFiltro}</div>
             </div>
             <div
@@ -537,7 +540,7 @@ export default function VisualizationsFilters({
               }`}
               title={validationMessage ?? undefined}
             >
-              {isValid ? 'OK' : 'INCOMPLETO'}
+              {isValid ? 'OK' : t('incomplete')}
             </div>
           </div>
           {!isValid && validationMessage && (
@@ -547,35 +550,35 @@ export default function VisualizationsFilters({
 
         {/* Tipo */}
         <div className="space-y-1">
-          <Label className="font-bold">Tipo de filtro</Label>
+          <Label className="font-bold">{t('filterType')}</Label>
           <select
             className="w-full border rounded px-2 py-1 text-xs bg-background"
             value={filterKind}
             onChange={(e) => setFilterKind(e.target.value as FilterKind)}
           >
-            <option value="EstValor">Filtrado Estación Valor (día)</option>
-            <option value="EstValorDias">Filtrado EstValorDias (mes)</option>
-            <option value="Horas">Filtrado Horas críticas</option>
-            <option value="Porcentaje">Filtrado Porcentaje Estaciones</option>
+            <option value="EstValor">{t('stationValueFilterDay')}</option>
+            <option value="EstValorDias">{t('stationValueFilterMonth')}</option>
+            <option value="Horas">{t('criticalHoursFilter')}</option>
+            <option value="Porcentaje">{t('stationsPercentageFilter')}</option>
           </select>
         </div>
 
-        {/* Matrices selection (same as you had) */}
+        {/* Matrices selection */}
         <div className="space-y-2">
-          <Label>Selección/agregación matrices</Label>
+          <Label>{t('matrixSelectionAggregation')}</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" className="w-full justify-between">
                 {selectedIds.length > 0
-                  ? `${selectedIds.length} seleccionada(s): ${selectedIds.join(';')}`
-                  : 'Selecciona matrices...'}
+                  ? `${selectedIds.length} ${t('selected')}: ${selectedIds.join(';')}`
+                  : t('selectMatrices')}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[400px] p-0">
               <Command>
-                <CommandInput placeholder="Buscar matriz..." />
-                <CommandEmpty>No encontrada</CommandEmpty>
+                <CommandInput placeholder={t('searchMatrix')} />
+                <CommandEmpty>{t('notFound')}</CommandEmpty>
                 <CommandList>
                   <CommandGroup>
                     {MATRICES.map((m) => (
@@ -602,18 +605,18 @@ export default function VisualizationsFilters({
           <Input
             value={seleccionAgreg}
             onChange={(e) => setSeleccionAgreg(e.target.value)}
-            placeholder="Ej: 1;2;3"
+            placeholder={t('matrixPlaceholder')}
           />
         </div>
 
         {/* Unified filter form */}
         <div className="space-y-4">
-          <Label className="text-xs">Parámetros del filtro</Label>
+          <Label className="text-xs">{t('filterParameters')}</Label>
 
           {/* Operador y valor */}
           <div className="space-y-2">
             <div className="space-y-1">
-              <Label className="text-xs">Operador</Label>
+              <Label className="text-xs">{t('operator')}</Label>
               <Select
                 value={filterState.operator}
                 onValueChange={(operator) => setFilterState((s) => ({ ...s, operator }))}
@@ -631,7 +634,7 @@ export default function VisualizationsFilters({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Valor</Label>
+              <Label className="text-xs">{t('value')}</Label>
               <Input
                 className="h-8 text-xs w-full"
                 value={filterState.value}
@@ -644,7 +647,7 @@ export default function VisualizationsFilters({
           {/* % del día */}
           <div className="space-y-1">
             <Label htmlFor="dayPct" className="text-xs">
-              % del día
+              {t('dayPercentage')}
             </Label>
             <div className="flex items-center gap-3">
               <input
@@ -662,18 +665,18 @@ export default function VisualizationsFilters({
 
           {/* Días */}
           <div className="space-y-1">
-            <Label className="text-xs">Días</Label>
+            <Label className="text-xs">{t('days')}</Label>
             <Input
               className="h-8 text-xs w-full"
               value={filterState.days}
               onChange={(e) => setFilterState((s) => ({ ...s, days: e.target.value }))}
-              placeholder="all o 0;1;2"
+              placeholder={t('daysPlaceholder')}
             />
           </div>
 
           {/* Días excepción */}
           <div className="space-y-1">
-            <Label className="text-xs">Días excepción</Label>
+            <Label className="text-xs">{t('exceptionDays')}</Label>
             <Input
               className="h-8 text-xs w-full"
               value={filterState.allowedFailDays}
@@ -687,7 +690,7 @@ export default function VisualizationsFilters({
           {/* % estaciones */}
           <div className="space-y-1">
             <Label htmlFor="stationsPct" className="text-xs">
-              % estaciones
+              {t('stationsPercentage')}
             </Label>
             <div className="flex items-center gap-3">
               <input
@@ -705,12 +708,12 @@ export default function VisualizationsFilters({
 
           {/* Lista de estaciones */}
           <div className="space-y-1">
-            <Label className="text-xs">Estaciones (IDs ;)</Label>
+            <Label className="text-xs">{t('stationsIDsSemicolon')}</Label>
             <Input
               className="h-8 text-xs w-full"
               value={filterState.stationsList}
               onChange={(e) => setFilterState((s) => ({ ...s, stationsList: e.target.value }))}
-              placeholder="1;15;26;48;..."
+              placeholder={t('stationsListPlaceholder')}
             />
           </div>
         </div>
@@ -725,7 +728,7 @@ export default function VisualizationsFilters({
 
       <SidebarFooter className="p-4 border-t">
         <Button onClick={handleRunFilter} disabled={isRunning || !runId || !isValid} className="w-full">
-          {isRunning ? 'Ejecutando filtro…' : 'Ejecutar filtro'}
+          {isRunning ? t('executingFilter') : t('executeFilter')}
         </Button>
       </SidebarFooter>
     </>

@@ -15,6 +15,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "./ui/popover";
 import {Button} from "./ui/button";
 import {Label} from "./ui/label";
 import {Card, CardContent, CardHeader, CardTitle} from "./ui/card";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 type InstantesInputProps = {
     deltaOutMin: number;
@@ -27,6 +28,8 @@ type Step = "date" | "fromTime" | "toTime";
 const GENERIC_MONTH = new Date(2000, 0, 1); // Jan 2000
 
 export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputProps) {
+    const {t} = useLanguage();
+
     const computeInstanteFromDayTime = (p: {
         day: number;
         hour: number;
@@ -165,15 +168,15 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
                                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30",
                             ].join(" ")}
                         >
-                            <span className="sr-only">Editar instantes</span>
+                            <span className="sr-only">{t('editInstants')}</span>
 
                             <span className="truncate text-text-secondary">
-          {value ? `Δ = ${value}` : "Selecciona rango"}
-        </span>
+                                {value ? `Δ = ${value}` : t('selectRange')}
+                            </span>
                             <span
                                 className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-surface-3 bg-surface-0">
-          <CalendarIcon className="h-3.5 w-3.5 text-accent"/>
-        </span>
+                                <CalendarIcon className="h-3.5 w-3.5 text-accent"/>
+                            </span>
                         </button>
 
                     </PopoverTrigger>
@@ -185,7 +188,7 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
                         {step === "date" && (
                             <div className="space-y-2">
                                 <Label className="text-xs font-medium text-text-primary">
-                                    Selecciona rango de días
+                                    {t('selectDayRange')}
                                 </Label>
                                 <Calendar
                                     mode="range"
@@ -200,7 +203,7 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
                         {step !== "date" && (
                             <div className="space-y-2">
                                 <Label className="text-xs font-medium text-text-primary">
-                                    {step === "fromTime" ? "Hora inicio" : "Hora fin"} ({clockView})
+                                    {step === "fromTime" ? t('startTime') : t('endTime')} ({clockView === "hours" ? t('hours') : t('minutes')})
                                 </Label>
 
                                 <div className="rounded-md border border-surface-3 bg-surface-0/60 p-2">
@@ -234,7 +237,7 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
                                     }
                                 }}
                             >
-                                Atrás
+                                {t('back')}
                             </Button>
 
                             <Button
@@ -246,7 +249,7 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
                                     resetFlow();
                                 }}
                             >
-                                Cancelar
+                                {t('cancel')}
                             </Button>
                         </div>
                     </PopoverContent>
@@ -254,10 +257,10 @@ export function InstantesInput({deltaOutMin, value, onChange}: InstantesInputPro
 
             </div>
             <div className="pt-2">
-            <span
-                className="rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
-     Valor actual: {value || "0"}
-    </span>
+                <span
+                    className="rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
+                    {t('currentValue')}: {value || "0"}
+                </span>
             </div>
         </div>
     );

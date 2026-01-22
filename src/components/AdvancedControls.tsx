@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export type DeltaMode = "media" | "acumulada";
 
@@ -42,6 +45,8 @@ export function AdvancedControls({
   advancedSalida,
   setAdvancedSalida,
 }: AdvancedControlsProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
       {/* Single grouped surface (avoid cards-in-cards) */}
@@ -69,12 +74,12 @@ export function AdvancedControls({
               htmlFor="advanced-user"
               className="text-xs text-text-primary select-none"
             >
-              Advanced user
+              {t('advancedUser')}
             </Label>
           </div>
 
           <span className="text-[11px] text-text-secondary">
-            Ajustes avanzados
+            {t('advancedSettings')}
           </span>
         </div>
 
@@ -84,25 +89,25 @@ export function AdvancedControls({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[11px] font-medium text-text-secondary">
-                  Delta
+                  {t('delta')}
                 </Label>
                 <Select
                   value={deltaMode}
                   onValueChange={(v) => setDeltaMode(v as DeltaMode)}
                 >
                   <SelectTrigger className="h-9 text-xs w-full rounded-md border-surface-3 bg-surface-1 focus:ring-2 focus:ring-accent/20 focus:border-accent">
-                    <SelectValue placeholder="Selecciona delta..." />
+                    <SelectValue placeholder={t('selectDelta')} />
                   </SelectTrigger>
                   <SelectContent className="border-surface-3 bg-surface-1/95 backdrop-blur-md">
-                    <SelectItem value="media">Delta Media</SelectItem>
-                    <SelectItem value="acumulada">Delta Acumulada</SelectItem>
+                    <SelectItem value="media">{t('deltaAverage')}</SelectItem>
+                    <SelectItem value="acumulada">{t('deltaCumulative')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-[11px] font-medium text-text-secondary">
-                  Valor
+                  {t('value')}
                 </Label>
                 <Input
                   className="h-9 text-xs w-full rounded-md border-surface-3 bg-surface-1 focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:border-accent"
@@ -120,7 +125,7 @@ export function AdvancedControls({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[11px] font-medium text-text-secondary">
-                  Advanced input
+                  {t('advancedInput')}
                 </Label>
                 <Input
                   className="h-9 text-xs w-full rounded-md border-surface-3 bg-surface-1 focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:border-accent"
@@ -132,7 +137,7 @@ export function AdvancedControls({
 
               <div className="space-y-2">
                 <Label className="text-[11px] font-medium text-text-secondary">
-                  Advanced output
+                  {t('advancedOutput')}
                 </Label>
                 <Input
                   className="h-9 text-xs w-full rounded-md border-surface-3 bg-surface-1 focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:border-accent"

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type BottomPanelProps = {
   barLeft?: React.ReactNode;
@@ -22,6 +23,7 @@ export function BottomPanel({
   minHeight = 120,
   onHeightChange,
 }: BottomPanelProps) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(defaultOpen);
 
   const barHeight = 44;
@@ -128,7 +130,7 @@ export function BottomPanel({
                           className="h-7 px-2 text-xs text-text-secondary hover:bg-surface-0/70"
                           onClick={() => setOpen((v) => !v)}
                       >
-                          {open ? "Hide" : "Show"}
+                          {open ? t('hide') : t('show')}
                       </Button>
                   </div>
               </div>

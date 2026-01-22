@@ -6,6 +6,7 @@ import type {DateRange} from "react-day-picker";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 import {MapsAndGraphsFilterControls} from "@/components/MapsAndGraphsFilterControls";
 import {MatrixSelect} from "@/components/MatrixSelect";
@@ -55,6 +56,8 @@ function dateDiffInDays(a: Date, b: Date) {
 }
 
 export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps) {
+    const {t} = useLanguage();
+
     // Matrix
     const [seleccionAgreg, setSeleccionAgreg, seleccionHydrated] =
         usePersistentState<string>("graphs_seleccionAgreg", "");
@@ -161,14 +164,14 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
         matsModeHydrated;
 
     if (!uiHydrated) {
-        return <div className="p-3 text-xs text-muted-foreground">Loading…</div>;
+        return <div className="p-3 text-xs text-muted-foreground">{t('loading')}</div>;
     }
 
     const handleAnalyze = async () => {
         if (apiBusy || selectedCharts.length === 0) return;
 
         if (!runId) {
-            setApiError("Selecciona una simulación...");
+            setApiError(t('selectSimulation'));
             return;
         }
 
@@ -204,7 +207,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                 matsMode,
             });
         } catch (e: any) {
-            setApiError(e?.message ?? "Error inesperado");
+            setApiError(e?.message ?? t('unexpectedError'));
         } finally {
             setApiBusy(false);
         }
@@ -228,7 +231,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                                 "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
                             ].join(" ")}
                         >
-                            Graphs
+                            {t('graphs')}
                         </TabsTrigger>
 
                         <TabsTrigger
@@ -242,7 +245,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                                 "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
                             ].join(" ")}
                         >
-                            Filter
+                            {t('filter')}
                         </TabsTrigger>
 
                         <TabsTrigger
@@ -256,7 +259,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                                 "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
                             ].join(" ")}
                         >
-                            Matrix
+                            {t('matrix')}
                         </TabsTrigger>
 
                         <TabsTrigger
@@ -270,7 +273,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                                 "focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
                             ].join(" ")}
                         >
-                            Actions
+                            {t('actions')}
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -279,7 +282,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                 <TabsContent value="graphs" className="mt-3">
                     <div
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-4">
-                        <div className="text-xs font-semibold text-text-primary">Graphs</div>
+                        <div className="text-xs font-semibold text-text-primary">{t('graphs')}</div>
 
                         <GraphsSelectorCard
                             GRAFICAS={GRAFICAS}
@@ -335,7 +338,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                 <TabsContent value="filter" className="mt-3">
                     <div
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3">
-                        <div className="mb-3 text-xs font-semibold text-text-primary">Filter</div>
+                        <div className="mb-3 text-xs font-semibold text-text-primary">{t('filter')}</div>
                         <MapsAndGraphsFilterControls
                             useFilterForMaps={useFilter}
                             setUseFilterForMaps={setUseFilter}
@@ -353,7 +356,7 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                 <TabsContent value="matrix" className="mt-3">
                     <div
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3">
-                        <div className="mb-3 text-xs font-semibold text-text-primary">Matrix</div>
+                        <div className="mb-3 text-xs font-semibold text-text-primary">{t('matrix')}</div>
                         <MatrixSelect
                             matrices={[...MATRICES]}
                             seleccionAgreg={seleccionAgreg}
@@ -365,14 +368,14 @@ export default function GraphAnalysisSidebar({runId}: GraphAnalysisSidebarProps)
                 <TabsContent value="actions" className="mt-3">
                     <div
                         className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3 space-y-3">
-                        <div className="text-xs font-semibold text-text-primary">Actions</div>
+                        <div className="text-xs font-semibold text-text-primary">{t('actions')}</div>
 
                         <Button
                             onClick={handleAnalyze}
                             disabled={apiBusy || selectedCharts.length === 0}
                             className="w-full bg-accent text-text-inverted hover:bg-accent-hover"
                         >
-                            {apiBusy ? "Analizando…" : "Analizar gráficas"}
+                            {apiBusy ? t('analyzing') : t('analyzeGraphs')}
                         </Button>
 
                         {apiError && <span className="text-xs text-danger">{apiError}</span>}

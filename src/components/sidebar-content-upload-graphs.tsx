@@ -8,6 +8,7 @@ import {
     SidebarContent as SidebarBody,
     SidebarFooter,
 } from '@/components/ui/sidebar';
+import {useLanguage} from '@/contexts/LanguageContext';
 import type {SimulationData} from '@/types/simulation';
 import StatisticsForm from '@/components/statistics-form';
 
@@ -21,6 +22,7 @@ export default function SidebarContentUploadMaps({
                                                      onSimulationComplete,
                                                      runId
                                                  }: SidebarContentProps) {
+    const {t} = useLanguage();
     const {toast} = useToast();
     const [isRunning, setIsRunning] = useState(false);
 
@@ -50,15 +52,15 @@ export default function SidebarContentUploadMaps({
             onSimulationComplete(result);
 
             toast({
-                title: 'Analysis Complete',
-                description: 'Analysis finished successfully',
+                title: t('analysisComplete'),
+                description: t('analysisFinishedSuccessfully'),
             });
         } catch (error) {
             toast({
                 variant: 'destructive',
-                title: 'Error',
+                title: t('error'),
                 description:
-                    error instanceof Error ? error.message : 'Analysis failed',
+                    error instanceof Error ? error.message : t('analysisFailed'),
             });
         } finally {
             setIsRunning(false);
@@ -70,10 +72,10 @@ export default function SidebarContentUploadMaps({
             <SidebarHeader className="p-4 border-b border-surface-3 bg-surface-1/85 backdrop-blur-md">
                 <div className="space-y-1">
                     <h2 className="text-base font-semibold font-headline text-text-primary">
-                        Analysis
+                        {t('analysis')}
                     </h2>
                     <p className="text-[11px] text-text-secondary">
-                        Map creation parameters
+                        {t('mapCreationParameters')}
                     </p>
                 </div>
             </SidebarHeader>
@@ -88,7 +90,7 @@ export default function SidebarContentUploadMaps({
             {/* Optional footer area (kept empty to avoid nested panels unless you want a status row) */}
             <SidebarFooter className="p-4 border-t border-surface-3 bg-surface-1/85 backdrop-blur-md">
                 <div className="text-[11px] text-text-secondary">
-                    {runId ? `Run: ${runId}` : "No run selected"}
+                    {runId ? `${t('run')}: ${runId}` : t('noRunSelected')}
                 </div>
             </SidebarFooter>
         </>

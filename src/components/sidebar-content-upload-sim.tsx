@@ -6,6 +6,7 @@ import SimulationForm from '@/components/simulation-form';
 import {Button} from '@/components/ui/button';
 import {Label} from '@/components/ui/label';
 import {Input} from '@/components/ui/input';
+import {useLanguage} from '@/contexts/LanguageContext';
 import type {SimulationData} from '@/types/simulation';
 
 type UploadSimPanelProps = {
@@ -13,6 +14,7 @@ type UploadSimPanelProps = {
 };
 
 export default function UploadSimPanel({onSimulationComplete}: UploadSimPanelProps) {
+    const {t} = useLanguage();
     const {toast} = useToast();
     const [isSimulating, setIsSimulating] = useState(false);
 
@@ -28,8 +30,8 @@ export default function UploadSimPanel({onSimulationComplete}: UploadSimPanelPro
         if (!folderPath.trim()) {
             toast({
                 variant: 'destructive',
-                title: 'Folder Required',
-                description: 'Please enter a valid input folder path.',
+                title: t('folderRequired'),
+                description: t('enterValidInputFolder'),
             });
             return;
         }
@@ -55,18 +57,21 @@ export default function UploadSimPanel({onSimulationComplete}: UploadSimPanelPro
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.detail || 'Simulation failed');
+                throw new Error(errorData?.detail || t('simulationFailed'));
             }
 
             const result = await response.json();
             onSimulationComplete(result);
 
-            toast({title: 'Simulation Complete', description: 'Simulation finished successfully'});
+            toast({
+                title: t('simulationComplete'),
+                description: t('simulationFinishedSuccessfully')
+            });
         } catch (error) {
             toast({
                 variant: 'destructive',
-                title: 'Error',
-                description: error instanceof Error ? error.message : 'Simulation failed',
+                title: t('error'),
+                description: error instanceof Error ? error.message : t('simulationFailed'),
             });
         } finally {
             setIsSimulating(false);
@@ -77,15 +82,15 @@ export default function UploadSimPanel({onSimulationComplete}: UploadSimPanelPro
         <div
             className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-4 space-y-4">
             <div className="space-y-0.5">
-                <div className="text-xs font-semibold text-text-primary">Simulation</div>
-                <div className="text-[11px] text-text-secondary">Input folder & parameters</div>
+                <div className="text-xs font-semibold text-text-primary">{t('simulation')}</div>
+                <div className="text-[11px] text-text-secondary">{t('inputFolderAndParameters')}</div>
             </div>
 
             <div className="h-px w-full bg-surface-3"/>
 
             <div className="space-y-1">
                 <Label htmlFor="folderPath" className="text-[11px] text-text-secondary">
-                    Input folder
+                    {t('inputFolder')}
                 </Label>
                 <Input
                     id="folderPath"
@@ -118,11 +123,11 @@ export default function UploadSimPanel({onSimulationComplete}: UploadSimPanelPro
                     disabled={isSimulating}
                     className="w-full bg-accent text-text-inverted hover:bg-accent-hover focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0"
                 >
-                    {isSimulating ? "Running Simulation..." : "Run Simulation"}
+                    {isSimulating ? t('runningSimulation') : t('runSimulation')}
                 </Button>
 
                 <div className="mt-2 text-[10px] text-text-tertiary">
-                    {isSimulating ? "Executing simulation request…" : "Ready."}
+                    {isSimulating ? t('executingSimulationRequest') : t('ready')}
                 </div>
             </div>
         </div>

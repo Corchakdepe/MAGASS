@@ -6,6 +6,7 @@ import {useEffect, useState} from "react";
 
 import {Button} from "@/components/ui/button";
 import {RefreshCw} from "lucide-react";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 import type {SimulationData, SimulationSummaryData} from "@/types/simulation";
 import type {MainContentMode} from "@/types/view-mode";
@@ -87,6 +88,7 @@ export default function MainContent({
                                         mode,
                                         onStationPick,
                                     }: MainContentProps) {
+    const {t} = useLanguage();
     const [simulationData, setSimulationData] = useState(externalSimData);
     const [simulationSummary, setSimulationSummary] = useState(defaultSummary);
     const [latestFolder, setLatestFolder] = useState<string | null>(null);
@@ -235,7 +237,7 @@ export default function MainContent({
             <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
                 <div className="flex items-center gap-2 text-sm text-text-secondary">
                     <RefreshCw className="h-4 w-4 animate-spin text-accent"/>
-                    <span>Cargando resultados de simulación…</span>
+                    <span>{t('loadingSimulationResults')}</span>
                 </div>
             </div>
         );
@@ -247,7 +249,7 @@ export default function MainContent({
                 <div
                     className="flex flex-col items-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-3 shadow-sm">
                     <div className="text-sm font-medium text-text-primary">
-                        Error al cargar datos
+                        {t('errorLoadingData')}
                     </div>
                     <div className="text-xs text-text-secondary max-w-md text-center">
                         {error}
@@ -259,7 +261,7 @@ export default function MainContent({
                         onClick={fetchLatest}
                     >
                         <RefreshCw className="mr-1 h-3 w-3"/>
-                        Reintentar
+                        {t('retry')}
                     </Button>
                 </div>
             </div>
@@ -273,10 +275,10 @@ export default function MainContent({
             <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
                 <div className="flex flex-col items-center gap-2 text-center">
                     <div className="text-sm font-semibold text-text-primary">
-                        No hay resultados de simulación todavía
+                        {t('noSimulationResults')}
                     </div>
                     <div className="text-xs text-text-secondary max-w-sm">
-                        Ejecuta una simulación para ver aquí el resumen, los gráficos y los mapas asociados.
+                        {t('runSimulationToSeeResults')}
                     </div>
                 </div>
             </div>

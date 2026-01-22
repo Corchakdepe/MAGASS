@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {Bike, MapPin, Navigation} from "lucide-react";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 type DashboardPanelProps = {
     apiBase: string;
@@ -45,6 +46,7 @@ function StatRow({
 }
 
 export default function DashboardPanel({apiBase, runId}: DashboardPanelProps) {
+    const {t} = useLanguage();
     const [initialData, setInitialData] = useState<InitialData>(defaultInitialData);
     const [stationsMapUrl, setStationsMapUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +92,7 @@ export default function DashboardPanel({apiBase, runId}: DashboardPanelProps) {
         return (
             <div className="h-full w-full flex items-center justify-center">
                 <div className="text-sm text-text-secondary py-12">
-                    Cargando dashboard...
+                    {t('loadingDashboard')}
                 </div>
             </div>
         );
@@ -100,7 +102,7 @@ export default function DashboardPanel({apiBase, runId}: DashboardPanelProps) {
         return (
             <div className="h-full w-full flex items-center justify-center">
                 <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md px-4 py-3">
-                    <p className="text-sm font-semibold text-danger">Error</p>
+                    <p className="text-sm font-semibold text-danger">{t('error')}</p>
                     <p className="text-xs text-text-secondary">{error}</p>
                 </div>
             </div>
@@ -120,17 +122,17 @@ export default function DashboardPanel({apiBase, runId}: DashboardPanelProps) {
             <div
                 className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel px-4 py-3 divide-y divide-surface-3/70">
                 <StatRow
-                    label="Ciudad"
+                    label={t('city')}
                     value={initialData.city}
                     icon={<Navigation className="h-4 w-4"/>}
                 />
                 <StatRow
-                    label="Número de Bicicletas"
+                    label={t('numberOfBikes')}
                     value={initialData.numBikes.toLocaleString()}
                     icon={<Bike className="h-4 w-4"/>}
                 />
                 <StatRow
-                    label="Estaciones Disponibles"
+                    label={t('availableStations')}
                     value={initialData.numStations.toLocaleString()}
                     icon={<MapPin className="h-4 w-4"/>}
                 />
@@ -141,10 +143,10 @@ export default function DashboardPanel({apiBase, runId}: DashboardPanelProps) {
                 className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
                 <div className="px-4 py-3 border-b border-surface-3/70">
                     <div className="text-sm font-semibold text-text-primary">
-                        Mapa de Estaciones
+                        {t('stationsMap')}
                     </div>
                     <div className="text-[11px] text-text-secondary">
-                        Vista general de estaciones del escenario seleccionado
+                        {t('stationsMapDescription')}
                     </div>
                 </div>
 
@@ -153,14 +155,14 @@ export default function DashboardPanel({apiBase, runId}: DashboardPanelProps) {
                         <iframe
                             src={stationsMapUrl}
                             className="w-full h-full "
-                            title="Mapa de Estaciones"
+                            title={t('stationsMap')}
                             loading="lazy"
                             sandbox="allow-scripts allow-same-origin"
                         />
                     </div>
                 ) : (
                     <div className="text-center text-text-secondary py-12 bg-surface-0">
-                        No hay mapa de estaciones disponible
+                        {t('noStationsMapAvailable')}
                     </div>
                 )}
             </div>

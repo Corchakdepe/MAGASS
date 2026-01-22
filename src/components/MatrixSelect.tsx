@@ -12,6 +12,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export type MatrixOption = {
   label: string;
@@ -25,6 +26,7 @@ export type MatrixSelectProps = {
 };
 
 export function MatrixSelect({ matrices, seleccionAgreg, setSeleccionAgreg }: MatrixSelectProps) {
+  const { t } = useLanguage();
   const [open, setOpen] = React.useState(false);
 
   const selected = React.useMemo(
@@ -49,7 +51,7 @@ export function MatrixSelect({ matrices, seleccionAgreg, setSeleccionAgreg }: Ma
             ].join(" ")}
           >
             <span className={selected ? "truncate" : "truncate text-text-secondary"}>
-              {selected ? selected.label : "Selecciona matriz..."}
+              {selected ? selected.label : t('selectMatrix')}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-text-tertiary" />
           </Button>
@@ -57,8 +59,8 @@ export function MatrixSelect({ matrices, seleccionAgreg, setSeleccionAgreg }: Ma
 
         <PopoverContent className="w-[320px] max-w-[90vw] p-0 bg-surface-1 border border-surface-3 shadow-mac-panel">
           <Command>
-            <CommandInput placeholder="Buscar matriz..." className="text-xs" />
-            <CommandEmpty>No hay resultados.</CommandEmpty>
+            <CommandInput placeholder={t('searchMatrix')} className="text-xs" />
+            <CommandEmpty>{t('noResults')}</CommandEmpty>
 
             <CommandGroup>
               {/* Optional "clear" row */}
@@ -70,7 +72,7 @@ export function MatrixSelect({ matrices, seleccionAgreg, setSeleccionAgreg }: Ma
                 }}
                 className="text-xs text-text-secondary"
               >
-                Quitar selección
+                {t('removeSelection')}
               </CommandItem>
 
               {matrices.map((m) => {
@@ -103,7 +105,7 @@ export function MatrixSelect({ matrices, seleccionAgreg, setSeleccionAgreg }: Ma
 
       {/* Small helper text (optional) */}
       <div className="text-[10px] text-text-tertiary">
-        Valor: <code className="font-mono">{seleccionAgreg || "—"}</code>
+        {t('value')}: <code className="font-mono">{seleccionAgreg || "—"}</code>
       </div>
     </div>
   );

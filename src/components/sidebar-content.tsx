@@ -9,6 +9,7 @@ import {
 import {Button} from '@/components/ui/button';
 import {Home, Settings, FolderOpen, ChartArea, Map, Play, Filter} from 'lucide-react';
 import {TbMapCog} from 'react-icons/tb';
+import {useLanguage} from '@/contexts/LanguageContext';
 import React from "react";
 
 type SidebarContentProps = {
@@ -20,23 +21,23 @@ export default function SidebarContentComponent({
                                                     simulationName,
                                                     currentFolder,
                                                 }: SidebarContentProps) {
+    const {t} = useLanguage();
     const router = useRouter();
     const pathname = usePathname();
 
     const menuItems = [
-        {id: 'dashboard', label: 'Dashboard', icon: Home, path: '/'},
-        {id: 'simulations', label: 'Simulations', icon: Play, path: '/simulador'},
+        {id: 'dashboard', label: t('dashboard'), icon: Home, path: '/'},
+        {id: 'simulations', label: t('simulations'), icon: Play, path: '/simulador'},
         {
             id: 'analyticsGraphCreator',
-            label: 'Analytics graph creator',
+            label: t('analyticsGraphCreator'),
             icon: ChartArea,
             path: '/analyticsGraphCreator'
         },
-        {id: 'analyticsMapCreator', label: 'Analytics map creator', icon: TbMapCog, path: '/analyticsMapCreator'},
-
-        {id: 'filter', label: 'Filter', icon: Filter, path: '/filters'},
-        {id: 'history', label: 'History', icon: FolderOpen, path: '/history'},
-        {id: 'settings', label: 'Settings', icon: Settings, path: '/settings'},
+        {id: 'analyticsMapCreator', label: t('analyticsMapCreator'), icon: TbMapCog, path: '/analyticsMapCreator'},
+        {id: 'filter', label: t('filter'), icon: Filter, path: '/filters'},
+        {id: 'history', label: t('history'), icon: FolderOpen, path: '/history'},
+        {id: 'settings', label: t('settings'), icon: Settings, path: '/settings'},
     ];
 
     const isActive = (itemPath: string) => {
@@ -51,7 +52,7 @@ export default function SidebarContentComponent({
                     <h2 className="text-base font-semibold font-headline text-text-primary">
                         BikeSim
                     </h2>
-                    <div className="text-[11px] text-text-secondary">Navigation</div>
+                    <div className="text-[11px] text-text-secondary">{t('navigation')}</div>
                 </div>
             </SidebarHeader>
 
@@ -89,7 +90,7 @@ export default function SidebarContentComponent({
             <SidebarFooter className="p-4 border-t border-surface-3 bg-surface-1/85 backdrop-blur-md">
                 <div className="space-y-1 min-w-0">
                     <p className="text-[12px] font-semibold text-text-primary truncate">
-                        {simulationName ?? "No name"}
+                        {simulationName ?? t('noName')}
                     </p>
                     <p className="text-[11px] text-text-secondary truncate">
                         {currentFolder ?? "—"}

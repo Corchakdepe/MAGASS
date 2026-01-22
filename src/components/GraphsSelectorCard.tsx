@@ -15,15 +15,18 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Calendar} from "@/components/ui/calendar";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import { GraphsSelectorCardProps } from "@/lib/analysis/graphs/types"
+import {useLanguage} from "@/contexts/LanguageContext";
+import {GraphsSelectorCardProps} from "@/lib/analysis/graphs/types"
 
 //Solo sirve para enseñar todos los dias si se selecciona
 function RangeLabel({range}: { range: DateRange | undefined }) {
-    if (!range?.from || !range?.to) return "Todos los días";
+    const {t} = useLanguage();
+    if (!range?.from || !range?.to) return t('allDays');
     return `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`;
 }
 
 export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
+    const {t} = useLanguage();
     const {
         GRAFICAS,
         selectedCharts,
@@ -66,22 +69,22 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="text-xs font-semibold text-text-primary">Gráficas</div>
+                    <div className="text-xs font-semibold text-text-primary">{t('graphs')}</div>
                     <div className="text-[11px] text-text-secondary">
-                        Selecciona gráficas y ajusta parámetros por gráfica.
+                        {t('selectGraphsAndAdjust')}
                     </div>
                 </div>
 
                 {useFilter ? (
                     <div className="shrink-0 rounded-md bg-accent-soft px-2 py-1 text-[11px] text-accent">
-                        Filtro activo
+                        {t('activeFilter')}
                     </div>
                 ) : null}
             </div>
 
             {/* Multi-select: trigger + selected chips */}
             <div className="space-y-2">
-                <Label className="text-[11px] text-text-secondary">Selección</Label>
+                <Label className="text-[11px] text-text-secondary">{t('selection')}</Label>
 
                 <Popover>
                     <PopoverTrigger asChild>
@@ -96,8 +99,9 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                         >
             <span className="truncate text-left">
               {selectedCharts.length === 0
-                  ? "Selecciona gráficas…"
-                  : `${selectedCharts.length} seleccionadas`}
+                  ? t('selectGraphs')
+                  : `${selectedCharts.length} ${t('selected')}`}
+
             </span>
                             <span className="ml-2 text-text-tertiary">▾</span>
                         </Button>
@@ -106,8 +110,8 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                     <PopoverContent
                         className="w-[340px] max-w-[90vw] p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                         <Command>
-                            <CommandInput placeholder="Buscar gráfica…" className="text-xs"/>
-                            <CommandEmpty>No hay resultados.</CommandEmpty>
+                            <CommandInput placeholder={t('searchGraph')} className="text-xs"/>
+                            <CommandEmpty>{t('noResults')}</CommandEmpty>
 
                             <CommandGroup>
                                 {GRAFICAS.map((g) => {
@@ -162,7 +166,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                             {(g.key === "graf_barras_est_med" || g.key === "graf_barras_est_acum") && (
                                 <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Estaciones</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('stations')}</Label>
                                         <Input
                                             className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             placeholder="87;212"
@@ -173,7 +177,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Días</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('days')}</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -199,7 +203,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                         </Popover>
 
                                         <div className="text-[10px] text-text-tertiary">
-                                            Valor enviado: <code className="font-mono">{barDays}</code>
+                                            {t('sentValue')}: <code className="font-mono">{barDays}</code>
                                         </div>
                                     </div>
                                 </div>
@@ -209,7 +213,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                             {g.key === "graf_barras_dia" && (
                                 <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Días</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('days')}</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -235,13 +239,13 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                         </Popover>
 
                                         <div className="text-[10px] text-text-tertiary">
-                                            Valor enviado: <code className="font-mono">{dayDays}</code>
+                                            {t('sentValue')}: <code className="font-mono">{dayDays}</code>
                                         </div>
                                     </div>
 
                                     <div className="space-y-3">
                                         <div className="space-y-1">
-                                            <Label className="text-[11px] text-text-secondary">Modo</Label>
+                                            <Label className="text-[11px] text-text-secondary">{t('mode')}</Label>
                                             <Select value={dayMode} onValueChange={(v) => setDayMode(v as "M" | "A")}>
                                                 <SelectTrigger
                                                     className="h-8 text-xs bg-surface-1 border border-surface-3 focus:ring-2 focus:ring-accent/25 focus:border-accent/30">
@@ -249,8 +253,8 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                                 </SelectTrigger>
                                                 <SelectContent
                                                     className="bg-surface-1 border border-surface-3 shadow-mac-panel">
-                                                    <SelectItem value="M">Media (M)</SelectItem>
-                                                    <SelectItem value="A">Acum. (A)</SelectItem>
+                                                    <SelectItem value="M">{t('average')} (M)</SelectItem>
+                                                    <SelectItem value="A">{t('cumulative')} (A)</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -258,7 +262,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                         <div className="flex items-center gap-2 pt-1">
                                             <Checkbox checked={dayFreq}
                                                       onCheckedChange={(v) => setDayFreq(Boolean(v))}/>
-                                            <span className="text-[11px] text-text-secondary">Frecuencia (-Frec)</span>
+                                            <span className="text-[11px] text-text-secondary">{t('frequency')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -268,7 +272,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                             {g.key === "graf_linea_comp_est" && (
                                 <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Estaciones</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('stations')}</Label>
                                         <Input
                                             className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                             placeholder="87;212"
@@ -277,12 +281,12 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                             disabled={useFilter}
                                         />
                                         <div className="text-[10px] text-text-tertiary">
-                                            Usa "all" o patrones por estación separados por "#" (ej: 0;1#2;3).
+                                            {t('stationsPatternHelp')}
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Días</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('days')}</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -309,7 +313,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                         </Popover>
 
                                         <div className="text-[10px] text-text-tertiary">
-                                            Valor enviado: <code className="font-mono">{lineDays}</code>
+                                            {t('sentValue')}: <code className="font-mono">{lineDays}</code>
                                         </div>
                                     </div>
                                 </div>
@@ -319,7 +323,7 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                             {g.key === "graf_linea_comp_mats" && (
                                 <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Δ y modo</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('deltaAndMode')}</Label>
                                         <div className="grid grid-cols-2 gap-2">
                                             <Input
                                                 className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
@@ -334,25 +338,25 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
                                                 </SelectTrigger>
                                                 <SelectContent
                                                     className="bg-surface-1 border border-surface-3 shadow-mac-panel">
-                                                    <SelectItem value="M">Media</SelectItem>
-                                                    <SelectItem value="A">Acum.</SelectItem>
+                                                    <SelectItem value="M">{t('average')}</SelectItem>
+                                                    <SelectItem value="A">{t('cumulative')}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-[11px] text-text-secondary">Estaciones</Label>
+                                        <Label className="text-[11px] text-text-secondary">{t('stations')}</Label>
                                         <Input
                                             className="h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
-                                            placeholder="Est. matriz base (ej: 87;212)"
+                                            placeholder={t('baseMatrixStations')}
                                             value={matsStations1}
                                             onChange={(e) => setMatsStations1(e.target.value)}
                                             disabled={useFilter}
                                         />
                                         <Input
                                             className="mt-2 h-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
-                                            placeholder="Est. matriz custom (ej: 0;1)"
+                                            placeholder={t('customMatrixStations')}
                                             value={matsStations2}
                                             onChange={(e) => setMatsStations2(e.target.value)}
                                         />

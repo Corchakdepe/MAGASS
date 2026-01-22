@@ -6,7 +6,9 @@ import {SidebarHeader, SidebarContent as SidebarBody} from '@/components/ui/side
 import SidebarContentUploadSim from '@/components/sidebar-content-upload-sim';
 import SidebarContentUploadMaps from '@/components/sidebar-content-upload-maps';
 import GraphAnalysisSidebar from '@/components/graph-analysis-sidebar';
+import LanguageSelector from "@/components/LanguageSelector";
 import {Button} from '@/components/ui/button';
+import {useLanguage} from '@/contexts/LanguageContext';
 import type {SimulationData} from '@/types/simulation';
 import {API_BASE} from "@/lib/analysis/constants";
 
@@ -55,6 +57,7 @@ export default function SidebarHistory({
                                            currentRunId,
                                            onRunIdChange,
                                        }: SidebarHistoryProps) {
+    const {t} = useLanguage();
     const pathname = usePathname();
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
@@ -125,19 +128,16 @@ export default function SidebarHistory({
     };
 
     let content: React.ReactNode = (
-        <p className="text-xs text-text-secondary">
-            Select a section on the left to configure simulations or analytics.
-        </p>
+        <LanguageSelector />
     );
-
 
     if (pathname.startsWith('/history')) {
         content = (
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-xs font-semibold text-text-primary">Simulation history</h3>
-                        <p className="text-[11px] text-text-secondary">Select a run to load its summary.</p>
+                        <h3 className="text-xs font-semibold text-text-primary">{t('simulationHistory')}</h3>
+                        <p className="text-[11px] text-text-secondary">{t('selectRunToLoadSummary')}</p>
                     </div>
 
                     <Button
@@ -150,10 +150,10 @@ export default function SidebarHistory({
                     </Button>
                 </div>
 
-                {loadingHistory && <p className="text-xs text-text-secondary">Loading history…</p>}
+                {loadingHistory && <p className="text-xs text-text-secondary">{t('loadingHistory')}</p>}
 
                 {!loadingHistory && history.length === 0 && (
-                    <p className="text-xs text-text-secondary">No simulations yet.</p>
+                    <p className="text-xs text-text-secondary">{t('noSimulationsYet')}</p>
                 )}
 
                 <ul className="space-y-1 max-h-80 overflow-y-auto pr-1">
@@ -180,20 +180,20 @@ export default function SidebarHistory({
                                         <div className="min-w-0">
                                             <div
                                                 className={["text-xs font-semibold truncate", active ? "text-accent" : "text-text-primary"].join(" ")}>
-                                                {item.cityname ?? "Unknown city"}
+                                                {item.cityname ?? t('unknownCity')}
                                             </div>
                                             <div className="text-[10px] text-text-tertiary">
-                                                Date {item.created}
+                                                {t('date')} {item.created}
                                             </div>
                                             <div className="text-[10px] text-text-tertiary truncate">
-                                                Simulation Folder {item.name}
+                                                {t('simulationFolder')} {item.name}
                                             </div>
                                         </div>
 
                                         {active ? (
                                             <div
                                                 className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-text-inverted">
-                                                Selected
+                                                {t('selected')}
                                             </div>
                                         ) : null}
                                     </div>
@@ -207,17 +207,15 @@ export default function SidebarHistory({
     } else if (pathname.startsWith('/simulador') && onSimulationComplete) {
         content = <SidebarContentUploadSim onSimulationComplete={onSimulationComplete}/>;
     } else if (pathname.startsWith('/analyticsMapCreator') && onSimulationComplete) {
-        // You can keep this, but now maps tools are in bottom panel; optional:
         content = (
             <div className="text-xs text-muted-foreground">
-                Selected run: {currentRunId ?? 'none'} (map tools are in the bottom panel)
+                {t('selectedRun')}: {currentRunId ?? t('none')} ({t('mapToolsInBottomPanel')})
             </div>
         );
     } else if (pathname.startsWith('/analyticsGraphCreator')) {
-        // Same: bottom panel will show graphs; optional:
         content = (
             <div className="text-xs text-muted-foreground">
-                Selected run: {currentRunId ?? 'none'} (graph tools are in the bottom panel)
+                {t('selectedRun')}: {currentRunId ?? t('none')} ({t('graphToolsInBottomPanel')})
             </div>
         );
     }
@@ -227,10 +225,10 @@ export default function SidebarHistory({
             <SidebarHeader className="p-4 border-b border-surface-3 bg-surface-1/85 backdrop-blur-md">
                 <div className="space-y-1">
                     <h2 className="text-base font-semibold font-headline text-text-primary">
-                        Tools
+                        {t('tools')}
                     </h2>
                     <p className="text-[11px] text-text-secondary">
-                        Manage runs and configure panels.
+                        {t('manageRunsAndConfigure')}
                     </p>
                 </div>
             </SidebarHeader>

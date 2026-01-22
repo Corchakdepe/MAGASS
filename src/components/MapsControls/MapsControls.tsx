@@ -7,7 +7,7 @@ import {cn} from "@/lib/utils";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
-
+import { useLanguage } from "@/contexts/LanguageContext";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {
     Command,
@@ -67,6 +67,7 @@ export function MapsControls({
                                  mapUserName,
                                  setMapUserName,
                              }: MapsControlsProps) {
+    const { t } = useLanguage();
     const selectedMap = selectedMaps[0];
 
     const setStationsFor = (key: MapKey, next: string) => {
@@ -85,11 +86,11 @@ export function MapsControls({
     const [mapPickerOpen, setMapPickerOpen] = React.useState(false);
 
     const selectedMapLabel =
-        MAPAS.find((m) => m.arg === (selectedMap ?? ""))?.label ?? "Selecciona mapa…";
+        MAPAS.find((m) => m.arg === (selectedMap ?? ""))?.label ?? t('selectMap');
 
     return (
-        <div
-            className="">{/* Selector de mapa */}
+        <div className="">
+            {/* Selector de mapa */}
             <div className="grid grid-cols-2 gap-4 ">
                 <Popover open={mapPickerOpen} onOpenChange={setMapPickerOpen}>
                     <PopoverTrigger asChild>
@@ -100,9 +101,9 @@ export function MapsControls({
                             aria-expanded={mapPickerOpen}
                             className="h-9 w-full rounded-md border border-surface-3 bg-surface-1 text-xs text-text-primary hover:bg-surface-0/70 flex items-center justify-between"
                         >
-      <span className="truncate flex-1 text-left">
-        {selectedMapLabel}
-      </span>
+                            <span className="truncate flex-1 text-left">
+                                {selectedMapLabel}
+                            </span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-text-secondary"/>
                         </Button>
                     </PopoverTrigger>
@@ -113,12 +114,12 @@ export function MapsControls({
                     >
                         <Command className="bg-transparent">
                             <CommandInput
-                                placeholder="Buscar mapa…"
+                                placeholder={t('searchMap')}
                                 className="h-9 text-xs"
                             />
                             <CommandList>
                                 <CommandEmpty className="py-2 text-xs text-text-secondary">
-                                    No hay resultados.
+                                    {t('noResults')}
                                 </CommandEmpty>
                                 <CommandGroup>
                                     {MAPAS.map((m) => {
@@ -165,7 +166,7 @@ export function MapsControls({
                                     setMapPickerOpen(false);
                                 }}
                             >
-                                Limpiar selección
+                                {t('clearSelection')}
                             </Button>
                         </div>
                     </PopoverContent>
@@ -173,67 +174,68 @@ export function MapsControls({
 
                 <Input
                     className="h-9 w-full rounded-md border border-surface-3 bg-surface-1 text-xs text-text-primary hover:bg-surface-0/70"
-                    placeholder="Nombre descriptivo para el mapa"
+                    placeholder={t('mapDescriptiveName')}
                     value={mapUserName}
                     onChange={(e) => setMapUserName(e.target.value)}
                 />
 
-
                 {/* Mapa densidad */}
                 {selectedMap === "mapa_densidad" && (
                     <section className="grid grid-cols-1 gap-4 ">
-                               <InstantesInput
-                                deltaOutMin={deltaOutMin}
-                                value={instantesMaps["mapa_densidad"] ?? ""}
-                                onChange={(val) => setInstantesFor("mapa_densidad", val)}
-                            />
+                        <InstantesInput
+                            deltaOutMin={deltaOutMin}
+                            value={instantesMaps["mapa_densidad"] ?? ""}
+                            onChange={(val) => setInstantesFor("mapa_densidad", val)}
+                        />
                         <StationsSelector
-                                mapKey="mapa_densidad"
-                                value={stationsMaps["mapa_densidad"] ?? ""}
-                                disabled={useFilterForMaps}
-                                onChange={(_, next) => setStationsFor("mapa_densidad", next)}
-                                onClear={() => clearStationsFor("mapa_densidad")}
-                            />
+                            mapKey="mapa_densidad"
+                            value={stationsMaps["mapa_densidad"] ?? ""}
+                            disabled={useFilterForMaps}
+                            onChange={(_, next) => setStationsFor("mapa_densidad", next)}
+                            onClear={() => clearStationsFor("mapa_densidad")}
+                        />
                     </section>
                 )}
 
                 {/* Mapa círculos */}
                 {selectedMap === "mapa_circulo" && (
                     <section className="grid grid-cols-1 gap-4 ">
-                            <StationsSelector
-                                mapKey="mapa_circulo"
-                                value={stationsMaps["mapa_circulo"] ?? ""}
-                                disabled={useFilterForMaps}
-                                onChange={(_, next) => setStationsFor("mapa_circulo", next)}
-                                onClear={() => clearStationsFor("mapa_circulo")}
-                            />
-                            <InstantesInput
-                                deltaOutMin={deltaOutMin}
-                                value={instantesMaps["mapa_circulo"] ?? ""}
-                                onChange={(val) => setInstantesFor("mapa_circulo", val)}
-                            />
+                        <StationsSelector
+                            mapKey="mapa_circulo"
+                            value={stationsMaps["mapa_circulo"] ?? ""}
+                            disabled={useFilterForMaps}
+                            onChange={(_, next) => setStationsFor("mapa_circulo", next)}
+                            onClear={() => clearStationsFor("mapa_circulo")}
+                        />
+                        <InstantesInput
+                            deltaOutMin={deltaOutMin}
+                            value={instantesMaps["mapa_circulo"] ?? ""}
+                            onChange={(val) => setInstantesFor("mapa_circulo", val)}
+                        />
                     </section>
                 )}
+
                 {/* Mapa Voronoi */}
                 {selectedMap === "mapa_voronoi" && (
                     <section className="">
-                            <InstantesInput
-                                deltaOutMin={deltaOutMin}
-                                value={instantesMaps["mapa_voronoi"] ?? ""}
-                                onChange={(val) => setInstantesFor("mapa_voronoi", val)}
-                            />
+                        <InstantesInput
+                            deltaOutMin={deltaOutMin}
+                            value={instantesMaps["mapa_voronoi"] ?? ""}
+                            onChange={(val) => setInstantesFor("mapa_voronoi", val)}
+                        />
                     </section>
                 )}
+
                 {/* Mapa de desplazamientos */}
                 {selectedMap === "mapa_desplazamientos" && (
                     <section className="space-y-4 rounded-lg border border-surface-3 bg-surface-1 p-3">
                         <div className="text-xs font-semibold text-text-primary">
-                            Mapa de desplazamientos
+                            {t('displacementMap')}
                         </div>
 
                         <div className="space-y-2">
                             <Label className="text-[11px] font-medium text-text-secondary">
-                                Instantes
+                                {t('instants')}
                             </Label>
                             <Input
                                 className="h-8 w-full text-xs rounded-md bg-surface-1 border border-surface-3 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/20"
@@ -243,13 +245,13 @@ export function MapsControls({
                                     setInstantesFor("mapa_desplazamientos_inst", e.target.value)
                                 }
                             />
-                            <p className="text-[11px] text-text-secondary">Lista de tiempo</p>
+                            <p className="text-[11px] text-text-secondary">{t('timeList')}</p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 min-w-0">
                             <div className="space-y-2">
                                 <Label className="text-[11px] font-medium text-text-secondary">
-                                    Ventana de tiempo origen
+                                    {t('originTimeWindow')}
                                 </Label>
                                 <Input
                                     className="h-8 w-full text-xs rounded-md bg-surface-1 border border-surface-3 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/20"
@@ -263,7 +265,7 @@ export function MapsControls({
 
                             <div className="space-y-2">
                                 <Label className="text-[11px] font-medium text-text-secondary">
-                                    Ventana temporal destino
+                                    {t('destinationTimeWindow')}
                                 </Label>
                                 <Input
                                     className="h-8 w-full text-xs rounded-md bg-surface-1 border border-surface-3 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/20"
@@ -278,36 +280,36 @@ export function MapsControls({
 
                         {/* Movimiento (select-like combobox) */}
                         <SelectLikeCombobox
-                            label="Movimiento"
-                            placeholder="Movimiento"
+                            label={t('movement')}
+                            placeholder={t('movement')}
                             value={instantesMaps["mapa_desplazamientos_mov"] ?? ""}
                             onValueChange={(v) => setInstantesFor("mapa_desplazamientos_mov", v)}
                             options={[
-                                {label: "Entradas (dejar bici)", value: "1"},
-                                {label: "Salidas (coger bici)", value: "-1"},
+                                {label: t('arrivals'), value: "1"},
+                                {label: t('departures'), value: "-1"},
                             ]}
                         />
 
                         {/* Tipo (select-like combobox) */}
                         <SelectLikeCombobox
-                            label="Tipo"
-                            placeholder="Tipo"
+                            label={t('type')}
+                            placeholder={t('type')}
                             value={instantesMaps["mapa_desplazamientos_tipo"] ?? ""}
                             onValueChange={(v) => setInstantesFor("mapa_desplazamientos_tipo", v)}
                             options={[
-                                {label: "Reales", value: "1"},
-                                {label: "Ficticios", value: "0"},
-                                {label: "Todos", value: ""},
+                                {label: t('real'), value: "1"},
+                                {label: t('fictitious'), value: "0"},
+                                {label: t('all'), value: ""},
                             ]}
                         />
                     </section>
                 )}
+
                 {useFilterForMaps ? (
                     <div className="justify-self-end self-center">
-      <span
-          className="inline-flex items-center rounded-full bg-warning-soft px-2 py-0.5 text-[10px] font-medium text-warning border border-warning/30">
-        Filtro activo
-      </span>
+                        <span className="inline-flex items-center rounded-full bg-warning-soft px-2 py-0.5 text-[10px] font-medium text-warning border border-warning/30">
+                            {t('activeFilter')}
+                        </span>
                     </div>
                 ) : null}
             </div>
@@ -328,6 +330,7 @@ function SelectLikeCombobox({
     onValueChange: (v: string) => void;
     options: { label: string; value: string }[];
 }) {
+    const { t } = useLanguage();
     const [open, setOpen] = React.useState(false);
     const selectedLabel =
         options.find((o) => o.value === value)?.label ?? placeholder;
@@ -357,10 +360,10 @@ function SelectLikeCombobox({
                         className="w-[--radix-popover-trigger-width] p-2 rounded-lg border border-surface-3 bg-surface-1/95 backdrop-blur-md shadow-mac-panel"
                     >
                         <Command className="bg-transparent">
-                            <CommandInput placeholder="Buscar…" className="h-9 text-xs"/>
+                            <CommandInput placeholder={t('search')} className="h-9 text-xs"/>
                             <CommandList>
                                 <CommandEmpty className="py-2 text-xs text-text-secondary">
-                                    No hay resultados.
+                                    {t('noResults')}
                                 </CommandEmpty>
                                 <CommandGroup>
                                     {options.map((o) => {

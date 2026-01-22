@@ -29,6 +29,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 import type {GraphItem} from "@/components/visualizations-panel";
 
@@ -146,6 +147,7 @@ function buildChartData(chart: BackendChart): ChartDataState {
 }
 
 export default function VisualizationGraphs({runId, apiBase, graphs, chartsFromApi}: VisualizationGraphsProps) {
+    const {t} = useLanguage();
     const fileMode = !!graphs;
     const jsonMode = !!chartsFromApi;
 
@@ -338,8 +340,8 @@ export default function VisualizationGraphs({runId, apiBase, graphs, chartsFromA
     if (!orderedGraphs || orderedGraphs.length === 0) {
         return (
             <section className="space-y-2">
-                <div className="text-sm font-semibold text-text-primary">Analytics Graph Creator</div>
-                <p className="text-xs text-text-secondary">No graph results found for this run.</p>
+                <div className="text-sm font-semibold text-text-primary">{t('analyticsGraphCreator')}</div>
+                <p className="text-xs text-text-secondary">{t('noGraphResultsForRun')}</p>
             </section>
         );
     }
@@ -350,9 +352,8 @@ export default function VisualizationGraphs({runId, apiBase, graphs, chartsFromA
             <section className="w-full space-y-3">
                 <div
                     className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-4">
-                    <div className="text-sm font-semibold text-text-primary">No graphs match filters</div>
-                    <div className="mt-1 text-xs text-text-secondary">Adjust search/filters or disable only favorites.
-                    </div>
+                    <div className="text-sm font-semibold text-text-primary">{t('noGraphsMatchFilters')}</div>
+                    <div className="mt-1 text-xs text-text-secondary">{t('adjustSearchOrDisableFavorites')}</div>
                     <div className="mt-3 flex items-center gap-2">
                         <Button
                             variant="outline"
@@ -367,7 +368,7 @@ export default function VisualizationGraphs({runId, apiBase, graphs, chartsFromA
                                 }))
                             }
                         >
-                            Reset filters
+                            {t('resetFilters')}
                         </Button>
                     </div>
                 </div>
@@ -420,7 +421,7 @@ export default function VisualizationGraphs({runId, apiBase, graphs, chartsFromA
                                 </div>
                                 {isFav && (
                                     <Badge
-                                        className="shrink-0 bg-accent-soft text-accent border border-accent/25">Favorite</Badge>
+                                        className="shrink-0 bg-accent-soft text-accent border border-accent/25">{t('favorite')}</Badge>
                                 )}
                             </div>
 
@@ -430,13 +431,13 @@ export default function VisualizationGraphs({runId, apiBase, graphs, chartsFromA
                             </div>
 
                             <div className="mt-2 text-[11px] text-text-tertiary flex flex-wrap items-center gap-2">
-<span>
-Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
-</span>
+                                <span>
+                                    {t('format')} {String(active.format ?? "")} · {t('kind')} {String(active.kind ?? "")}
+                                </span>
                                 <Separator orientation="vertical" className="h-4 bg-surface-3"/>
                                 <span>
-{selectedIndex + 1} / {filteredGraphs.length} (filtered) · {orderedGraphs.length} total
-</span>
+                                    {selectedIndex + 1} / {filteredGraphs.length} ({t('filtered')}) · {orderedGraphs.length} {t('total')}
+                                </span>
                             </div>
                         </div>
 
@@ -447,8 +448,8 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
                                 className="bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                 onClick={() => selectIndex(Math.max(0, selectedIndex - 1))}
                                 disabled={!canPrev}
-                                aria-label="Previous graph"
-                                title="Previous (←)"
+                                aria-label={t('previousGraph')}
+                                title={t('previousArrow')}
                             >
                                 <ChevronLeft className="h-4 w-4 text-text-primary"/>
                             </Button>
@@ -459,8 +460,8 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
                                 className="bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                 onClick={() => selectIndex(Math.min(filteredGraphs.length - 1, selectedIndex + 1))}
                                 disabled={!canNext}
-                                aria-label="Next graph"
-                                title="Next (→)"
+                                aria-label={t('nextGraph')}
+                                title={t('nextArrow')}
                             >
                                 <ChevronRight className="h-4 w-4 text-text-primary"/>
                             </Button>
@@ -469,12 +470,12 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
                                 className="h-8 w-[8.5rem] rounded-md border border-surface-3 bg-surface-1 px-2 text-xs text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                 value={visualType}
                                 onChange={(e) => setVisualType(e.target.value as "auto" | "bar" | "line" | "area")}
-                                title="Chart style"
+                                title={t('chartStyle')}
                             >
-                                <option value="auto">Auto (meta)</option>
-                                <option value="bar">Bar</option>
-                                <option value="line">Line</option>
-                                <option value="area">Area</option>
+                                <option value="auto">{t('autoMeta')}</option>
+                                <option value="bar">{t('bar')}</option>
+                                <option value="line">{t('line')}</option>
+                                <option value="area">{t('area')}</option>
                             </select>
 
                             <DropdownMenu>
@@ -483,8 +484,8 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
                                         variant="outline"
                                         size="icon"
                                         className="bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
-                                        aria-label="More actions"
-                                        title="More actions"
+                                        aria-label={t('moreActions')}
+                                        title={t('moreActions')}
                                     >
                                         <MoreVertical className="h-4 w-4 text-text-primary"/>
                                     </Button>
@@ -492,18 +493,19 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
 
                                 <DropdownMenuContent align="end"
                                                      className="w-56 bg-surface-1 border border-surface-3 shadow-mac-panel">
-                                    <DropdownMenuLabel className="text-xs text-text-secondary">Graph
-                                        actions</DropdownMenuLabel>
+                                    <DropdownMenuLabel className="text-xs text-text-secondary">
+                                        {t('graphActions')}
+                                    </DropdownMenuLabel>
                                     <DropdownMenuSeparator className="bg-surface-3"/>
                                     <DropdownMenuItem onClick={() => toggleFavorite(activeId)} className="text-xs">
                                         {isFav ? <StarOff className="h-4 w-4 mr-2 text-text-tertiary"/> :
                                             <Star className="h-4 w-4 mr-2 text-text-tertiary"/>}
-                                        {isFav ? "Unfavorite" : "Favorite"}
+                                        {isFav ? t('unfavorite') : t('favorite')}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => window.open(href, "_blank", "noreferrer")}
                                                       className="text-xs">
                                         <ChartSpline className="h-4 w-4 mr-2 text-text-tertiary"/>
-                                        Open JSON
+                                        {t('openJSON')}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -538,7 +540,7 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
                                 )
                             ) : (
                                 <div className="flex h-full items-center justify-center text-xs text-text-tertiary">
-                                    No numeric data available for this graph.
+                                    {t('noNumericDataForGraph')}
                                 </div>
                             )}
                         </div>
@@ -548,18 +550,18 @@ Format {String(active.format ?? "")} · Kind {String(active.kind ?? "")}
                 <div className="w-full border-t border-surface-3 bg-surface-1/85 p-3">
                     <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                            <div className="text-[11px] text-text-secondary">Selected graph</div>
+                            <div className="text-[11px] text-text-secondary">{t('selectedGraph')}</div>
                             <div
-                                className="text-xs font-semibold text-text-primary truncate">{meta.title || displayName || "Sin título"}</div>
+                                className="text-xs font-semibold text-text-primary truncate">{meta.title || displayName || t('noTitle')}</div>
                             <div className="mt-1 text-[11px] text-text-tertiary flex flex-wrap items-center gap-2">
-<span>
-X <span className="font-medium text-text-primary">{xLabel}</span>
-</span>
                                 <span>
-Y <span className="font-medium text-text-primary">{yLabel}</span>
-</span>
+                                    X <span className="font-medium text-text-primary">{xLabel}</span>
+                                </span>
+                                <span>
+                                    Y <span className="font-medium text-text-primary">{yLabel}</span>
+                                </span>
                                 {ySeries.some((s) => s.derived) &&
-                                    <span className="italic">Includes derived series.</span>}
+                                    <span className="italic">{t('includesDerivedSeries')}</span>}
                             </div>
                         </div>
 
@@ -572,10 +574,10 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                     isFav ? "text-accent border-accent/25 bg-accent-soft" : "",
                                 ].join(" ")}
                                 onClick={() => toggleFavorite(activeId)}
-                                title="Toggle favorite"
+                                title={t('toggleFavorite')}
                             >
                                 <Star className="h-4 w-4 mr-2"/>
-                                {isFav ? "Starred" : "Star"}
+                                {isFav ? t('starred') : t('star')}
                             </Button>
 
                             <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
@@ -584,10 +586,10 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                         variant="outline"
                                         size="sm"
                                         className="shrink-0 bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
-                                        title="Open history (H)"
+                                        title={t('openHistoryH')}
                                     >
                                         <ChevronUp className="h-4 w-4 mr-2"/>
-                                        Choose graph
+                                        {t('chooseGraph')}
                                     </Button>
                                 </SheetTrigger>
 
@@ -595,8 +597,7 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                     <div className="p-4 border-b border-surface-3 bg-surface-1/92 backdrop-blur-md">
                                         <SheetHeader>
                                             <SheetTitle className="text-sm text-text-primary">
-                                                Graphs history ({filteredGraphs.length} shown
-                                                / {orderedGraphs.length} total)
+                                                {t('graphsHistory')} ({filteredGraphs.length} {t('shown')} / {orderedGraphs.length} {t('total')})
                                             </SheetTitle>
                                         </SheetHeader>
                                     </div>
@@ -604,7 +605,7 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                     <div className="px-4 pb-3 space-y-3">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
                                             <div className="space-y-1">
-                                                <Label className="text-[11px] text-text-secondary">Search</Label>
+                                                <Label className="text-[11px] text-text-secondary">{t('search')}</Label>
                                                 <div className="relative">
                                                     <Search
                                                         className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary"/>
@@ -615,13 +616,13 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                                             ...p,
                                                             searchText: e.target.value
                                                         }))}
-                                                        placeholder="name, kind, id…"
+                                                        placeholder={t('searchPlaceholder')}
                                                     />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-[11px] text-text-secondary">Filters</Label>
+                                                <Label className="text-[11px] text-text-secondary">{t('filters')}</Label>
                                                 <div className="flex items-center gap-2">
                                                     <Button
                                                         type="button"
@@ -639,7 +640,7 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                                         }
                                                     >
                                                         <Filter className="h-4 w-4 mr-2"/>
-                                                        Reset
+                                                        {t('reset')}
                                                     </Button>
 
                                                     <div className="flex items-center gap-2">
@@ -652,13 +653,13 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                                             className="border-surface-3 data-[state=checked]:bg-accent data-[state=checked]:border-accent/40 focus-visible:ring-2 focus-visible:ring-accent/25"
                                                         />
                                                         <span
-                                                            className="text-xs text-text-secondary">Only favorites</span>
+                                                            className="text-xs text-text-secondary">{t('onlyFavorites')}</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-[11px] text-text-secondary">Kind / Format</Label>
+                                                <Label className="text-[11px] text-text-secondary">{t('kindFormat')}</Label>
                                                 <div className="flex gap-2">
                                                     <select
                                                         className="h-8 w-full rounded-md border border-surface-3 bg-surface-1 px-2 text-xs text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
@@ -668,7 +669,7 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                                             kindFilter: e.target.value
                                                         }))}
                                                     >
-                                                        <option value="">All kinds</option>
+                                                        <option value="">{t('allKinds')}</option>
                                                         {allKinds.map((k) => (
                                                             <option key={k} value={k}>
                                                                 {k}
@@ -684,7 +685,7 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                                             formatFilter: e.target.value
                                                         }))}
                                                     >
-                                                        <option value="">All formats</option>
+                                                        <option value="">{t('allFormats')}</option>
                                                         {allFormats.map((f) => (
                                                             <option key={f} value={f}>
                                                                 {f}
@@ -695,9 +696,7 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                             </div>
                                         </div>
 
-                                        <div className="text-[11px] text-text-tertiary">Shortcuts: ←/→ navigate · H
-                                            history
-                                        </div>
+                                        <div className="text-[11px] text-text-tertiary">{t('shortcuts')}</div>
                                     </div>
 
                                     <div className="px-4 pb-4">
@@ -753,8 +752,8 @@ Y <span className="font-medium text-text-primary">{yLabel}</span>
                                                                                 e.stopPropagation();
                                                                                 toggleFavorite(id);
                                                                             }}
-                                                                            aria-label={fav ? "Unfavorite" : "Favorite"}
-                                                                            title={fav ? "Unfavorite" : "Favorite"}
+                                                                            aria-label={fav ? t('unfavorite') : t('favorite')}
+                                                                            title={fav ? t('unfavorite') : t('favorite')}
                                                                         >
                                                                             {fav ? <StarOff className="h-4 w-4"/> :
                                                                                 <Star className="h-4 w-4"/>}

@@ -20,6 +20,7 @@ import {
   Zap,
   Waypoints,
 } from "lucide-react";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 type SummaryPanelProps =
   | {
@@ -52,6 +53,8 @@ const formatInt = (value: number | undefined): string => {
 };
 
 export default function SummaryPanel(props: SummaryPanelProps) {
+  const {t} = useLanguage();
+
   if (props.kind === "initial" && props.initialData) {
     const data = props.initialData;
 
@@ -60,10 +63,10 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-4">
           <div className="space-y-1 mb-4">
             <h2 className="text-base font-semibold font-headline text-text-primary">
-              Summary from initial loaded Data
+              {t('summaryFromInitialLoadedData')}
             </h2>
             <p className="text-[11px] text-text-secondary">
-              Basic dataset information.
+              {t('basicDatasetInformation')}
             </p>
           </div>
 
@@ -71,7 +74,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  Number of Bikes
+                  {t('numberOfBikes')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -84,7 +87,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  Number of Stations
+                  {t('numberOfStations')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -97,7 +100,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  City
+                  {t('city')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -120,10 +123,10 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-4">
           <div className="space-y-1 mb-4">
             <h2 className="text-base font-semibold font-headline text-text-primary">
-              Summary from Simulation Run
+              {t('summaryFromSimulationRun')}
             </h2>
             <p className="text-[11px] text-text-secondary">
-              Key metrics computed from the run.
+              {t('keyMetricsComputedFromRun')}
             </p>
           </div>
 
@@ -131,13 +134,13 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  Delta Time
+                  {t('deltaTime')}
                 </CardTitle>
                 <Timer className="h-4 w-4 text-text-tertiary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-text-primary">
-                  {formatInt(data.deltaMinutes)} min
+                  {formatInt(data.deltaMinutes)} {t('min')}
                 </div>
               </CardContent>
             </Card>
@@ -145,7 +148,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  Stress Level
+                  {t('stressLevel')}
                 </CardTitle>
                 <Zap className="h-4 w-4 text-text-tertiary" />
               </CardHeader>
@@ -159,13 +162,13 @@ export default function SummaryPanel(props: SummaryPanelProps) {
 
           <div className="mt-5">
             <div className="mb-2 text-xs font-semibold text-text-primary">
-              Distance Metrics
+              {t('distanceMetrics')}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Real Pick up Distance
+                    {t('realPickupDistance')}
                   </CardTitle>
                   <Ruler className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -179,7 +182,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Real Drop off Distance
+                    {t('realDropoffDistance')}
                   </CardTitle>
                   <PackageMinus className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -193,7 +196,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Fictional Pick up Distance
+                    {t('fictionalPickupDistance')}
                   </CardTitle>
                   <Route className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -207,7 +210,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Fictional Drop off Distance
+                    {t('fictionalDropoffDistance')}
                   </CardTitle>
                   <Waypoints className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -222,13 +225,13 @@ export default function SummaryPanel(props: SummaryPanelProps) {
 
           <div className="mt-5">
             <div className="mb-2 text-xs font-semibold text-text-primary">
-              Resolution Metrics
+              {t('resolutionMetrics')}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Resolved Real Pick ups
+                    {t('resolvedRealPickups')}
                   </CardTitle>
                   <PackageCheck className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -242,7 +245,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Resolved Real Drop offs
+                    {t('resolvedRealDropoffs')}
                   </CardTitle>
                   <PackageOpen className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -256,7 +259,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-warning/25 bg-warning-soft">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-warning">
-                    Unresolved Real Pick ups
+                    {t('unresolvedRealPickups')}
                   </CardTitle>
                   <PackageCheck className="h-4 w-4 text-warning" />
                 </CardHeader>
@@ -270,7 +273,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-warning/25 bg-warning-soft">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-warning">
-                    Unresolved Real Drop offs
+                    {t('unresolvedRealDropoffs')}
                   </CardTitle>
                   <PackageOpen className="h-4 w-4 text-warning" />
                 </CardHeader>
@@ -284,7 +287,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Resolved Fictional Pick ups
+                    {t('resolvedFictionalPickups')}
                   </CardTitle>
                   <MonitorCheck className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -298,7 +301,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-surface-3 bg-surface-0/60">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-text-primary">
-                    Resolved Fictional Drop offs
+                    {t('resolvedFictionalDropoffs')}
                   </CardTitle>
                   <PackageX className="h-4 w-4 text-text-tertiary" />
                 </CardHeader>
@@ -312,7 +315,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-warning/25 bg-warning-soft">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-warning">
-                    Unresolved Fictional Pick ups
+                    {t('unresolvedFictionalPickups')}
                   </CardTitle>
                   <MonitorCheck className="h-4 w-4 text-warning" />
                 </CardHeader>
@@ -326,7 +329,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
               <Card className="border-warning/25 bg-warning-soft">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0">
                   <CardTitle className="text-sm font-medium text-warning">
-                    Unresolved Fictional Drop offs
+                    {t('unresolvedFictionalDropoffs')}
                   </CardTitle>
                   <PackageX className="h-4 w-4 text-warning" />
                 </CardHeader>
@@ -351,10 +354,10 @@ export default function SummaryPanel(props: SummaryPanelProps) {
         <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-4">
           <div className="space-y-1 mb-4">
             <h2 className="text-base font-semibold font-headline text-text-primary">
-              Simulation Summary
+              {t('simulationSummary')}
             </h2>
             <p className="text-[11px] text-text-secondary">
-              Execution-level summary values.
+              {t('executionLevelSummaryValues')}
             </p>
           </div>
 
@@ -362,12 +365,12 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  Delta Time
+                  {t('deltaTime')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-text-primary">
-                  {formatInt(d.deltaMinutes)} min
+                  {formatInt(d.deltaMinutes)} {t('min')}
                 </div>
               </CardContent>
             </Card>
@@ -375,7 +378,7 @@ export default function SummaryPanel(props: SummaryPanelProps) {
             <Card className="border-surface-3 bg-surface-0/60">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-text-primary">
-                  Stress Level
+                  {t('stressLevel')}
                 </CardTitle>
               </CardHeader>
               <CardContent>

@@ -6,6 +6,12 @@ import dayjs, { Dayjs } from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { TimeClock } from '@mui/x-date-pickers/TimeClock';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+// Import MUI locales
+import 'dayjs/locale/es';
+import 'dayjs/locale/pt';
+import 'dayjs/locale/en';
 
 type MuiTimeClockProps = {
   hour: number;                 // 0..23
@@ -15,10 +21,21 @@ type MuiTimeClockProps = {
 };
 
 export function MuiTimeClock({ hour, minute, minuteStep, onChange }: MuiTimeClockProps) {
-  const value: Dayjs = dayjs().hour(hour).minute(minute).second(0).millisecond(0);
+  const { language } = useLanguage();
+
+  // Map our language codes to dayjs locale codes
+  const localeMap: Record<string, string> = {
+    en: 'en',
+    es: 'es',
+    pt: 'pt',
+  };
+
+  const dayjsLocale = localeMap[language] || 'en';
+
+  const value: Dayjs = dayjs().hour(hour).minute(minute).second(0).millisecond(0).locale(dayjsLocale);
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={dayjsLocale}>
       <TimeClock
         value={value}
         onChange={(newValue) => {
@@ -36,7 +53,6 @@ export function MuiTimeClock({ hour, minute, minuteStep, onChange }: MuiTimeCloc
           onChange({ hour: h, minute: m });
         }}
         views={['hours', 'minutes']}
-
         minutesStep={Math.max(1, minuteStep)}
       />
     </LocalizationProvider>

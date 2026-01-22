@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 type FilterOperator = ">=" | "<=" | ">" | "<";
 
@@ -71,6 +72,8 @@ export function MapsAndGraphsFilterControls({
                                                 setDaysRange,
                                                 dateDiffInDays,
                                             }: MapsFilterControlsProps) {
+    const {t} = useLanguage();
+
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -93,7 +96,7 @@ export function MapsAndGraphsFilterControls({
                     htmlFor="use-filter-maps"
                     className="cursor-pointer text-xs text-text-secondary"
                 >
-                    Habilitar filtrado
+                    {t('enableFiltering')}
                 </Label>
             </div>
 
@@ -102,17 +105,17 @@ export function MapsAndGraphsFilterControls({
                     className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel p-3">
                     <div className="mb-3">
                         <div className="text-xs font-semibold text-text-primary">
-                            Filtrado de estaciones
+                            {t('stationFiltering')}
                         </div>
                         <div className="text-[11px] text-text-secondary">
-                            Restringe los resultados por valor y rango de días.
+                            {t('restrictResultsByValueAndRange')}
                         </div>
                     </div>
 
                     <div className="space-y-3">
                         {/* Tipo de filtro */}
                         <div className="space-y-1">
-                            <Label className="text-[11px] text-text-secondary">Tipo de filtro</Label>
+                            <Label className="text-[11px] text-text-secondary">{t('filterType')}</Label>
                             <select
                                 className={[
                                     "h-8 w-full rounded-md px-2 text-xs",
@@ -124,17 +127,17 @@ export function MapsAndGraphsFilterControls({
                                 value={filterKind}
                                 onChange={(e) => setFilterKind(e.target.value as any)}
                             >
-                                <option value="EstValor">Estación valor (día)</option>
-                                <option value="EstValorDias">Estación valor (mes)</option>
-                                <option value="Horas">Horas</option>
-                                <option value="Porcentaje">Porcentaje</option>
+                                <option value="EstValor">{t('stationValueDay')}</option>
+                                <option value="EstValorDias">{t('stationValueMonth')}</option>
+                                <option value="Horas">{t('hours')}</option>
+                                <option value="Porcentaje">{t('percentage')}</option>
                             </select>
                         </div>
 
                         {/* Operador + valor */}
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
-                                <Label className="text-[11px] text-text-secondary">Operador</Label>
+                                <Label className="text-[11px] text-text-secondary">{t('operator')}</Label>
                                 <Select
                                     value={filterState.operator}
                                     onValueChange={(operator) => setFilterState((s) => ({...s, operator}))}
@@ -154,7 +157,7 @@ export function MapsAndGraphsFilterControls({
                             </div>
 
                             <div className="space-y-1">
-                                <Label className="text-[11px] text-text-secondary">Valor</Label>
+                                <Label className="text-[11px] text-text-secondary">{t('value')}</Label>
                                 <Input
                                     className="h-8 w-full text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     value={filterState.value}
@@ -167,7 +170,7 @@ export function MapsAndGraphsFilterControls({
                         {/* % del día */}
                         <div className="space-y-1">
                             <Label htmlFor="dayPct" className="text-[11px] text-text-secondary">
-                                % del día
+                                {t('dayPercentage')}
                             </Label>
                             <div className="flex items-center gap-3">
                                 <input
@@ -180,14 +183,14 @@ export function MapsAndGraphsFilterControls({
                                     className="flex-1 accent-accent"
                                 />
                                 <span className="w-12 text-right text-xs text-text-primary">
-                {filterState.dayPct || 0}%
-              </span>
+                                    {filterState.dayPct || 0}%
+                                </span>
                             </div>
                         </div>
 
                         {/* Días */}
                         <div className="space-y-1">
-                            <Label className="text-[11px] text-text-secondary">Días</Label>
+                            <Label className="text-[11px] text-text-secondary">{t('days')}</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -195,7 +198,7 @@ export function MapsAndGraphsFilterControls({
                                         className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     >
                                         {!daysRange?.from || !daysRange?.to
-                                            ? "Todos los días"
+                                            ? t('allDays')
                                             : `${daysRange.from.toLocaleDateString()} - ${daysRange.to.toLocaleDateString()}`}
                                     </Button>
                                 </PopoverTrigger>
@@ -225,7 +228,7 @@ export function MapsAndGraphsFilterControls({
 
                         {/* Días excepción */}
                         <div className="space-y-1">
-                            <Label className="text-[11px] text-text-secondary">Días excepción</Label>
+                            <Label className="text-[11px] text-text-secondary">{t('exceptionDays')}</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -233,8 +236,8 @@ export function MapsAndGraphsFilterControls({
                                         className="h-8 w-full justify-between px-2 text-xs bg-surface-1 border border-surface-3 hover:bg-surface-0 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                                     >
                                         {filterState.allowedFailDays
-                                            ? `Hasta ${filterState.allowedFailDays} días`
-                                            : "Sin excepciones"}
+                                            ? `${t('upTo')} ${filterState.allowedFailDays} ${t('days')}`
+                                            : t('noExceptions')}
                                     </Button>
                                 </PopoverTrigger>
 
@@ -242,7 +245,7 @@ export function MapsAndGraphsFilterControls({
                                     className="w-auto p-2 bg-surface-1 border border-surface-3 shadow-mac-panel">
                                     <div className="space-y-2">
                                         <Label className="text-[11px] text-text-secondary">
-                                            Número máximo de días con fallo
+                                            {t('maxFailDays')}
                                         </Label>
                                         <Input
                                             type="number"
