@@ -2,15 +2,20 @@
 import './globals.css';
 import AppLayout from '@/components/app-layout';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { SimulationProvider } from '@/contexts/SimulationContext';
 
-export const metadata = { title: 'Gonzalo Bike Dashboard' };
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body className="min-h-screen">
+    <html lang="en" suppressHydrationWarning>
+      <body>
         <LanguageProvider>
-          <AppLayout />
+          <SimulationProvider>
+            <AppLayout>{children}</AppLayout>
+          </SimulationProvider>
         </LanguageProvider>
       </body>
     </html>

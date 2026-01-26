@@ -11,6 +11,7 @@ import {
 import {useLanguage} from '@/contexts/LanguageContext';
 import type {SimulationData} from '@/types/simulation';
 import StatisticsForm from '@/components/statistics-form';
+import {API_BASE} from "@/lib/analysis/constants";
 
 type SidebarContentProps = {
     onSimulationComplete: (data: SimulationData) => void;
@@ -37,7 +38,8 @@ export default function SidebarContentUploadMaps({
                 seleccionagregacion: -1,
             };
 
-            const response = await fetch('http://127.0.0.1:8000/exe/analizar-json', {
+            const response = await fetch(`${API_BASE}/exe/simular-json`, {
+
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body),

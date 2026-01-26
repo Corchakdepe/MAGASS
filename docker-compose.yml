@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: magass-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./results:/app/results
+      - ./Resultados_Simulador:/app/Resultados_Simulador
+      - ./Resultados_Analisis:/app/Resultados_Analisis
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./Datos:/app/Datos
+      - ./mainapi.py:/app/mainapi.py
+      - ./bike_simulator5.py:/app/bike_simulator5.py
+      - ./Frontend:/app/Frontend
+      - ./Backend:/app/Backend
+      - ./utils:/app/utils
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - CHROME_BIN=/usr/bin/chromium
+      - CHROMEDRIVER_PATH=/usr/bin/chromedriver
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+    networks:
+      - magass-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: magass-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:8000
+      - NODE_ENV=production
+    networks:
+      - magass-network
+    restart: unless-stopped
+
+networks:
+  magass-network:
+    driver: bridge

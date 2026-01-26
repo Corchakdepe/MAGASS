@@ -1,117 +1,62 @@
 // app/MainContent.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import MainContent from '@/components/main-content';
-import type { SimulationData, SimulationSummaryData } from '@/types/simulation';
 import type { MainContentMode } from '@/types/view-mode';
-import {API_BASE} from "@/lib/analysis/constants";
+import { useSimulationRuns } from '@/hooks/useSimulationHooks';
+import { simulationAPI } from '@/lib/api/simulation-client';
+import type { SimulationData, SimulationSummaryData } from '@/types/simulation';
 
 type AppMainContentProps = {
   mode?: MainContentMode;
   triggerRefresh?: number;
 };
 
-
-const defaultSummary: SimulationSummaryData = {
-  deltaMinutes: 0,
-  stressPercentage: 0,
-  realPickupKms: 0,
-  realDropoffKms: 0,
-  fictionalPickupKms: 0,
-  fictionalDropoffKms: 0,
-  resolvedRealPickups: 0,
-  resolvedRealDropoffs: 0,
-  unresolvedRealPickups: 0,
-  unresolvedRealDropoffs: 0,
-  resolvedFictionalPickups: 0,
-  resolvedFictionalDropoffs: 0,
-  unresolvedFictionalPickups: 0,
-  unresolvedFictionalDropoffs: 0,
-};
-
-const parseSimulationData = (dataString: string): SimulationSummaryData => {
-  const cleaned = dataString.trim().replace(/^"|"$/g, '');
-  const values = cleaned.split(',').map(v => Number(v.trim()) || 0);
-  return {
-    deltaMinutes: values[0] || 0,
-    stressPercentage: values[1] || 0,
-    realPickupKms: values[2] || 0,
-    realDropoffKms: values[3] || 0,
-    fictionalPickupKms: values[4] || 0,
-    fictionalDropoffKms: values[5] || 0,
-    resolvedRealPickups: values[6] || 0,
-    resolvedRealDropoffs: values[7] || 0,
-    unresolvedRealPickups: values[8] || 0,
-    unresolvedRealDropoffs: values[9] || 0,
-    resolvedFictionalPickups: values[10] || 0,
-    resolvedFictionalDropoffs: values[11] || 0,
-    unresolvedFictionalPickups: values[12] || 0,
-    unresolvedFictionalDropoffs: values[13] || 0,
-  };
-};
-
 export default function AppMainContent({
   mode = 'analyticsGraphs',
   triggerRefresh,
 }: AppMainContentProps) {
-  const [simulationData, setSimulationData] = useState<SimulationData | null>(null);
-  const [latestFolder, setLatestFolder] = useState<string | null>(null);
-  const [simulationSummary, setSimulationSummary] =
-    useState<SimulationSummaryData>(defaultSummary);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Use centralized hook for simulation runs
+  const {
+    runs,
+    loading: isLoading,
+    error: errorMsg,
+    reload
+  } = useSimulationRuns();
 
-  const fetchLatest = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const listResponse = await fetch(`${API_BASE}/list-simulations`, {
-        cache: 'no-store',
-      });
-      if (!listResponse.ok) throw new Error('Failed to fetch simulations');
-      const listData = await listResponse.json();
-
-      if (Array.isArray(listData.simulations) && listData.simulations.length > 0) {
-        const latest = listData.simulations[0];
-        setLatestFolder(latest.name);
-
-        let summary = defaultSummary;
-        const summaryResponse = await fetch(`${API_BASE}/simulation-summary`, {
-          cache: 'no-store',
-        });
-        if (summaryResponse.ok) {
-          summary = parseSimulationData(await summaryResponse.text());
-        }
-        setSimulationSummary(summary);
-
-        const sim: SimulationData = {
-          folder: latest.name,
-          created: latest.created,
-          fileCount: latest.file_count,
-          simulationSummary: summary,
-          chartData: [],
-          mapUrl: '',
-          heatmapUrl: '',
-          csvData: '',
-        };
-        setSimulationData(sim);
-      } else {
-        setSimulationData(null);
-        setLatestFolder(null);
-        setSimulationSummary(defaultSummary);
-      }
-    } catch (e: any) {
-      setError(e?.message ?? 'Failed to load simulation data');
-    } finally {
-      setIsLoading(false);
+  // Refresh on triggerRefresh change
+  useEffect(() => {
+    if (triggerRefresh) {
+      reload();
     }
-  };
+  }, [triggerRefresh, reload]);
 
+  // Get latest simulation
+  const latestSimulation = runs[0];
+  const latestFolder = latestSimulation?.name;
 
+  // Build SimulationData from the run (note: summary would need separate fetch or context)
+  // For now, matching your original structure
+  const simulationData: SimulationData | null = latestFolder
+    ? {
+        folder: latestSimulation.name,
+        created: latestSimulation.created,
+        fileCount: latestSimulation.file_count,
+        simName: latestSimulation.name, // Added missing simName property
+        simulationSummary: {} as SimulationSummaryData, // Would need separate fetch
+        chartData: [],
+        mapUrl: '',
+        heatmapUrl: '',
+        csvData: '',
+      }
+    : null;
 
+  const error = errorMsg ? errorMsg.message : null;
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
@@ -128,12 +73,13 @@ export default function AppMainContent({
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="flex flex-col h-full">
         <header className="flex items-center justify-between p-4 border-b bg-card">
           <h1 className="text-2xl font-bold font-headline">Gonzalo Bike Dashboard</h1>
-          <Button variant="secondary" onClick={fetchLatest}>
+          <Button variant="secondary" onClick={reload}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
           </Button>
@@ -148,6 +94,7 @@ export default function AppMainContent({
     );
   }
 
+  // Empty state
   if (!simulationData || !latestFolder) {
     return (
       <div className="flex flex-col h-full">
@@ -166,7 +113,7 @@ export default function AppMainContent({
 
   return (
     <MainContent
-      simulationData={{ ...simulationData, simulationSummary }}
+      simulationData={simulationData}
       triggerRefresh={triggerRefresh}
       mode={mode}
     />

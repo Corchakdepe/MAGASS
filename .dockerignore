@@ -1,0 +1,51 @@
+# Node
+node_modules
+npm-debug.log
+.npm
+
+# Next.js
+.next
+out
+
+# Python
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Environment
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Results (will be mounted as volumes)
+results
+Resultados_Simulador
+Resultados_Analisis
+uploads
+logs
+
+# Build outputs
+dist
+build
+
+# Misc
+*.log
+.cache
+coverage

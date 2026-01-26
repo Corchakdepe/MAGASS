@@ -17,19 +17,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
 from Backend import Constantes
-from Frontend.analysis_models import AnalysisArgs,StationDays,SimulateArgs
+from Frontend.analysis_models import AnalysisArgs, StationDays, SimulateArgs
 from Frontend.analysis_runner import run_analysis
 from Frontend.simulation_runner import run_simulation
-
 
 # ============================================
 # CONFIGURATION
 # ============================================
 
-ROOT_DIR = Path(__file__).resolve().parent
-RESULTS_BASE_FOLDER = ROOT_DIR / "results"
-UPLOADS_FOLDER = ROOT_DIR / "uploads"
+# DOCKER-COMPATIBLE
+ROOT_DIR = Path(__file__).resolve().parent  # This is /app in Docker
+RESULTS_BASE_FOLDER = ROOT_DIR / "results"  # /app/results (mounted volume)
+UPLOADS_FOLDER = ROOT_DIR / "uploads"  # /app/uploads (mounted volume)
 HISTORY_FILE = RESULTS_BASE_FOLDER / "simulations_history.json"
+
+
 
 # Map visualization types and formats
 MAP_KINDS = [
@@ -51,15 +53,19 @@ MAP_KINDS = [
 
 app = FastAPI(title="BikeSim API", version="1.0")
 
-# CORS configuration - allow all origins for development
+# Get allowed origins from environment variable or use defaults
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:8000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Configurable via environment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Create required directories
 UPLOADS_FOLDER.mkdir(exist_ok=True)
 RESULTS_BASE_FOLDER.mkdir(exist_ok=True)
@@ -141,8 +147,8 @@ def append_simulation_metadata(
 
 def get_latest_station_bikes_info() -> tuple[Optional[str], Optional[int], Optional[int]]:
     """Extracts city, station count, and bike count from latest CSV in uploads folder"""
-    folder = "uploads"
-    #Tengo que repensar eso para que no este hardcoded pero aun no se bien como va a ser el upload por ahora se queda aqui
+    folder = UPLOADS_FOLDER
+    # Tengo que repensar eso para que no este hardcoded pero aun no se bien como va a ser el upload por ahora se queda aqui
     suffix = "_15min_deltas.csv"
 
     try:
@@ -324,7 +330,6 @@ def _find_last_filter_file(output_folder: str) -> Path:
 
 
 class AnalysisRequest(AnalysisArgs):
-
     use_filter_for_maps: bool = False
     use_filter_for_graphs: bool = False
     filter_result_filename: Optional[str] = None
@@ -691,7 +696,6 @@ def exe_simular_json(args: SimulateArgs):
 async def analizar(req: AnalysisRequest):
     """Executes analysis with optional filtering for maps/graphs"""
 
-
     try:
         # === FILTER FOR MAPS ===
         if req.use_filter_for_maps:
@@ -874,7 +878,6 @@ async def analizar(req: AnalysisRequest):
 
             return run_analysis(final_args)
 
-
         # === STANDARD ANALYSIS (no filtering) ===
         final_args = AnalysisArgs(
             input_folder=req.input_folder,
@@ -995,9 +998,6 @@ async def get_dashboard_initial_data(run: str = Query(..., description="Simulati
             status_code=500,
             detail=f"Error fetching initial data: {e}"
         )
-
-
-
 
 
 @app.get("/dashboard/stations-map")

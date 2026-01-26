@@ -80,6 +80,42 @@
       "numberOfBikes": 2512,
       "simdata": {},
       "simdataId": "20260122_202149_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20260123_174906_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20260123_174906_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20260123_174906_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20260123_175713_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20260123_175713_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20260123_175713_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20260123_190548_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20260123_190548_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20260123_190548_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "20260123_181350_sim_ST0_S0.00_WC1.00_D15",
+      "simfolder": "20260123_181350_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20260123_181350_sim_ST0_S0.00_WC1.00_D15"
     }
   ]
 }

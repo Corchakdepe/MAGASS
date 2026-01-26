@@ -1,7 +1,6 @@
 'use server';
 
-import { suggestSimulationParameters } from '@/ai/flows/suggest-simulation-parameters';
-import type { SimulationData } from '@/components/oldv/app-layout';
+
 import { promises as fs } from 'fs';
 import path from 'path';
 

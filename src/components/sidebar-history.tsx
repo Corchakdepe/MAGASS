@@ -10,6 +10,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import {Button} from '@/components/ui/button';
 import {useLanguage} from '@/contexts/LanguageContext';
 import type {SimulationData} from '@/types/simulation';
+import { useSimulationRuns } from '@/hooks/useSimulationHooks';
 import {API_BASE} from "@/lib/analysis/constants";
 
 
@@ -59,31 +60,7 @@ export default function SidebarHistory({
                                        }: SidebarHistoryProps) {
     const {t} = useLanguage();
     const pathname = usePathname();
-    const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [loadingHistory, setLoadingHistory] = useState(false);
-
-    const loadHistory = async () => {
-        try {
-            setLoadingHistory(true);
-            const res = await fetch(`${API_BASE}/list-simulations`, {cache: 'no-store'});
-            if (!res.ok) throw new Error('Failed to load simulations');
-
-            const data = await res.json();
-            const sims = Array.isArray(data.simulations) ? data.simulations : [];
-            setHistory(sims);
-
-            // auto-select most recent if none selected yet
-            if (!currentRunId && sims.length > 0) {
-                onRunIdChange?.(sims[0].simfolder);
-            }
-        } catch (e) {
-            console.error(e);
-            setHistory([]);
-        } finally {
-            setLoadingHistory(false);
-        }
-    };
-
+    const { runs: history, loading: loadingHistory, reload: loadHistory } = useSimulationRuns();
     useEffect(() => {
         loadHistory();
         // eslint-disable-next-line react-hooks/exhaustive-deps

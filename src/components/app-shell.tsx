@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { SimulationProvider } from "@/contexts/SimulationContext";
 import AppLayout from "@/components/app-layout";
 
 type Props = { children: ReactNode };
@@ -26,10 +27,13 @@ export default function AppShell({ children }: Props) {
     setMounted(true);
   }, []);
 
-  // Optional: avoid flash of unstyled content
   if (!mounted) {
     return null;
   }
 
-  return <AppLayout>{children}</AppLayout>;
+  return (
+    <SimulationProvider>
+      <AppLayout>{children}</AppLayout>
+    </SimulationProvider>
+  );
 }

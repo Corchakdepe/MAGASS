@@ -1,0 +1,25 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+RUN npm install
+
+COPY next.config.ts ./
+COPY tsconfig.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.mjs ./
+COPY components.json ./
+COPY src/ ./src/
+COPY public/ ./public/
+
+RUN npm run build
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["npm", "start"]

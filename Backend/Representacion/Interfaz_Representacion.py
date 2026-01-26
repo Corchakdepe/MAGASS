@@ -1,9 +1,9 @@
+import os
 from abc import ABC, abstractmethod
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
-#Clase interfaz
 class Interfaz_Representacion(ABC):
 
     @abstractmethod
@@ -18,37 +18,36 @@ class Interfaz_Representacion(ABC):
     def getInstanciasMax(self):
         pass
 
-    def _build_driver(self, headless: bool = True, chromedriver_path: str = None, chrome_binary: str = None):
+    def _build_driver(self, headless: bool = True):
         opts = Options()
-        # modern headless flag recommended for current Chrome
+
         if headless:
+            # Works on newer Chrome/Chromium; if it fails, switch to "--headless"
             opts.add_argument("--headless=new")
+
+        # Required in Docker
         opts.add_argument("--no-sandbox")
-        opts.add_argument("--disable-gpu")
         opts.add_argument("--disable-dev-shm-usage")
+        opts.add_argument("--disable-gpu")
 
-        # On macOS, if Chrome isn’t found automatically, you can set:
-        # chrome_binary = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-        if chrome_binary:
-            opts.binary_location = chrome_binary  # optional, only if needed [macOS]
+        # Optional stability
+        opts.add_argument("--window-size=3000,1000")
 
-        if chromedriver_path:
-            # Use an explicit chromedriver (pinned/manual)
-            service = Service(chromedriver_path)
-            return webdriver.Chrome(service=service, options=opts)
-        else:
-            # Let Selenium Manager resolve the driver automatically
-            return webdriver.Chrome(options=opts)
+        # Get paths from env (set in docker-compose), fallback to Debian defaults
+        chrome_binary = os.getenv("CHROME_BIN", "/usr/bin/chromium")
+        chromedriver_path = os.getenv("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
+
+        # Force Selenium to use system Chromium + system chromedriver
+        opts.binary_location = chrome_binary
+        service = Service(executable_path=chromedriver_path)
+
+        return webdriver.Chrome(service=service, options=opts)
 
     def realizarFoto(self, rutaSalida: str):
-        # If you manually installed chromedriver, pass its path here; otherwise leave as None:
-        # driver = self._build_driver(headless=True, chromedriver_path="/usr/local/bin/chromedriver")
         driver = self._build_driver(headless=True)
 
         try:
-            driver.set_window_size(3000, 1000)  # choose a resolution
             driver.get("file://" + self.getFichero())
-            driver.refresh()
             driver.save_screenshot(rutaSalida)
         finally:
             driver.quit()

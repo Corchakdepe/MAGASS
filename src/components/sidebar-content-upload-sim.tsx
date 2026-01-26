@@ -8,7 +8,7 @@ import {Label} from '@/components/ui/label';
 import {Input} from '@/components/ui/input';
 import {useLanguage} from '@/contexts/LanguageContext';
 import type {SimulationData} from '@/types/simulation';
-
+import { API_BASE } from "@/lib/analysis/constants";
 type UploadSimPanelProps = {
     onSimulationComplete: (data: SimulationData | any) => void;
 };
@@ -49,7 +49,7 @@ export default function UploadSimPanel({onSimulationComplete}: UploadSimPanelPro
                 simname: simName || null,
             };
 
-            const response = await fetch('http://127.0.0.1:8000/exe/simular-json', {
+            const response = await fetch(`${API_BASE}/exe/simular-json`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body),
