@@ -23,6 +23,7 @@ from Backend.Representacion.Mapas.MapaDensidad import MapaDensidad2
 from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
 from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
 from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
+from Backend.Representacion.ChartBuilder import ChartBuilder, create_chart_json
 
 from Frontend.analysis_models import AnalysisArgs
 from Frontend.chart_utils import write_series_csv
@@ -228,9 +229,16 @@ def run_analysis(args: AnalysisArgs) -> dict:
     eoc = estadisticasOcupacionHorarias(matrizDeseada, Constantes.DELTA_TIME)
 
     # ===========================
-    # 1) Histogramas por estación
+    # IMPORTS (add to top of file)
     # ===========================
-    # <GraficobarrasEstacionMedio>
+    from Backend.Representacion.ChartBuilder import ChartBuilder
+    import hashlib
+    from pathlib import Path
+    from datetime import datetime
+
+    # ===========================
+    # 1) Histogramas por estación - MEDIA
+    # ===========================
     if histograma_medio_estacion:
         # spec: "est" o "est1;est2;...-dias"
         aux_cadena = histograma_medio_estacion.split("-")
@@ -253,20 +261,12 @@ def run_analysis(args: AnalysisArgs) -> dict:
         else:
             dias = list(map(int, dias_str.split(";")))
 
-        titulo = auxiliar_ficheros.formatoArchivo(
-            f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
-            "png",
-        )
-        # Si quieres seguir generando una imagen por estación, puedes
-        # llamar a eoc.HistogramaPorEstacion en un bucle, pero para
-        # el JSON calculamos directamente desde matrizDeseada.
-
-        # horas 0..23
+        # Calculate data - horas 0..23
         x = list(range(24))
         idx = [h + d * 24 for d in dias for h in range(24)]
         hora_index = [h for d in dias for h in range(24)]
 
-        ys = {}
+        series_data = {}
         for est_id in estaciones_ids:
             # media por HORA en esa estación
             serie = (
@@ -276,9 +276,35 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 .reindex(x)
                 .tolist()
             )
-            ys[f"Est_{est_id}"] = serie
+            series_data[f"est_{est_id}"] = serie
 
-        meta = {
+        # Generate filename with timestamp and hash
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_name = f"GraficaMedia_Estaciones_{'_'.join(map(str, estaciones_ids))}"
+        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        json_filename = f"{timestamp}_Grafica_{content_hash}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_filename
+
+        # Create standardized chart using ChartBuilder
+        chart_json = ChartBuilder.create_timeseries_chart(
+            title=f"Mean Occupancy: Stations {estaciones_ids}",
+            x_hours=x,
+            series_data=series_data,
+            stations=estaciones_ids,
+            days=dias,
+            aggregation="mean",
+            output_path=str(json_path)
+        )
+
+        # Add to response
+        charts.append(chart_json)
+
+        # Also write CSV for backward compatibility (optional)
+        titulo_csv = auxiliar_ficheros.formatoArchivo(
+            f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
+            "png",
+        )
+        meta_csv = {
             "type": "bar",
             "title": f"Media Estaciones {estaciones_ids}",
             "xLabel": "Hora",
@@ -287,47 +313,16 @@ def run_analysis(args: AnalysisArgs) -> dict:
             "stations": estaciones_ids,
             "dias": dias,
         }
-
         write_series_csv(
-            join(Constantes.RUTA_SALIDA, titulo),
+            join(Constantes.RUTA_SALIDA, titulo_csv),
             x=x,
-            ys=ys,
-            meta=meta,
+            ys={f"Est_{est_id}": series_data[f"est_{est_id}"] for est_id in estaciones_ids},
+            meta=meta_csv,
         )
-        charts.append({
-            "id": f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
-            "kind": "graph",
-            "format": "json",
-            "x": x,
-            "series": ys,
-            "meta": meta,
-        })
 
-        base_path = Path(Constantes.RUTA_SALIDA) / titulo
-        if "Grafica" in base_path.name:
-            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
-        else:
-            prefix = base_path.name[:40]
-        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
-        json_name = f"{prefix}_{h}.json"
-        json_path = Path(Constantes.RUTA_SALIDA) / json_name
-
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "id": f"GraficaMedia_Estaciones_{','.join(map(str, estaciones_ids))}",
-                    "kind": "graph",
-                    "format": "json",
-                    "x": x,
-                    "series": ys,
-                    "meta": meta,
-                },
-                f,
-                ensure_ascii=False,
-                indent=2,
-            )
-
-    # <GraficobarrasEstacionAcumulado>
+    # ===========================
+    # 2) Histogramas por estación - ACUMULADO
+    # ===========================
     if histograma_acumulado_estacion:
         aux_cadena = histograma_acumulado_estacion.split("-")
         if len(aux_cadena) < 2:
@@ -349,18 +344,12 @@ def run_analysis(args: AnalysisArgs) -> dict:
         else:
             dias = list(map(int, dias_str.split(";")))
 
-        titulo = auxiliar_ficheros.formatoArchivo(
-            f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
-            "png",
-        )
-        # eoc.HistogramaAcumulacion sigue siendo válido si lo usas solo
-        # para generar una imagen por estación; aquí calculamos el JSON.
-
+        # Calculate cumulative data
         x = list(range(24))
         idx = [h + d * 24 for d in dias for h in range(24)]
         hora_index = [h for d in dias for h in range(24)]
 
-        ys = {}
+        series_data = {}
         for est_id in estaciones_ids:
             # suma por hora y acumulado
             values = (
@@ -371,9 +360,34 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 .cumsum()
                 .tolist()
             )
-            ys[f"Est_{est_id}"] = values
+            series_data[f"est_{est_id}"] = values
 
-        meta = {
+        # Generate filename with timestamp and hash
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_name = f"GraficaAcumulado_Estaciones_{'_'.join(map(str, estaciones_ids))}"
+        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        json_filename = f"{timestamp}_Grafica_{content_hash}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_filename
+
+        # Create standardized chart using ChartBuilder
+        chart_json = ChartBuilder.create_accumulation_chart(
+            title=f"Cumulative Occupancy: Stations {estaciones_ids}",
+            x_hours=x,
+            series_data=series_data,
+            stations=estaciones_ids,
+            days=dias,
+            output_path=str(json_path)
+        )
+
+        # Add to response
+        charts.append(chart_json)
+
+        # Also write CSV for backward compatibility (optional)
+        titulo_csv = auxiliar_ficheros.formatoArchivo(
+            f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
+            "png",
+        )
+        meta_csv = {
             "type": "line",
             "title": f"Acumulado Estaciones {estaciones_ids}",
             "xLabel": "Hora",
@@ -382,48 +396,15 @@ def run_analysis(args: AnalysisArgs) -> dict:
             "stations": estaciones_ids,
             "dias": dias,
         }
-
         write_series_csv(
-            join(Constantes.RUTA_SALIDA, titulo),
+            join(Constantes.RUTA_SALIDA, titulo_csv),
             x=x,
-            ys=ys,
-            meta=meta,
+            ys={f"Est_{est_id}": series_data[f"est_{est_id}"] for est_id in estaciones_ids},
+            meta=meta_csv,
         )
-        charts.append({
-            "id": f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
-            "kind": "graph",
-            "format": "json",
-            "x": x,
-            "series": ys,
-            "meta": meta,
-        })
-
-        base_path = Path(Constantes.RUTA_SALIDA) / titulo
-        if "Grafica" in base_path.name:
-            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
-        else:
-            prefix = base_path.name[:40]
-        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
-        json_name = f"{prefix}_{h}.json"
-        json_path = Path(Constantes.RUTA_SALIDA) / json_name
-
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "id": f"GraficaAcumulado_Estaciones_{','.join(map(str, estaciones_ids))}",
-                    "kind": "graph",
-                    "format": "json",
-                    "x": x,
-                    "series": ys,
-                    "meta": meta,
-                },
-                f,
-                ensure_ascii=False,
-                indent=2,
-            )
 
     # ===========================
-    # 2) Gráfica Días (media/acum, opcional frecuencia)
+    # 3) Gráfica Días (media/acum, opcional frecuencia)
     # ===========================
     if histograma_dia:
         # "dias-M", "dias-A", "dias-M-Frec", "dias-A-Frec"
@@ -442,11 +423,7 @@ def run_analysis(args: AnalysisArgs) -> dict:
         else:
             dias = list(map(int, dias_str.split(";")))
 
-        titulo = auxiliar_ficheros.formatoArchivo(
-            f"GraficaDias_{dias}", "png"
-        )
-        eoc.HistogramaOcupacionMedia(dias, frecuencia=frecuencia, media=media_flag)
-
+        # Calculate base values
         idx = [h + d * 24 for d in dias for h in range(24)]
 
         base_vals = (
@@ -455,16 +432,46 @@ def run_analysis(args: AnalysisArgs) -> dict:
             else matrizDeseada.iloc[idx, :].sum(axis=0).to_numpy()
         )
 
+        # Generate filename with timestamp and hash
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dias_repr = "_".join(map(str, dias[:5])) if len(dias) <= 5 else f"all_{len(dias)}"
+
         if frecuencia:
-            # histograma de frecuencias sobre valores
+            # DISTRIBUTION CHART: histograma de frecuencias sobre valores
             bin_count = 20
             vmin, vmax = float(base_vals.min()), float(base_vals.max())
+
+            # Avoid division by zero if all values are the same
+            if vmin == vmax:
+                vmin -= 0.5
+                vmax += 0.5
+
             bins = np.linspace(vmin, vmax, bin_count + 1)
             counts, edges = np.histogram(base_vals, bins=bins)
             centers = (edges[:-1] + edges[1:]) / 2.0
-            x = centers.tolist()
-            vals = counts.tolist()
-            meta = {
+
+            base_name = f"GraficaDias_{dias_repr}_freq"
+            content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+            json_filename = f"{timestamp}_Grafica_{content_hash}.json"
+            json_path = Path(Constantes.RUTA_SALIDA) / json_filename
+
+            # Create distribution chart
+            chart_json = ChartBuilder.create_distribution_chart(
+                title=f"Distribution - Days {dias}",
+                bin_centers=centers.tolist(),
+                frequencies=counts.tolist(),
+                days=dias,
+                value_type="mean" if media_flag else "sum",
+                output_path=str(json_path)
+            )
+
+            charts.append(chart_json)
+
+            # CSV backward compatibility
+            titulo_csv = auxiliar_ficheros.formatoArchivo(
+                f"GraficaDias_{dias}", "png"
+            )
+            meta_csv = {
                 "type": "bar",
                 "title": f"Días {dias}",
                 "xLabel": "Valor",
@@ -472,13 +479,66 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 "freq": True,
                 "media": media_flag,
             }
+            write_series_csv(
+                join(Constantes.RUTA_SALIDA, titulo_csv),
+                x=centers.tolist(),
+                ys={"value": counts.tolist()},
+                meta=meta_csv,
+            )
         else:
-            # Valores medios/acumulados POR ESTACIÓN (no por hora)
-            # opcional: ordenar para curva ascendente tipo entropía
-            # base_vals = np.sort(base_vals)
+            # STATION SERIES: Valores medios/acumulados POR ESTACIÓN (no por hora)
             x = list(range(len(base_vals)))  # índice de estación
             vals = base_vals.tolist()
-            meta = {
+
+            base_name = f"GraficaDias_{dias_repr}_stations"
+            content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+            json_filename = f"{timestamp}_Grafica_{content_hash}.json"
+            json_path = Path(Constantes.RUTA_SALIDA) / json_filename
+
+            # Create station series chart
+            chart_json = {
+                "id": f"station_values_days_{'_'.join(map(str, dias[:3]))}",
+                "kind": "station_series",
+                "format": "json",
+                "visualization": {
+                    "recommended": "line",
+                    "supported": ["line", "bar"]
+                },
+                "data": {
+                    "x": {
+                        "values": x,
+                        "label": "Station Index",
+                        "type": "categorical",
+                        "unit": "station_id"
+                    },
+                    "series": [{
+                        "id": "value",
+                        "label": "Mean" if media_flag else "Sum",
+                        "values": vals,
+                        "metadata": {
+                            "derived": False,
+                            "value_type": "mean" if media_flag else "sum"
+                        }
+                    }]
+                },
+                "context": {
+                    "title": f"Station Values - Days {dias}",
+                    "days": dias,
+                    "value_type": "mean" if media_flag else "sum"
+                }
+            }
+
+            # Save JSON
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(chart_json, f, ensure_ascii=False, indent=2)
+
+            charts.append(chart_json)
+
+            # CSV backward compatibility
+            titulo_csv = auxiliar_ficheros.formatoArchivo(
+                f"GraficaDias_{dias}", "png"
+            )
+            meta_csv = {
                 "type": "line",
                 "title": f"Días {dias}",
                 "xLabel": "Estación",
@@ -486,65 +546,32 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 "freq": False,
                 "media": media_flag,
             }
-
-        write_series_csv(
-            join(Constantes.RUTA_SALIDA, titulo),
-            x=x,
-            ys={"value": vals},
-            meta=meta,
-        )
-        charts.append({
-            "id": f"GraficaDias_{dias}",
-            "kind": "graph",
-            "format": "json",
-            "x": x,
-            "series": {"value": vals},
-            "meta": meta,
-        })
-
-        base_path = Path(Constantes.RUTA_SALIDA) / titulo
-        if "Grafica" in base_path.name:
-            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
-        else:
-            prefix = base_path.name[:40]
-        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
-        json_name = f"{prefix}_{h}.json"
-        json_path = Path(Constantes.RUTA_SALIDA) / json_name
-
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "id": f"GraficaDias_{dias}",
-                    "kind": "graph",
-                    "format": "json",
-                    "x": x,
-                    "series": {"value": vals},
-                    "meta": meta,
-                },
-                f,
-                ensure_ascii=False,
-                indent=2,
+            write_series_csv(
+                join(Constantes.RUTA_SALIDA, titulo_csv),
+                x=x,
+                ys={"value": vals},
+                meta=meta_csv,
             )
 
-    # ===========================
-    # 3) Gráfica línea comparar estaciones
-    # ===========================
-    histograma_comparar_estaciones = args.graf_linea_comp_est
+        # Call original eoc function if you still need image generation
+        eoc.HistogramaOcupacionMedia(dias, frecuencia=frecuencia, media=media_flag)
 
+    # ===========================
+    # 4) Gráfica línea comparar estaciones
+    # ===========================
     if histograma_comparar_estaciones:
         estaciones = [spec.station_id for spec in histograma_comparar_estaciones]
 
         x = list(range(24))
-        series = {}
-        dias_repr = []
+        series_specs = []
 
         for spec in histograma_comparar_estaciones:
             if spec.days == "all":
                 dias = list(range(diasMatrizDeseada))
-                dias_repr.append("all")
+                dias_label = "all"
             else:
                 dias = list(spec.days)
-                dias_repr.append(";".join(map(str, dias)))
+                dias_label = dias  # Will be formatted in ChartBuilder
 
             idx = [h + d * 24 for d in dias for h in range(24)]
             hora_index = [h for d in dias for h in range(24)]
@@ -560,9 +587,47 @@ def run_analysis(args: AnalysisArgs) -> dict:
                 s = s.reindex(x)
                 serie = s.tolist()
 
-            series[f"est_{spec.station_id}"] = serie
+            series_specs.append({
+                "station_id": spec.station_id,
+                "days": dias_label,
+                "values": serie,
+                "aggregation": "mean"
+            })
 
-        meta = {
+        # Generate filename with timestamp and hash
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_name = f"GraficaCompararEstaciones_{'_'.join(map(str, estaciones[:5]))}"
+        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        json_filename = f"{timestamp}_Grafica_{content_hash}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_filename
+
+        # Create comparison chart using ChartBuilder
+        chart_json = ChartBuilder.create_comparison_chart(
+            title=f"Compare Stations {estaciones}",
+            x_hours=x,
+            series_specs=series_specs,
+            global_context={},
+            output_path=str(json_path)
+        )
+
+        charts.append(chart_json)
+
+        # CSV backward compatibility
+        titulo_csv = auxiliar_ficheros.formatoArchivo(
+            "Grafica_CompararEstaciones", "png"
+        )
+        series_csv = {}
+        dias_repr = []
+        for spec in histograma_comparar_estaciones:
+            series_csv[f"est_{spec.station_id}"] = series_specs[
+                [s["station_id"] for s in series_specs].index(spec.station_id)
+            ]["values"]
+            if spec.days == "all":
+                dias_repr.append("all")
+            else:
+                dias_repr.append(";".join(map(str, spec.days)))
+
+        meta_csv = {
             "type": "line",
             "title": f"Comparar estaciones {estaciones}",
             "xLabel": "Hora",
@@ -570,52 +635,15 @@ def run_analysis(args: AnalysisArgs) -> dict:
             "stations": estaciones,
             "dias": dias_repr,
         }
-
-        titulo = auxiliar_ficheros.formatoArchivo(
-            "Grafica_CompararEstaciones", "png"
-        )
-
         write_series_csv(
-            join(Constantes.RUTA_SALIDA, titulo),
+            join(Constantes.RUTA_SALIDA, titulo_csv),
             x=x,
-            ys=series,
-            meta=meta,
+            ys=series_csv,
+            meta=meta_csv,
         )
-        charts.append({
-            "id": "Grafica_CompararEstaciones",
-            "kind": "graph",
-            "format": "json",
-            "x": x,
-            "series": series,
-            "meta": meta,
-        })
-
-        base_path = Path(Constantes.RUTA_SALIDA) / titulo
-        if "Grafica" in base_path.name:
-            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
-        else:
-            prefix = base_path.name[:40]
-        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
-        json_name = f"{prefix}_{h}.json"
-        json_path = Path(Constantes.RUTA_SALIDA) / json_name
-
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "id": "Grafica_CompararEstaciones",
-                    "kind": "graph",
-                    "format": "json",
-                    "x": x,
-                    "series": series,
-                    "meta": meta,
-                },
-                f,
-                ensure_ascii=False,
-                indent=2,
-            )
 
     # ===========================
-    # 4) Gráfica línea comparar matrices
+    # 5) Gráfica línea comparar matrices
     # ===========================
     if histograma_comparar_matrices and Constantes.MATRIZ_CUSTOM is not None:
         cadenas = histograma_comparar_matrices.split("-")
@@ -624,9 +652,9 @@ def run_analysis(args: AnalysisArgs) -> dict:
         estaciones2 = list(map(int, cadenas[2].split(";")))
         media_flag = cadenas[3] == "M"
 
+        # Call original function if still needed for image generation
         eoc2 = estadisticasOcupacionHorarias(matrizDeseada, Constantes.DELTA_TIME)
-
-        titulo = auxiliar_ficheros.formatoArchivo(
+        titulo_img = auxiliar_ficheros.formatoArchivo(
             "Grafica_CompararMatrices", "png"
         )
         eoc2.HistogramaCompararMatrices(
@@ -635,16 +663,102 @@ def run_analysis(args: AnalysisArgs) -> dict:
             estaciones1,
             estaciones2,
             media=media_flag,
-            nombreGrafica=titulo,
+            nombreGrafica=titulo_img,
         )
 
-        # comportamiento horario, así que 24 horas
+        # Calculate data - comportamiento horario, así que 24 horas
         x = list(range(24))
-        ys = {
-            "current": matrizDeseada.mean(axis=0).tolist(),
-            "custom": Constantes.MATRIZ_CUSTOM.matrix.mean(axis=0).tolist(),
+
+        # Current matrix mean by hour
+        current_vals = matrizDeseada.mean(axis=0).tolist()
+
+        # Custom matrix mean by hour
+        custom_vals = Constantes.MATRIZ_CUSTOM.matrix.mean(axis=0).tolist()
+
+        # Generate filename with timestamp and hash
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_name = "GraficaCompararMatrices"
+        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        json_filename = f"{timestamp}_Grafica_{content_hash}.json"
+        json_path = Path(Constantes.RUTA_SALIDA) / json_filename
+
+        # Create comparison chart with matrix comparison semantics
+        series_specs = [
+            {
+                "station_id": -1,  # Virtual station for current matrix
+                "days": "all",
+                "values": current_vals,
+                "aggregation": "mean"
+            },
+            {
+                "station_id": -2,  # Virtual station for custom matrix
+                "days": "all",
+                "values": custom_vals,
+                "aggregation": "mean"
+            }
+        ]
+
+        # Manually construct chart JSON since this is a special case
+        chart_json = {
+            "id": f"matrix_comparison_{deltaMatriz}",
+            "kind": "comparison",
+            "format": "json",
+            "visualization": {
+                "recommended": "line",
+                "supported": ["line", "area", "bar"]
+            },
+            "data": {
+                "x": {
+                    "values": x,
+                    "label": "Hour of Day",
+                    "type": "temporal",
+                    "unit": "hour",
+                    "domain": [0, 23]
+                },
+                "series": [
+                    {
+                        "id": "current",
+                        "label": "Current Matrix",
+                        "values": current_vals,
+                        "metadata": {
+                            "derived": False,
+                            "aggregation": "mean",
+                            "matrix_type": "current"
+                        }
+                    },
+                    {
+                        "id": "custom",
+                        "label": "Custom Matrix",
+                        "values": custom_vals,
+                        "metadata": {
+                            "derived": False,
+                            "aggregation": "mean",
+                            "matrix_type": "custom"
+                        }
+                    }
+                ]
+            },
+            "context": {
+                "title": "Compare Matrices",
+                "delta": deltaMatriz,
+                "media": media_flag,
+                "estaciones1": estaciones1,
+                "estaciones2": estaciones2
+            }
         }
-        meta = {
+
+        # Save JSON
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(chart_json, f, ensure_ascii=False, indent=2)
+
+        charts.append(chart_json)
+
+        # CSV backward compatibility
+        ys_csv = {
+            "current": current_vals,
+            "custom": custom_vals,
+        }
+        meta_csv = {
             "type": "line",
             "title": "Comparar matrices",
             "xLabel": "Hora",
@@ -654,45 +768,12 @@ def run_analysis(args: AnalysisArgs) -> dict:
             "estaciones1": estaciones1,
             "estaciones2": estaciones2,
         }
-
         write_series_csv(
-            join(Constantes.RUTA_SALIDA, titulo),
+            join(Constantes.RUTA_SALIDA, titulo_img),
             x=x,
-            ys=ys,
-            meta=meta,
+            ys=ys_csv,
+            meta=meta_csv,
         )
-        charts.append({
-            "id": "Grafica_CompararMatrices",
-            "kind": "graph",
-            "format": "json",
-            "x": x,
-            "series": ys,
-            "meta": meta,
-        })
-
-        base_path = Path(Constantes.RUTA_SALIDA) / titulo
-        if "Grafica" in base_path.name:
-            prefix = base_path.name.split("Grafica", 1)[0] + "Grafica"
-        else:
-            prefix = base_path.name[:40]
-        h = hashlib.sha1(base_path.name.encode("utf-8")).hexdigest()[:8]
-        json_name = f"{prefix}_{h}.json"
-        json_path = Path(Constantes.RUTA_SALIDA) / json_name
-
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "id": "Grafica_CompararMatrices",
-                    "kind": "graph",
-                    "format": "json",
-                    "x": x,
-                    "series": ys,
-                    "meta": meta,
-                },
-                f,
-                ensure_ascii=False,
-                indent=2,
-            )
 
     # ===========================
     # 5) Mapas de densidad (instantáneos)

@@ -5,16 +5,18 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useSimulationData, useCurrentRunId, useSimulationRuns } from '@/hooks/useSimulationHooks';
+import {
+  useSimulationData,
+  useCurrentRunId,
+  useSimulationRuns,
+} from "@/hooks/useSimulationHooks";
 import type { MainContentMode } from "@/types/view-mode";
 import type { AnalysisArtifact } from "@/types/core-data";
-
-import SummaryPanel from "@/components/summary-panel";
+import  SummaryPanel  from "@/components/summary-panel";
 import VisualizationsPanel from "@/components/visualizations-panel";
 import type { GraphItem } from "@/components/visualizations-panel";
 import { FiltersPanel } from "@/components/visualizationsFilters";
-import DashboardPanel from "@/components/dashboard-panel";
-import MapAnalysisCreator from "@/components/map-analysis-creator";
+import  DashboardPanel  from "@/components/dashboard-panel";
 import { API_BASE } from "@/lib/analysis/constants";
 
 export type RawResultItem = {
@@ -32,11 +34,7 @@ type MainContentProps = {
   simulationData?: { folder?: string } | null;
   triggerRefresh?: number;
   mode: MainContentMode;
-  onStationPick?: (p: {
-    mapName?: string;
-    station: number;
-    data?: number | null;
-  }) => void;
+  onStationPick?: (p: { mapName?: string; station: number; data?: number | null }) => void;
 };
 
 export default function MainContent({
@@ -49,18 +47,18 @@ export default function MainContent({
 
   // Use the new hooks
   const currentRunId = useCurrentRunId();
-  const effectiveRunId = externalSimData?.folder || currentRunId || undefined;
+  const effectiveRunId = externalSimData?.folder ?? currentRunId ?? undefined;
 
   const {
     data: simulationContext,
     loading: isLoading,
     error,
-    reload
+    reload,
   } = useSimulationData(effectiveRunId);
 
   const { reload: reloadRuns } = useSimulationRuns();
 
-  // Local state for artifacts (filtered from context)
+  // Local state for artifacts filtered from context
   const [maps, setMaps] = useState<RawResultItem[]>([]);
   const [graphs, setGraphs] = useState<GraphItem[]>([]);
   const [chartsFromApi, setChartsFromApi] = useState<RawResultItem[]>([]);
@@ -72,8 +70,12 @@ export default function MainContent({
       name: artifact.name,
       kind: artifact.kind as "graph" | "map" | "matrix",
       format: artifact.format as "csv" | "json" | "html" | "png",
-      url: artifact.url || `/results/${effectiveRunId}/${artifact.name}`,
-      api_full_url: artifact.url ? `${API_BASE}${artifact.url}` : `${API_BASE}/results/${effectiveRunId}/${artifact.name}`,
+      url: artifact.url
+        ? `results/${effectiveRunId}/${artifact.name}`
+        : `${API_BASE}results/${effectiveRunId}/${artifact.name}`,
+      api_full_url: artifact.url
+        ? `${API_BASE}${artifact.url}`
+        : `${API_BASE}results/${effectiveRunId}/${artifact.name}`,
       created: artifact.created,
       meta: artifact.metadata,
     };
@@ -119,52 +121,27 @@ export default function MainContent({
   }, [triggerRefresh, mode, reload, reloadRuns]);
 
   // Loading state
-  if (isLoading && !simulationContext) {
+  if (isLoading || !simulationContext) {
     return (
       <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <RefreshCw className="h-4 w-4 animate-spin text-accent" />
-          <span>{t('loadingSimulationResults')}</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error && !simulationContext) {
-    return (
-      <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-surface-3 bg-surface-1 px-4 py-3 shadow-sm">
-          <div className="text-sm font-medium text-text-primary">
-            {t('errorLoadingData')}
-          </div>
-          <div className="text-xs text-text-secondary max-w-md text-center">
-            {error.message}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-1 border-surface-3 text-text-primary hover:bg-surface-0"
-            onClick={reload}
-          >
-            <RefreshCw className="mr-1 h-3 w-3" />
-            {t('retry')}
-          </Button>
+          <span>{t("loadingSimulationResults")}</span>
         </div>
       </div>
     );
   }
 
   // Empty state
-  if (!simulationContext && !effectiveRunId) {
+  if (!simulationContext || !effectiveRunId) {
     return (
       <div className="flex h-full w-full min-w-0 items-center justify-center bg-surface-0 overflow-hidden">
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="text-sm font-semibold text-text-primary">
-            {t('noSimulationResults')}
+            {t("noSimulationResults")}
           </div>
           <div className="text-xs text-text-secondary max-w-sm">
-            {t('runSimulationToSeeResults')}
+            {t("runSimulationToSeeResults")}
           </div>
         </div>
       </div>
@@ -174,59 +151,43 @@ export default function MainContent({
   // Extract summary data from context
   const summaryData = simulationContext?.results?.summary
     ? {
-        deltaMinutes: simulationContext.results.summary.deltaMinutes || 0,
-        stressPercentage: simulationContext.results.summary.stressPercentage || 0,
-        realPickupKms: simulationContext.results.summary.realPickupKms || 0,
-        realDropoffKms: simulationContext.results.summary.realDropoffKms || 0,
-        fictionalPickupKms: simulationContext.results.summary.fictionalPickupKms || 0,
-        fictionalDropoffKms: simulationContext.results.summary.fictionalDropoffKms || 0,
-        resolvedRealPickups: simulationContext.results.summary.resolvedRealPickups || 0,
-        resolvedRealDropoffs: simulationContext.results.summary.resolvedRealDropoffs || 0,
-        unresolvedRealPickups: simulationContext.results.summary.unresolvedRealPickups || 0,
-        unresolvedRealDropoffs: simulationContext.results.summary.unresolvedRealDropoffs || 0,
-        resolvedFictionalPickups: simulationContext.results.summary.resolvedFictionalPickups || 0,
-        resolvedFictionalDropoffs: simulationContext.results.summary.resolvedFictionalDropoffs || 0,
-        unresolvedFictionalPickups: simulationContext.results.summary.unresolvedFictionalPickups || 0,
-        unresolvedFictionalDropoffs: simulationContext.results.summary.unresolvedFictionalDropoffs || 0,
+        deltaMinutes: simulationContext.results.summary.deltaMinutes ?? 0,
+        stressPercentage: simulationContext.results.summary.stressPercentage ?? 0,
+        realPickupKms: simulationContext.results.summary.realPickupKms ?? 0,
+        realDropoffKms: simulationContext.results.summary.realDropoffKms ?? 0,
+        fictionalPickupKms: simulationContext.results.summary.fictionalPickupKms ?? 0,
+        fictionalDropoffKms: simulationContext.results.summary.fictionalDropoffKms ?? 0,
+        resolvedRealPickups: simulationContext.results.summary.resolvedRealPickups ?? 0,
+        resolvedRealDropoffs: simulationContext.results.summary.resolvedRealDropoffs ?? 0,
+        unresolvedRealPickups: simulationContext.results.summary.unresolvedRealPickups ?? 0,
+        unresolvedRealDropoffs: simulationContext.results.summary.unresolvedRealDropoffs ?? 0,
+        resolvedFictionalPickups:
+          simulationContext.results.summary.resolvedFictionalPickups ?? 0,
+        resolvedFictionalDropoffs:
+          simulationContext.results.summary.resolvedFictionalDropoffs ?? 0,
+        unresolvedFictionalPickups:
+          simulationContext.results.summary.unresolvedFictionalPickups ?? 0,
+        unresolvedFictionalDropoffs:
+          simulationContext.results.summary.unresolvedFictionalDropoffs ?? 0,
       }
     : undefined;
 
   return (
-    <div className="">
+    <div className="h-full w-full flex flex-col overflow-hidden">
       {mode === "simulations" && summaryData && (
         <SummaryPanel kind="simulation" summaryData={summaryData} />
       )}
 
-      {mode === "analyticsGraphs" && (
+      {(mode === "analyticsGraphs" || mode === "analyticsMaps" || mode === "maps") && (
         <VisualizationsPanel
           mode={mode}
           apiBase={API_BASE}
-          runId={effectiveRunId || ""}
+          runId={effectiveRunId}
           simulationData={null}
           graphs={graphs}
           maps={maps}
           chartsFromApi={chartsFromApi}
-        />
-      )}
-
-      {mode === "analyticsMaps" && (
-        <MapAnalysisCreator
-          runId={effectiveRunId || ""}
-          apiBase={API_BASE}
-          maps={maps}
           onStationPick={onStationPick}
-        />
-      )}
-
-      {mode === "maps" && (
-        <VisualizationsPanel
-          mode={mode}
-          apiBase={API_BASE}
-          runId={effectiveRunId || ""}
-          simulationData={null}
-          graphs={graphs}
-          maps={maps}
-          chartsFromApi={chartsFromApi}
         />
       )}
 
