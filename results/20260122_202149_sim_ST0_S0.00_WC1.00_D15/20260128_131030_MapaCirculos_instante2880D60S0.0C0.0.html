@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_9143a817c89882f92d0691390b003bc6 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_9143a817c89882f92d0691390b003bc6" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_9143a817c89882f92d0691390b003bc6 = L.map(
+                "map_9143a817c89882f92d0691390b003bc6",
+                {
+                    center: [37.39994, -5.95629],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 13,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_751f4c567c9f1b2ec20eea05fb31d26c = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca target=\"_blank\" href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\"_blank\" href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+            var circle_780c286c3f8c8f927e359a153627f64f = L.circle(
+                [37.39609, -5.95876],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_55e511cada6b5efee8539ae72eb31855 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_5a9524e1f0f8dd8f5ea50cd1ff192008 = $(`<div id="html_5a9524e1f0f8dd8f5ea50cd1ff192008" style="width: 100.0%; height: 100.0%;">Estacion 34</div>`)[0];
+                popup_55e511cada6b5efee8539ae72eb31855.setContent(html_5a9524e1f0f8dd8f5ea50cd1ff192008);
+            
+        
+
+        circle_780c286c3f8c8f927e359a153627f64f.bindPopup(popup_55e511cada6b5efee8539ae72eb31855)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_780c286c3f8c8f927e359a153627f64f;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 34, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+    
+            var circle_4e575815d25bb730081e78252e722663 = L.circle(
+                [37.40296, -5.95821],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_213f2f5c00927a2f2feb08f2e9cfebd5 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_43721b69bae2f265703efdbf426be576 = $(`<div id="html_43721b69bae2f265703efdbf426be576" style="width: 100.0%; height: 100.0%;">Estacion 42</div>`)[0];
+                popup_213f2f5c00927a2f2feb08f2e9cfebd5.setContent(html_43721b69bae2f265703efdbf426be576);
+            
+        
+
+        circle_4e575815d25bb730081e78252e722663.bindPopup(popup_213f2f5c00927a2f2feb08f2e9cfebd5)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_4e575815d25bb730081e78252e722663;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 42, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+    
+            var circle_6cb5e074ce31ac79d46b4c421df79ca0 = L.circle(
+                [37.39387, -5.96237],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_28aa326dee9d9b6f0d0b2c9544fd1ad3 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_6b2d51a54e750a943f1133ac58138a97 = $(`<div id="html_6b2d51a54e750a943f1133ac58138a97" style="width: 100.0%; height: 100.0%;">Estacion 93</div>`)[0];
+                popup_28aa326dee9d9b6f0d0b2c9544fd1ad3.setContent(html_6b2d51a54e750a943f1133ac58138a97);
+            
+        
+
+        circle_6cb5e074ce31ac79d46b4c421df79ca0.bindPopup(popup_28aa326dee9d9b6f0d0b2c9544fd1ad3)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_6cb5e074ce31ac79d46b4c421df79ca0;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 93, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+    
+            var circle_968132e5fec9b61961c0d2ea6b4002dc = L.circle(
+                [37.39994, -5.95629],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_af501ee7603ed4308a4eda6784720ffe = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_92b7372a22e9f3873fd0b9b393f78524 = $(`<div id="html_92b7372a22e9f3873fd0b9b393f78524" style="width: 100.0%; height: 100.0%;">Estacion 96</div>`)[0];
+                popup_af501ee7603ed4308a4eda6784720ffe.setContent(html_92b7372a22e9f3873fd0b9b393f78524);
+            
+        
+
+        circle_968132e5fec9b61961c0d2ea6b4002dc.bindPopup(popup_af501ee7603ed4308a4eda6784720ffe)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_968132e5fec9b61961c0d2ea6b4002dc;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 96, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+    
+            var circle_d7292fcd4825aab83e02c5e2fedde5f5 = L.circle(
+                [37.3954, -5.96404],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_3a2e748bb494f583b66d1edfed54f1c6 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_f514054a5cb51e00b8553e745b695b31 = $(`<div id="html_f514054a5cb51e00b8553e745b695b31" style="width: 100.0%; height: 100.0%;">Estacion 109</div>`)[0];
+                popup_3a2e748bb494f583b66d1edfed54f1c6.setContent(html_f514054a5cb51e00b8553e745b695b31);
+            
+        
+
+        circle_d7292fcd4825aab83e02c5e2fedde5f5.bindPopup(popup_3a2e748bb494f583b66d1edfed54f1c6)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_d7292fcd4825aab83e02c5e2fedde5f5;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 109, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+    
+            var circle_28c49d221474635cc544241f2b032dab = L.circle(
+                [37.39769, -5.9616],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_2e73ecc626c39cae4b92a960b2f8bb87 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_5eb4c8dc7cbee7fa328d5934690f7584 = $(`<div id="html_5eb4c8dc7cbee7fa328d5934690f7584" style="width: 100.0%; height: 100.0%;">Estacion 169</div>`)[0];
+                popup_2e73ecc626c39cae4b92a960b2f8bb87.setContent(html_5eb4c8dc7cbee7fa328d5934690f7584);
+            
+        
+
+        circle_28c49d221474635cc544241f2b032dab.bindPopup(popup_2e73ecc626c39cae4b92a960b2f8bb87)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_28c49d221474635cc544241f2b032dab;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 169, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+    
+            var circle_e8116fdce4ed587ab54ffb7a3aae468e = L.circle(
+                [37.40167, -5.94214],
+                {"bubblingMouseEvents": true, "color": "#0000ffff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0000ffff", "fillOpacity": 0.4, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 150, "stroke": true, "weight": 3}
+            ).addTo(map_9143a817c89882f92d0691390b003bc6);
+        
+    
+        var popup_7ca65f3e3926961ff4f0e573c90dd065 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_e0622ccd9f33fdaeede9d6f49679d433 = $(`<div id="html_e0622ccd9f33fdaeede9d6f49679d433" style="width: 100.0%; height: 100.0%;">Estacion 204</div>`)[0];
+                popup_7ca65f3e3926961ff4f0e573c90dd065.setContent(html_e0622ccd9f33fdaeede9d6f49679d433);
+            
+        
+
+        circle_e8116fdce4ed587ab54ffb7a3aae468e.bindPopup(popup_7ca65f3e3926961ff4f0e573c90dd065)
+        ;
+
+        
+    
+    
+          (function(){
+            var layer = circle_e8116fdce4ed587ab54ffb7a3aae468e;
+            if (!layer) return;
+            layer.on('click', function(){
+              try {
+                window.parent.postMessage(
+                  { type: "MAPSTATIONCLICK", station: 204, mapName: "mapa_circulo" },
+                  "*"
+                );
+              } catch (e) {}
+            });
+          })();
+        
+</script>
+</html>
