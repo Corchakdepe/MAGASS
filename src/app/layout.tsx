@@ -1,6 +1,6 @@
 // app/layout.tsx
 import './globals.css';
-import AppLayout from '@/components/app-layout';
+import AppLayout from '@/components/layout/app-layout';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { SimulationProvider } from '@/contexts/SimulationContext';
 

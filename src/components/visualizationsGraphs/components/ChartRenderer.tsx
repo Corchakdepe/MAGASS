@@ -4,7 +4,7 @@
 
 import React from "react";
 import {LineChart, BarChart} from "@mui/x-charts";
-import {ChartAnalytics} from "@/components/ChartAnalytics";
+import {ChartAnalytics} from "@/components/analytics/components/ChartAnalytics";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { ChartDataState } from "../types";
 

@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { ChartAnalytics } from "@/components/ChartAnalytics";
+import { ChartAnalytics } from "@/components/analytics/components/ChartAnalytics";
 import { GraphHeader } from "./GraphHeader";
 import { GraphFooter } from "./GraphFooter";
 import { ChartRenderer } from "./ChartRenderer";
