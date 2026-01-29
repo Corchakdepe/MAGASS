@@ -1,10 +1,11 @@
 """Pydantic models for the application."""
 
 from __future__ import annotations
-from typing import Optional, List, Dict, Any, Literal
+from typing import Optional, List, Dict, Any, Literal, Union
 from pathlib import Path
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
+
 
 
 # ============================================
@@ -50,7 +51,7 @@ class SimulationHistory(BaseModel):
 class StationDaySpec(BaseModel):
     """Specification for station and days in analysis."""
     station_id: int
-    days: str | List[int]  # "all" or list of day indices
+    days: Union[str, List[int]]  # "all" or list of day indices
 
     @validator('days', pre=True)
     def parse_days(cls, v):

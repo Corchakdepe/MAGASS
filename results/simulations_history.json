@@ -1,0 +1,24 @@
+{
+  "simulations": [
+    {
+      "simname": "age",
+      "simfolder": "20260129_165042_sim_ST3_S0.32_WC0.39_D15",
+      "simdataId": "20260129_165042_sim_ST3_S0.32_WC0.39_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "path": "/Users/ageudepetris/Desktop/TFG project/results/20260129_165042_sim_ST3_S0.32_WC0.39_D15",
+      "created": null
+    },
+    {
+      "simname": "asd",
+      "simfolder": "20260129_171338_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": "Seville",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "simdata": {},
+      "simdataId": "20260129_171338_sim_ST0_S0.00_WC1.00_D15"
+    }
+  ]
+}
