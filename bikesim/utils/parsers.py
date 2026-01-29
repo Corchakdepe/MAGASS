@@ -162,3 +162,8 @@ def parse_displacement_spec(spec: str) -> Tuple[int, int, int, int, int]:
         raise ValueError(f"Non-integer values in displacement spec: {spec}") from e
 
     return instant, delta_origin, delta_dest, action, type_
+
+def parse_int_list_from_text(text: str) -> list[int]:
+    """Extracts all integers from text string"""
+    return [int(x) for x in re.findall(r"\d+", text)]
+

@@ -1,6 +1,7 @@
 """Filter results API routes."""
 
 import logging
+import re
 from fastapi import APIRouter, HTTPException, Query, Depends
 
 from bikesim.services.simulation_service import SimulationService
@@ -14,10 +15,10 @@ router = APIRouter()
 
 @router.get("/result")
 async def get_filter_result(
-        run: str = Query(..., description="Simulation folder name"),
-        filename: str = Query(..., description="Filter file name"),
-        kind: str = Query("stations", description="Filter kind: stations, hours, percent"),
-        service: SimulationService = Depends(get_simulation_service)
+    run: str = Query(..., description="Simulation folder name"),
+    filename: str = Query(..., description="Filter file name"),
+    kind: str = Query("stations", description="Filter kind: stations, hours, percent"),
+    service: SimulationService = Depends(get_simulation_service)
 ):
     """
     Get parsed filter results from a specific file.
@@ -33,7 +34,6 @@ async def get_filter_result(
     try:
         # Find simulation folder
         folder = service.repository.find_by_folder_name(run)
-
         if not folder:
             raise HTTPException(
                 status_code=404,
@@ -42,7 +42,6 @@ async def get_filter_result(
 
         # Get file path
         file_path = folder / filename
-
         if not file_path.exists():
             raise HTTPException(
                 status_code=404,
@@ -55,18 +54,14 @@ async def get_filter_result(
         # Parse based on kind
         if kind in ("stations", "hours"):
             numbers = parse_int_list_from_text(text)
-
             if kind == "stations":
                 return {"stations": numbers}
             else:
                 return {"hours": numbers}
-
         elif kind == "percent":
-            import re
             match = re.search(r"\d+(\.\d+)?", text)
             value = float(match.group(0)) if match else 0.0
             return {"percent": value}
-
         else:
             # Return raw text for unknown kinds
             return {"raw": text}

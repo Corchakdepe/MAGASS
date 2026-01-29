@@ -1,7 +1,8 @@
 """Results retrieval API routes."""
 
 import logging
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
 from fastapi.responses import FileResponse, HTMLResponse
@@ -18,11 +19,11 @@ router = APIRouter()
 
 @router.get("/list")
 async def list_results(
-        run: Optional[str] = Query(None, description="Simulation folder name"),
-        kind: Optional[str] = Query(None, description="Filter by kind: map, graph, filter"),
-        format: Optional[str] = Query(None, description="Filter by format: html, png, json, csv"),
-        request: Request = None,
-        service: SimulationService = Depends(get_simulation_service)
+    run: Optional[str] = Query(None, description="Simulation folder name"),
+    kind: Optional[str] = Query(None, description="Filter by kind: map, graph, filter"),
+    format: Optional[str] = Query(None, description="Filter by format: html, png, json, csv"),
+    request: Request = None,
+    service: SimulationService = Depends(get_simulation_service)
 ):
     """
     List all result files for a simulation run.
@@ -54,25 +55,22 @@ async def list_results(
 
         # Get API base URL
         api_base = str(request.base_url).rstrip("/") if request else ""
-
         items = []
 
         # List maps
         if not kind or kind == "map":
             map_files = result_repo.list_maps(
-                kind=None,  # Already filtered by 'kind' parameter
+                kind=None,
                 format=format
             )
 
             for file_path in map_files:
                 ext = file_path.suffix.lower()
                 fmt = "html" if ext == ".html" else "png"
-
                 if format and fmt != format:
                     continue
 
                 relative_url = f"/results/file/{folder.name}/{file_path.name}"
-
                 items.append({
                     "id": f"{folder.name}:{file_path.name}",
                     "name": file_path.name,
@@ -86,13 +84,11 @@ async def list_results(
         # List charts
         if not kind or kind == "graph":
             chart_files = result_repo.list_charts()
-
             for file_path in chart_files:
                 if format and format != "json":
                     continue
 
                 relative_url = f"/results/file/{folder.name}/{file_path.name}"
-
                 items.append({
                     "id": f"{folder.name}:{file_path.name}",
                     "name": file_path.name,
@@ -106,13 +102,11 @@ async def list_results(
         # List filters
         if not kind or kind == "filter":
             filter_files = result_repo.list_filters()
-
             for file_path in filter_files:
                 if format and format != "csv":
                     continue
 
                 relative_url = f"/results/file/{folder.name}/{file_path.name}"
-
                 items.append({
                     "id": f"{folder.name}:{file_path.name}",
                     "name": file_path.name,
@@ -142,9 +136,9 @@ async def list_results(
 
 @router.get("/file/{run_folder}/{fname:path}")
 async def get_result_file(
-        run_folder: str,
-        fname: str,
-        service: SimulationService = Depends(get_simulation_service)
+    run_folder: str,
+    fname: str,
+    service: SimulationService = Depends(get_simulation_service)
 ):
     """
     Serve individual result file.
@@ -191,7 +185,6 @@ async def get_result_file(
         }
 
         media_type = media_types.get(ext, "application/octet-stream")
-
         return FileResponse(
             str(file_path),
             media_type=media_type,
@@ -210,8 +203,8 @@ async def get_result_file(
 
 @router.get("/download")
 async def download_results(
-        folder_name: Optional[str] = Query(None, description="Simulation folder name"),
-        service: SimulationService = Depends(get_simulation_service)
+    folder_name: Optional[str] = Query(None, description="Simulation folder name"),
+    service: SimulationService = Depends(get_simulation_service)
 ):
     """
     Download simulation summary file.
@@ -224,7 +217,6 @@ async def download_results(
     """
     try:
         summary_file = service.get_summary_file(folder_name)
-
         if not summary_file or not summary_file.exists():
             raise HTTPException(
                 status_code=404,

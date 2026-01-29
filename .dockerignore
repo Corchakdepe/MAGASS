@@ -1,51 +1,49 @@
-# Node
-node_modules
-npm-debug.log
-.npm
-
-# Next.js
-.next
-out
-
 # Python
-.venv
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.Python
+__pycache__/
+*.py[cod]
+*$py.class
 *.so
-.pytest_cache
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # IDE
-.idea
-.vscode
+.vscode/
+.idea/
 *.swp
 *.swo
+
+# OS
 .DS_Store
+Thumbs.db
 
 # Git
-.git
+.git/
 .gitignore
 
-# Environment
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
 
-# Results (will be mounted as volumes)
-results
-Resultados_Simulador
-Resultados_Analisis
-uploads
-logs
+# Local data (these are mounted as volumes)
+results/
+uploads/
+logs/
+Resultados_Simulador/
+Resultados_Analisis/
 
-# Build outputs
-dist
-build
-
-# Misc
-*.log
-.cache
-coverage
+# Documentation
+README.md
+docs/
+*.md

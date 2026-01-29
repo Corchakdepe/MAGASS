@@ -5,47 +5,76 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: magass-backend
+    container_name: bikesim-backend
     ports:
       - "8000:8000"
     volumes:
+      # Persistent data volumes
       - ./results:/app/results
       - ./Resultados_Simulador:/app/Resultados_Simulador
       - ./Resultados_Analisis:/app/Resultados_Analisis
       - ./uploads:/app/uploads
       - ./logs:/app/logs
       - ./Datos:/app/Datos
+
+      # Development hot-reload volumes (remove in production)
       - ./mainapi.py:/app/mainapi.py
       - ./bike_simulator5.py:/app/bike_simulator5.py
       - ./Frontend:/app/Frontend
       - ./Backend:/app/Backend
+      - ./bikesim:/app/bikesim
       - ./utils:/app/utils
+
     environment:
+      # Python settings
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
+
+      # Chrome/Chromedriver
       - CHROME_BIN=/usr/bin/chromium
       - CHROMEDRIVER_PATH=/usr/bin/chromedriver
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+
+      # CORS settings
+      - ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000,http://localhost:8000
+
+      # Path configurations (for AppConfig)
+      - RESULTS_FOLDER=/app/results
+      - UPLOADS_FOLDER=/app/uploads
+      - ROOT_DIR=/app
+      - HISTORY_FILE=/app/results/simulations_history.json
+
     networks:
-      - magass-network
+      - bikesim-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
     restart: unless-stopped
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: magass-frontend
+    container_name: bikesim-frontend
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
-      - NEXT_PUBLIC_API_BASE=http://localhost:8000
+      # Use container name for internal communication
+      - NEXT_PUBLIC_API_BASE=http://backend:8000
       - NODE_ENV=production
+
     networks:
-      - magass-network
+      - bikesim-network
+
     restart: unless-stopped
 
 networks:
-  magass-network:
+  bikesim-network:
     driver: bridge

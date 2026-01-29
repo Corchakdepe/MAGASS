@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any, Literal, Union
 from pathlib import Path
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
-
+from Frontend.analysis_models import  StationDays
 
 
 # ============================================
@@ -185,9 +185,14 @@ class AnalysisArgs(BaseModel):
     apply_filter_to_line_comp: bool = False
 
 
+
+
+
 class AnalysisRequest(AnalysisArgs):
-    """Extended analysis args with additional API fields."""
-    pass
+    use_filter_for_maps: bool = False
+    use_filter_for_graphs: bool = False
+    filter_result_filename: Optional[str] = None
+    graf_linea_comp_est: Optional[List[StationDays]] = None
 
 
 # ============================================

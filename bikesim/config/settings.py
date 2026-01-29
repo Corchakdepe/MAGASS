@@ -1,66 +1,45 @@
-"""Application configuration."""
+from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Define base paths
+ROOT_DIR = Path(__file__).parent.parent.parent  # Project root
+RESULTS_BASE_FOLDER = ROOT_DIR / "results"
+UPLOADS_FOLDER = ROOT_DIR / "uploads"
 
 class AppConfig(BaseSettings):
-    """Application configuration loaded from environment."""
+    """Application configuration with environment variable support."""
 
-    # Paths
-    root_dir: Path = Field(default_factory=lambda: Path.cwd())
-    results_folder: Path = Field(default=None)
-    uploads_folder: Path = Field(default=None)
-    history_file: Path = Field(default=None)
+    # Path configurations with defaults
+    root_dir: Path = Field(default=ROOT_DIR)
+    results_folder: Path = Field(default=RESULTS_BASE_FOLDER)
+    uploads_folder: Path = Field(default=UPLOADS_FOLDER)
+    history_file: Path = Field(default=RESULTS_BASE_FOLDER / "simulations_history.json")
 
-    # API
-    allowed_origins: str = "http://localhost:3000,http://localhost:8000"
-    api_title: str = "BikeSim API"
-    api_version: str = "1.0"
+    # Other settings
+    database_host: str = Field(default="localhost")
+    database_port: int = Field(default=3306)
 
-    # Analysis defaults
-    default_delta_time: int = 15
-    max_stations: int = 1000
-
-    # Map configuration
-    map_types: Dict[str, str] = {
-        "density": "MapaDensidad",
-        "circles": "MapaCirculos",
-        "voronoi": "MapaVoronoi",
-        "displacement": "MapaDesplazamientos",
-        "espera": "MapaEspera",
-    }
-
-    map_formats: List[str] = ["html", "png"]
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore"  # Ignore extra env vars
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        # Set default paths based on root_dir
-        if self.results_folder is None:
-            self.results_folder = self.root_dir / "results"
-        if self.uploads_folder is None:
-            self.uploads_folder = self.root_dir / "uploads"
-        if self.history_file is None:
-            self.history_file = self.results_folder / "simulations_history.json"
-
-        # Ensure directories exist
+        # Create directories if they don't exist
         self.results_folder.mkdir(exist_ok=True, parents=True)
         self.uploads_folder.mkdir(exist_ok=True, parents=True)
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        env_prefix = "BIKESIM_"
-
-
-# Singleton instance
-_config: AppConfig = None
-
+# Singleton pattern
+_config: AppConfig | None = None
 
 def get_config() -> AppConfig:
-    """Get application configuration singleton."""
+    """Get or create application config singleton."""
     global _config
     if _config is None:
         _config = AppConfig()

@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system deps (build) + GEOS + Chromium + runtime libs needed by Chromium
+# Install system dependencies for GEOS, Chromium, and geospatial libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -30,26 +30,41 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xdg-utils \
   && rm -rf /var/lib/apt/lists/*
 
+# Set Chrome/Chromedriver paths
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
+# Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY mainapi.py .
 COPY bike_simulator5.py .
 COPY Script_Entropia.py .
 COPY debug_mapa.py .
 COPY ux_html2.py .
 COPY main.py .
+
+# Copy project modules
 COPY Frontend/ ./Frontend/
 COPY Backend/ ./Backend/
 COPY utils/ ./utils/
+COPY bikesim/ ./bikesim/
 COPY Datos/ ./Datos/
 
+# Create required directories
 RUN mkdir -p /app/results /app/uploads /app/logs \
     /app/Resultados_Simulador /app/Resultados_Analisis
 
+# Set environment variables for paths (used by AppConfig)
+ENV RESULTS_FOLDER=/app/results
+ENV UPLOADS_FOLDER=/app/uploads
+ENV ROOT_DIR=/app
+ENV HISTORY_FILE=/app/results/simulations_history.json
+
+# Expose API port
 EXPOSE 8000
 
-CMD ["uvicorn", "mainapi:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Use production server (remove --reload for production)
+CMD ["uvicorn", "mainapi:app", "--host", "0.0.0.0", "--port", "8000"]

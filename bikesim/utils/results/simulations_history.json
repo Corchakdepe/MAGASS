@@ -1,0 +1,22 @@
+{
+  "simulations": [
+    {
+      "simname": "ageu",
+      "simfolder": "20260129_211047_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260129_211047_sim_ST0_S0.00_WC1.00_D15"
+    },
+    {
+      "simname": "/Users/ageudepetris/Desktop/TFG project/uploads",
+      "simfolder": "20260129_204833_sim_ST0_S0.00_WC1.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260129_204833_sim_ST0_S0.00_WC1.00_D15"
+    }
+  ]
+}

@@ -475,4 +475,3 @@ export const simulationAPI = new SimulationAPIClient(
 /**
  * Export types
  */
-export type { SimulationAPIError };
