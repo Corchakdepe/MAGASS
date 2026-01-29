@@ -1,31 +1,41 @@
-from __future__ import annotations
+"""Utility functions for chart generation (backward compatibility)."""
 
-import hashlib
+import csv
+from typing import Dict, List, Any
 from pathlib import Path
-from typing import Any, Dict, List
-
-import pandas as pd
 
 
-def write_series_csv(base: str, x: List[Any], ys: Dict[str, List[Any]], meta: Dict[str, Any]) -> Path:
-    base_path = Path(base)
-    parent = base_path.parent
-    original_name = base_path.name
+def write_series_csv(
+        file_path: str,
+        x: List,
+        ys: Dict[str, List],
+        meta: Dict[str, Any]
+):
+    """
+    Write chart data to CSV format (for backward compatibility).
 
-    short_root = "Grafica"
-    if "Grafica" in original_name:
-        prefix = original_name.split("Grafica", 1)[0] + "Grafica"
-    else:
-        prefix = original_name[:40]
+    Args:
+        file_path: Output file path
+        x: X-axis values
+        ys: Dictionary of series_id -> y values
+        meta: Metadata dictionary
+    """
+    with open(file_path, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
 
-    h = hashlib.sha1(original_name.encode("utf-8")).hexdigest()[:8]
-    safe_name = f"{prefix}_{h}.csv"
-    out_path = parent / safe_name
+        # Write metadata as comments
+        writer.writerow(['# Chart Metadata'])
+        for key, value in meta.items():
+            writer.writerow([f'# {key}: {value}'])
+        writer.writerow([])
 
-    data = {"x": x}
-    for name, values in ys.items():
-        data[name] = values
+        # Write header
+        header = ['x'] + list(ys.keys())
+        writer.writerow(header)
 
-    df = pd.DataFrame(data)
-    df.to_csv(out_path, index=False)
-    return out_path
+        # Write data rows
+        for i, x_val in enumerate(x):
+            row = [x_val]
+            for series_id in ys.keys():
+                row.append(ys[series_id][i] if i < len(ys[series_id]) else '')
+            writer.writerow(row)

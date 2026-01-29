@@ -1,37 +1,17 @@
 """
-Improved chart JSON generation utilities for harmonized frontend consumption
+Chart builder for creating standardized chart JSON outputs.
+This extends the existing Backend functionality.
 """
 
-from typing import List, Dict, Any, Literal, Optional, Union
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+from datetime import datetime
 import hashlib
 
 
 class ChartBuilder:
-    """Builder for creating standardized chart JSON structures"""
-
-    @staticmethod
-    def _generate_chart_id(kind: str, **kwargs) -> str:
-        """Generate unique chart ID from parameters"""
-        parts = [kind]
-        for k, v in sorted(kwargs.items()):
-            if isinstance(v, (list, tuple)):
-                parts.append(f"{k}_{'_'.join(map(str, v))}")
-            else:
-                parts.append(f"{k}_{v}")
-        return "_".join(parts)
-
-    @staticmethod
-    def _generate_filename(base_name: str) -> tuple[str, str]:
-        """Generate unique filename for JSON output"""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
-        json_filename = f"{timestamp}_{base_name}_{content_hash}.json"
-        return json_filename
+    """Builder for creating standardized chart JSON."""
 
     @staticmethod
     def create_timeseries_chart(
@@ -40,53 +20,46 @@ class ChartBuilder:
         series_data: Dict[str, List[float]],
         stations: List[int],
         days: List[int],
-        aggregation: Literal["mean", "sum"] = "mean",
-        output_path: Optional[str] = None
-    ) -> Dict[str, Any]:
+        aggregation: str,
+        output_path: str
+    ) -> dict:
         """
-        Create a standardized timeseries chart (hourly data)
+        Create timeseries chart JSON.
 
         Args:
-            title: Human-readable title
-            x_hours: List of hours [0-23]
-            series_data: {"est_87": [values], "est_212": [values]}
-            stations: List of station IDs
-            days: Days included in aggregation
-            aggregation: Type of aggregation performed
-            output_path: Optional path to save JSON file
+            title: Chart title
+            x_hours: Hour values (0-23)
+            series_data: Dictionary of series_id -> values
+            stations: Station IDs
+            days: Day indices
+            aggregation: Aggregation type (mean, sum)
+            output_path: Path to save JSON
 
         Returns:
-            Standardized chart JSON structure
+            Chart JSON dictionary
         """
-        chart_id = ChartBuilder._generate_chart_id(
-            "timeseries",
-            stations=stations,
-            days=tuple(days[:3]) if len(days) > 3 else tuple(days)
-        )
+        chart_id = f"timeseries_{hashlib.sha1(title.encode()).hexdigest()[:8]}"
 
+        # Build series list
         series = []
-        for station_id in stations:
-            key = f"est_{station_id}"
-            if key in series_data:
-                series.append({
-                    "id": key,
-                    "label": f"Station {station_id}",
-                    "values": series_data[key],
-                    "metadata": {
-                        "station_id": station_id,
-                        "derived": False,
-                        "aggregation": aggregation,
-                        "value_type": "occupancy"
-                    }
-                })
+        for series_id, values in series_data.items():
+            series.append({
+                "id": series_id,
+                "label": series_id.replace("_", " ").title(),
+                "values": values,
+                "metadata": {
+                    "derived": False,
+                    "aggregation": aggregation
+                }
+            })
 
         chart_json = {
             "id": chart_id,
             "kind": "timeseries",
             "format": "json",
             "visualization": {
-                "recommended": "line" if len(series) > 1 else "bar",
-                "supported": ["line", "bar", "area"]
+                "recommended": "bar",
+                "supported": ["bar", "line", "area"]
             },
             "data": {
                 "x": {
@@ -100,169 +73,15 @@ class ChartBuilder:
             },
             "context": {
                 "title": title,
-                "time_range": {"start": 0, "end": 23, "unit": "hour"},
-                "days": days,
                 "stations": stations,
+                "days": days,
                 "aggregation": aggregation
             }
         }
 
-        if output_path:
-            ChartBuilder._save_json(chart_json, output_path)
-
-        return chart_json
-
-    @staticmethod
-    def create_distribution_chart(
-        title: str,
-        bin_centers: List[float],
-        frequencies: List[int],
-        days: List[int],
-        value_type: Literal["mean", "sum"] = "mean",
-        output_path: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Create a distribution/histogram chart
-
-        Args:
-            title: Human-readable title
-            bin_centers: Center points of histogram bins
-            frequencies: Count in each bin
-            days: Days included in calculation
-            value_type: What the values represent
-            output_path: Optional path to save JSON file
-
-        Returns:
-            Standardized chart JSON structure
-        """
-        chart_id = ChartBuilder._generate_chart_id(
-            "distribution",
-            days=tuple(days[:3]) if len(days) > 3 else tuple(days),
-            value_type=value_type
-        )
-
-        chart_json = {
-            "id": chart_id,
-            "kind": "distribution",
-            "format": "json",
-            "visualization": {
-                "recommended": "bar",
-                "supported": ["bar", "area"]
-            },
-            "data": {
-                "x": {
-                    "values": [round(v, 2) for v in bin_centers],
-                    "label": f"{value_type.capitalize()} Value",
-                    "type": "quantitative",
-                    "unit": "value_bin"
-                },
-                "series": [{
-                    "id": "frequency",
-                    "label": "Frequency",
-                    "values": frequencies,
-                    "metadata": {
-                        "derived": False,
-                        "value_type": "count"
-                    }
-                }]
-            },
-            "context": {
-                "title": title,
-                "days": days,
-                "value_type": value_type,
-                "bin_count": len(bin_centers)
-            }
-        }
-
-        if output_path:
-            ChartBuilder._save_json(chart_json, output_path)
-
-        return chart_json
-
-    @staticmethod
-    def create_comparison_chart(
-        title: str,
-        x_hours: List[int],
-        series_specs: List[Dict[str, Any]],
-        global_context: Optional[Dict[str, Any]] = None,
-        output_path: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Create a multi-station/multi-condition comparison chart
-
-        Args:
-            title: Human-readable title
-            x_hours: List of hours [0-23]
-            series_specs: List of dicts with {station_id, days, values, aggregation}
-            global_context: Additional context info
-            output_path: Optional path to save JSON file
-
-        Returns:
-            Standardized chart JSON structure
-        """
-        all_stations = []
-        series = []
-
-        for spec in series_specs:
-            station_id = spec["station_id"]
-            days = spec.get("days", "all")
-            all_stations.append(station_id)
-
-            # Create readable label
-            if days == "all":
-                days_label = "all days"
-            elif isinstance(days, list):
-                if len(days) > 3:
-                    days_label = f"{len(days)} days"
-                else:
-                    days_label = f"days {','.join(map(str, days))}"
-            else:
-                days_label = str(days)
-
-            series.append({
-                "id": f"est_{station_id}",
-                "label": f"Station {station_id} ({days_label})",
-                "values": spec["values"],
-                "metadata": {
-                    "station_id": station_id,
-                    "days": days,
-                    "derived": False,
-                    "aggregation": spec.get("aggregation", "mean")
-                }
-            })
-
-        chart_id = ChartBuilder._generate_chart_id(
-            "comparison",
-            stations=tuple(all_stations[:5])
-        )
-
-        chart_json = {
-            "id": chart_id,
-            "kind": "comparison",
-            "format": "json",
-            "visualization": {
-                "recommended": "line",
-                "supported": ["line", "area", "bar"]
-            },
-            "data": {
-                "x": {
-                    "values": x_hours,
-                    "label": "Hour of Day",
-                    "type": "temporal",
-                    "unit": "hour",
-                    "domain": [0, 23]
-                },
-                "series": series
-            },
-            "context": {
-                "title": title,
-                "stations": all_stations,
-                **(global_context or {})
-            }
-        }
-
-        if output_path:
-            ChartBuilder._save_json(chart_json, output_path)
+        # Save to file
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(chart_json, f, ensure_ascii=False, indent=2)
 
         return chart_json
 
@@ -273,43 +92,22 @@ class ChartBuilder:
         series_data: Dict[str, List[float]],
         stations: List[int],
         days: List[int],
-        output_path: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """
-        Create a cumulative/accumulation chart
-
-        Args:
-            title: Human-readable title
-            x_hours: List of hours [0-23]
-            series_data: {"est_87": [cumulative_values], ...}
-            stations: List of station IDs
-            days: Days included
-            output_path: Optional path to save JSON file
-
-        Returns:
-            Standardized chart JSON structure
-        """
-        chart_id = ChartBuilder._generate_chart_id(
-            "accumulation",
-            stations=stations[:5],
-            days=tuple(days[:3]) if len(days) > 3 else tuple(days)
-        )
+        output_path: str
+    ) -> dict:
+        """Create cumulative/accumulation chart JSON."""
+        chart_id = f"accumulation_{hashlib.sha1(title.encode()).hexdigest()[:8]}"
 
         series = []
-        for station_id in stations:
-            key = f"est_{station_id}"
-            if key in series_data:
-                series.append({
-                    "id": key,
-                    "label": f"Station {station_id} (cumulative)",
-                    "values": series_data[key],
-                    "metadata": {
-                        "station_id": station_id,
-                        "derived": True,
-                        "aggregation": "cumulative",
-                        "value_type": "accumulation"
-                    }
-                })
+        for series_id, values in series_data.items():
+            series.append({
+                "id": series_id,
+                "label": series_id.replace("_", " ").title(),
+                "values": values,
+                "metadata": {
+                    "derived": True,
+                    "aggregation": "cumsum"
+                }
+            })
 
         chart_json = {
             "id": chart_id,
@@ -331,51 +129,261 @@ class ChartBuilder:
             },
             "context": {
                 "title": title,
-                "time_range": {"start": 0, "end": 23, "unit": "hour"},
+                "stations": stations,
                 "days": days,
-                "stations": stations
+                "aggregation": "cumulative"
             }
         }
 
-        if output_path:
-            ChartBuilder._save_json(chart_json, output_path)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(chart_json, f, ensure_ascii=False, indent=2)
 
         return chart_json
 
     @staticmethod
-    def _save_json(chart_json: Dict[str, Any], output_path: str):
-        """Save chart JSON to file with proper formatting"""
+    def create_distribution_chart(
+        title: str,
+        bin_centers: List[float],
+        frequencies: List[int],
+        days: List[int],
+        value_type: str,
+        output_path: str
+    ) -> dict:
+        """Create distribution/histogram chart JSON."""
+        chart_id = f"distribution_{hashlib.sha1(title.encode()).hexdigest()[:8]}"
+
+        chart_json = {
+            "id": chart_id,
+            "kind": "distribution",
+            "format": "json",
+            "visualization": {
+                "recommended": "bar",
+                "supported": ["bar", "histogram"]
+            },
+            "data": {
+                "x": {
+                    "values": bin_centers,
+                    "label": "Value",
+                    "type": "quantitative",
+                    "unit": "value"
+                },
+                "series": [{
+                    "id": "frequency",
+                    "label": "Frequency",
+                    "values": frequencies,
+                    "metadata": {
+                        "derived": True,
+                        "aggregation": "count"
+                    }
+                }]
+            },
+            "context": {
+                "title": title,
+                "days": days,
+                "value_type": value_type
+            }
+        }
+
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(chart_json, f, ensure_ascii=False, indent=2)
 
+        return chart_json
 
-# Convenience function for backward compatibility
-def create_chart_json(
-    kind: Literal["timeseries", "distribution", "comparison", "accumulation"],
-    **kwargs
-) -> Dict[str, Any]:
+    @staticmethod
+    def create_station_series_chart(
+        title: str,
+        station_indices: List[int],
+        values: List[float],
+        days: List[int],
+        value_type: str,
+        output_path: str
+    ) -> dict:
+        """Create station series chart JSON."""
+        chart_id = f"station_series_{hashlib.sha1(title.encode()).hexdigest()[:8]}"
+
+        chart_json = {
+            "id": chart_id,
+            "kind": "station_series",
+            "format": "json",
+            "visualization": {
+                "recommended": "line",
+                "supported": ["line", "bar"]
+            },
+            "data": {
+                "x": {
+                    "values": station_indices,
+                    "label": "Station Index",
+                    "type": "categorical",
+                    "unit": "station_id"
+                },
+                "series": [{
+                    "id": "value",
+                    "label": value_type.title(),
+                    "values": values,
+                    "metadata": {
+                        "derived": False,
+                        "value_type": value_type
+                    }
+                }]
+            },
+            "context": {
+                "title": title,
+                "days": days,
+                "value_type": value_type
+            }
+        }
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(chart_json, f, ensure_ascii=False, indent=2)
+
+        return chart_json
+
+    @staticmethod
+    def create_comparison_chart(
+        title: str,
+        x_hours: List[int],
+        series_specs: List[Dict],
+        global_context: Dict,
+        output_path: str
+    ) -> dict:
+        """Create comparison chart JSON."""
+        chart_id = f"comparison_{hashlib.sha1(title.encode()).hexdigest()[:8]}"
+
+        series = []
+        for spec in series_specs:
+            station_id = spec["station_id"]
+            days = spec["days"]
+
+            # Format days for label
+            if days == "all":
+                days_label = "all"
+            elif isinstance(days, list):
+                days_label = f"days {','.join(map(str, days[:3]))}" if len(days) <= 3 else f"{len(days)} days"
+            else:
+                days_label = str(days)
+
+            series.append({
+                "id": f"station_{station_id}",
+                "label": f"Station {station_id} ({days_label})",
+                "values": spec["values"],
+                "metadata": {
+                    "station_id": station_id,
+                    "days": days,
+                    "aggregation": spec.get("aggregation", "mean"),
+                    "derived": False
+                }
+            })
+
+        chart_json = {
+            "id": chart_id,
+            "kind": "comparison",
+            "format": "json",
+            "visualization": {
+                "recommended": "line",
+                "supported": ["line", "area", "bar"]
+            },
+            "data": {
+                "x": {
+                    "values": x_hours,
+                    "label": "Hour of Day",
+                    "type": "temporal",
+                    "unit": "hour",
+                    "domain": [0, 23]
+                },
+                "series": series
+            },
+            "context": {
+                "title": title,
+                **global_context
+            }
+        }
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(chart_json, f, ensure_ascii=False, indent=2)
+
+        return chart_json
+
+    @staticmethod
+    def create_matrix_comparison_chart(
+        title: str,
+        x_hours: List[int],
+        current_values: List[float],
+        custom_values: List[float],
+        delta: int,
+        is_mean: bool,
+        stations1: List[int],
+        stations2: List[int],
+        output_path: str
+    ) -> dict:
+        """Create matrix comparison chart JSON."""
+        chart_id = f"matrix_comparison_{delta}"
+
+        chart_json = {
+            "id": chart_id,
+            "kind": "comparison",
+            "format": "json",
+            "visualization": {
+                "recommended": "line",
+                "supported": ["line", "area", "bar"]
+            },
+            "data": {
+                "x": {
+                    "values": x_hours,
+                    "label": "Hour of Day",
+                    "type": "temporal",
+                    "unit": "hour",
+                    "domain": [0, 23]
+                },
+                "series": [
+                    {
+                        "id": "current",
+                        "label": "Current Matrix",
+                        "values": current_values,
+                        "metadata": {
+                            "derived": False,
+                            "aggregation": "mean" if is_mean else "sum",
+                            "matrix_type": "current"
+                        }
+                    },
+                    {
+                        "id": "custom",
+                        "label": "Custom Matrix",
+                        "values": custom_values,
+                        "metadata": {
+                            "derived": False,
+                            "aggregation": "mean" if is_mean else "sum",
+                            "matrix_type": "custom"
+                        }
+                    }
+                ]
+            },
+            "context": {
+                "title": title,
+                "delta": delta,
+                "is_mean": is_mean,
+                "stations1": stations1,
+                "stations2": stations2
+            }
+        }
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(chart_json, f, ensure_ascii=False, indent=2)
+
+        return chart_json
+
+
+def create_chart_json(chart_data: dict, output_path: str) -> dict:
     """
-    Factory function to create any chart type
+    Helper function to create and save chart JSON.
 
-    Usage:
-        chart = create_chart_json(
-            kind="timeseries",
-            title="Mean Occupancy",
-            x_hours=list(range(24)),
-            series_data={"est_87": [...]},
-            stations=[87],
-            days=[0,1,2],
-            aggregation="mean"
-        )
+    Args:
+        chart_data: Chart data dictionary
+        output_path: Path to save JSON
+
+    Returns:
+        Chart data dictionary
     """
-    builder_map = {
-        "timeseries": ChartBuilder.create_timeseries_chart,
-        "distribution": ChartBuilder.create_distribution_chart,
-        "comparison": ChartBuilder.create_comparison_chart,
-        "accumulation": ChartBuilder.create_accumulation_chart
-    }
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(chart_data, f, ensure_ascii=False, indent=2)
 
-    if kind not in builder_map:
-        raise ValueError(f"Unknown chart kind: {kind}")
-
-    return builder_map[kind](**kwargs)
+    return chart_data

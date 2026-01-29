@@ -5,7 +5,7 @@ import wx
 from Backend import Constantes
 from Backend.Manipuladores import Agrupador
 from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
-from Frontend.BackUp.Ventana import Ventana
+from Frontend import Ventana
 import customtkinter as tk
 
 from ux_html2 import MyFrame

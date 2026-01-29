@@ -61,7 +61,7 @@ export function MapViewer({
   }
 
   return (
-    <div className="flex-1 overflow-hidden p-3">
+    <div className="flex-1 overflow-hidden p-3 h-full w-full">
       <div className="relative h-full w-full overflow-hidden rounded-md border border-surface-3 bg-surface-0/60">
         {/* Loading State */}
         {iframeLoading && (

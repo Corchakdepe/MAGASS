@@ -1,13 +1,13 @@
 from tkinter import Menu
 
 from Backend import Constantes
-from Frontend.BackUp.Ventana import Ventana
+from Frontend import Ventana
 import customtkinter as tk
 
-from Frontend.VentanaEstadisticas import VentanaEstadisticas
-from Frontend.VentanaFiltrador import VentanaFiltrador
-from Frontend.VentanaMapa import VentanaMapa
-from Frontend.VentanaVoronoi import VentanaVoronoi
+from Frontend import VentanaEstadisticas
+from Frontend import VentanaFiltrador
+from Frontend import VentanaMapa
+from Frontend import VentanaVoronoi
 
 
 class VentanaMenu(Ventana):

@@ -21,31 +21,29 @@ import type { PersistedState, RawResultItem } from "../types";
 interface MapPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  filteredMaps: RawResultItem[];
-  orderedMaps: RawResultItem[];
-  selectedIndex: number;
+  items: RawResultItem[];
+  selectedId: string;
+  favorites: Set<string>;
   persisted: PersistedState;
-  setPersisted: React.Dispatch<React.SetStateAction<PersistedState>>;
-  favoritesSet: Set<string>;
   allKinds: string[];
   allFormats: string[];
-  onSelectIndex: (index: number) => void;
+  onSelect: (map: RawResultItem) => void;
   onToggleFavorite: (id: string) => void;
+  onUpdateFilters: (updates: Partial<PersistedState>) => void;
 }
 
 export function MapPicker({
   open,
   onOpenChange,
-  filteredMaps,
-  orderedMaps,
-  selectedIndex,
+  items,
+  selectedId,
+  favorites,
   persisted,
-  setPersisted,
-  favoritesSet,
   allKinds,
   allFormats,
-  onSelectIndex,
+  onSelect,
   onToggleFavorite,
+  onUpdateFilters,
 }: MapPickerProps) {
   const { t } = useLanguage();
 
@@ -56,8 +54,7 @@ export function MapPicker({
         <div className="p-4 border-b border-surface-3 bg-surface-1/92 backdrop-blur-md">
           <SheetHeader>
             <SheetTitle className="text-sm text-text-primary">
-              {t("mapsHistory")} ({filteredMaps.length} {t("shown")} /{" "}
-              {orderedMaps.length} {t("total")})
+              {t("mapsHistory")} ({items.length} {t("shown")})
             </SheetTitle>
           </SheetHeader>
         </div>
@@ -74,7 +71,7 @@ export function MapPicker({
                   className="h-8 pl-8 text-xs bg-surface-1 border border-surface-3 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                   value={persisted.searchText}
                   onChange={(e) =>
-                    setPersisted((p) => ({ ...p, searchText: e.target.value }))
+                    onUpdateFilters({ searchText: e.target.value })
                   }
                   placeholder={t("searchPlaceholder")}
                 />
@@ -91,13 +88,12 @@ export function MapPicker({
                   size="sm"
                   className="h-8 bg-surface-1 border border-surface-3 hover:bg-surface-0"
                   onClick={() =>
-                    setPersisted((p) => ({
-                      ...p,
+                    onUpdateFilters({
                       kindFilter: "",
                       formatFilter: "",
                       onlyFavorites: false,
                       searchText: "",
-                    }))
+                    })
                   }
                 >
                   <Filter className="h-4 w-4 mr-2" />
@@ -108,7 +104,7 @@ export function MapPicker({
                   <Checkbox
                     checked={persisted.onlyFavorites}
                     onCheckedChange={(v) =>
-                      setPersisted((p) => ({ ...p, onlyFavorites: Boolean(v) }))
+                      onUpdateFilters({ onlyFavorites: Boolean(v) })
                     }
                     className="border-surface-3 data-[state=checked]:bg-accent data-[state=checked]:border-accent/40 focus-visible:ring-2 focus-visible:ring-accent/25"
                   />
@@ -129,7 +125,7 @@ export function MapPicker({
                   className="h-8 w-full rounded-md border border-surface-3 bg-surface-1 px-2 text-xs text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                   value={persisted.kindFilter}
                   onChange={(e) =>
-                    setPersisted((p) => ({ ...p, kindFilter: e.target.value }))
+                    onUpdateFilters({ kindFilter: e.target.value })
                   }
                 >
                   <option value="">{t("allKinds")}</option>
@@ -144,7 +140,7 @@ export function MapPicker({
                   className="h-8 w-full rounded-md border border-surface-3 bg-surface-1 px-2 text-xs text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
                   value={persisted.formatFilter}
                   onChange={(e) =>
-                    setPersisted((p) => ({ ...p, formatFilter: e.target.value }))
+                    onUpdateFilters({ formatFilter: e.target.value })
                   }
                 >
                   <option value="">{t("allFormats")}</option>
@@ -165,11 +161,11 @@ export function MapPicker({
         <div className="px-4 pb-4">
           <div className="max-h-[50vh] overflow-y-auto rounded-md border border-surface-3 bg-surface-1">
             <ul className="divide-y divide-surface-3">
-              {filteredMaps.map((m, idx) => {
+              {items.map((m) => {
                 const title = prettyMapName(m.name ?? String(m.id));
-                const selected = idx === selectedIndex;
                 const id = String(m.id);
-                const fav = favoritesSet.has(id);
+                const selected = id === selectedId;
+                const fav = favorites.has(id);
 
                 return (
                   <li key={id}>
@@ -179,10 +175,7 @@ export function MapPicker({
                         "w-full px-3 py-2 text-left transition-colors hover:bg-surface-0/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0",
                         selected ? "bg-accent-soft" : "",
                       ].join(" ")}
-                      onClick={() => {
-                        onSelectIndex(idx);
-                        onOpenChange(false);
-                      }}
+                      onClick={() => onSelect(m)}
                       title={String(m.name)}
                     >
                       <div className="flex items-start justify-between gap-3">

@@ -2,16 +2,16 @@ from tkinter import Menu
 
 from Backend import Constantes
 
-from Frontend.BackUp.Ventana import Ventana
+from Frontend import Ventana
 import customtkinter as tk
 
-from Frontend.BackUp.VentanaDesplazamientos import VentanaDesplazamientos
+from Frontend import VentanaDesplazamientos
 
-from Frontend.BackUp.VentanaEstadisticas2 import VentanaEstadisticas2
+from Frontend import VentanaEstadisticas2
 
-from Frontend.BackUp.VentanaFiltrador2 import VentanaFiltrador2
+from Frontend import VentanaFiltrador2
 
-from Frontend.BackUp.VentanaMapa2 import VentanaMapa2
+from Frontend import VentanaMapa2
 
 
 

@@ -7,7 +7,7 @@ from Backend.Auxiliares import auxiliaresCalculos
 from Backend.Manipuladores import Agrupador
 from Backend.Manipuladores.Filtrador import Filtrador
 
-from Frontend.BackUp.Ventana import Ventana
+from Frontend import Ventana
 import customtkinter as tk
 from tkinter import messagebox,Toplevel,Text
 import tkinter as tt

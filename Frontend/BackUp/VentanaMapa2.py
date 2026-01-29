@@ -8,7 +8,7 @@ from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Vorono
 from Backend.Representacion.ManejadorMapas.manejar_densidad import Manejar_Densidad
 from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
 
-from Frontend.BackUp.Ventana import Ventana
+from Frontend import Ventana
 import customtkinter as tk
 from ux_html2 import MyFrame
 

@@ -382,5 +382,17 @@
    "analyticsView": "Analytics View",
   "viewingStatisticalAnalysis": "Viewing statistical analysis",
   "hideAnalytics": "Hide Analytics",
-  "showAnalytics": "Show Analytics"
+  "showAnalytics": "Show Analytics",
+  "customizations": {
+    "jetbrains": {
+      "settings": {
+        "Docker:app:DockerSettings.dockerComposePath": "/usr/local/bin/docker",
+        "Docker:app:DockerSettings.dockerPath": "/usr/local/bin/docker",
+        "com.intellij:app:HttpConfigurable.use_proxy_pac": true,
+        "com.intellij:app:BaseRefactoringSettings.safe_delete_search_in_comments": false,
+        "com.intellij:app:BaseRefactoringSettings.rename_search_in_comments_for_file": false,
+        "com.intellij:app:BaseRefactoringSettings.rename_search_for_references_for_directory": false
+      }
+    }
+  }
 }

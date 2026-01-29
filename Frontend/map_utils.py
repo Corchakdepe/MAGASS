@@ -1,82 +1,78 @@
-from __future__ import annotations
-
-from datetime import datetime
-from pathlib import Path
-from typing import List, Optional, Tuple
+"""Utility functions for map generation."""
 
 import json
-
-from Backend import Constantes
-
-
-def _sync_html_name_with_png(nombrePNG: str, logical: str) -> None:
-    """
-    Find any HTML in RUTA_SALIDA whose name contains `logical` and
-    rename the latest one so it shares the timestamp prefix of nombrePNG.
-    """
-    try:
-        out_dir = Path(Constantes.RUTA_SALIDA)
-        candidates = sorted(out_dir.glob(f"*{logical}*.html"))
-        if not candidates:
-            return
-
-        original_html = candidates[-1]  # latest for that logical name
-        target_html_name = Path(nombrePNG).with_suffix(".html").name
-        target_html_path = out_dir / target_html_name
-
-        if original_html != target_html_path:
-            original_html.rename(target_html_path)
-    except Exception:
-        # keep analysis running even if the rename fails
-        pass
+from pathlib import Path
+from typing import Tuple, List, Optional
 
 
 def parse_mapa_spec(spec: str) -> Tuple[List[int], Optional[List[int]], bool]:
     """
-    spec: "0;10;20+1;15;26-L" o "0;1;2" o "0;1;2-L" o "0;1;2+3;4"
-    return: (instantes, estaciones or None, labels_abiertos)
-    """
-    if not spec:
-        return [], None, False
+    Parse map specification string.
 
-    labels = False
+    Format: "inst1;inst2[+est1;est2;...][-L]"
+
+    Args:
+        spec: Map specification string
+
+    Returns:
+        Tuple of (instants, stations, show_labels)
+    """
+    show_labels = False
+    stations = None
+
+    # Check for -L flag
     if spec.endswith("-L"):
-        labels = True
+        show_labels = True
         spec = spec[:-2]
 
+    # Split by + to separate instants and stations
     if "+" in spec:
-        inst_str, est_str = spec.split("+", 1)
-        estaciones = [int(x) for x in est_str.split(";") if x.strip()]
+        instants_str, stations_str = spec.split("+", 1)
+        stations = list(map(int, stations_str.split(";")))
     else:
-        inst_str = spec
-        estaciones = None
+        instants_str = spec
 
-    instantes = [int(x) for x in inst_str.split(";") if x.strip()]
-    return instantes, estaciones, labels
+    instants = list(map(int, instants_str.split(";")))
+
+    return instants, stations, show_labels
 
 
 def write_map_sidecar(
-    base_html_or_png: str,
-    *,
-    name: str,
-    matrix_spec: Optional[str],
-    delta: Optional[int],
-    instante: Optional[int],
-    kind: str,
-) -> None:
+        map_path: Path,
+        instant: int,
+        stations: Optional[List[int]] = None,
+        map_type: str = "unknown"
+):
     """
-    Create a JSON sidecar with metadata for a given map.
+    Write sidecar JSON file for map metadata.
 
-    base_html_or_png: filename used for the map (html or png) in Constantes.RUTA_SALIDA.
+    Args:
+        map_path: Path to map HTML/PNG file
+        instant: Time instant
+        stations: Station IDs (optional)
+        map_type: Type of map
     """
-    base_path = Path(Constantes.RUTA_SALIDA) / base_html_or_png
-    json_path = base_path.with_suffix(".json")
-    meta = {
-        "name": name,
-        "matrix": matrix_spec,
-        "delta": delta,
-        "instante": instante,
-        "kind": kind,
-        "created_at": datetime.now().isoformat(timespec="seconds"),
+    json_path = map_path.with_suffix('.json')
+
+    metadata = {
+        "map_type": map_type,
+        "instant": instant,
+        "stations": stations,
+        "html_file": map_path.name
     }
-    json_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2)
+
+
+def _sync_html_name_with_png(html_name: str) -> str:
+    """
+    Ensure HTML filename matches PNG naming convention.
+
+    Args:
+        html_name: HTML filename
+
+    Returns:
+        Standardized filename
+    """
+    return html_name.replace('.png', '.html')

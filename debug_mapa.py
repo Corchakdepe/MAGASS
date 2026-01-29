@@ -1,4 +1,4 @@
-from Frontend.EjecutadorCMD import run_analysis, AnalysisArgs
+from Frontend import run_analysis, AnalysisArgs
 
 args = AnalysisArgs(
     input_folder="./results/20251209_193255_sim_ST0_S0.00_WC1.00_D15",
