@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import List, Optional
 import pandas as pd
 import numpy as np
-
+from Backend import Constantes
 from bikesim.core.models import ChartMetadata, AnalysisArgs, StationDaySpec
 from bikesim.core.exceptions import ChartGenerationError
 from bikesim.utils.matrix_utils import (
@@ -82,6 +82,7 @@ class ChartGenerator:
                 charts.append(self.generate_matrix_comparison_chart(
                     matrix, args.graf_linea_comp_mats
                 ))
+
 
         except Exception as e:
             logger.error(f"Error generating charts: {e}")
@@ -352,7 +353,6 @@ class ChartGenerator:
         Returns:
             Chart metadata
         """
-        from Backend import Constantes
 
         if Constantes.MATRIZ_CUSTOM is None:
             raise ChartGenerationError("MATRIZ_CUSTOM not available for comparison")
@@ -394,3 +394,4 @@ class ChartGenerator:
 
         logger.info("Generated matrix comparison chart")
         return ChartMetadata(**chart_json)
+

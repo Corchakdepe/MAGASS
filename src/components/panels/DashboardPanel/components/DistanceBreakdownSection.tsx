@@ -18,13 +18,13 @@ export function DistanceBreakdownSection({
       </h3>
       <div className="space-y-4">
         <ProgressBar
-          label="Real Operations"
+          label= {t("realOperations")}
           value={metrics.realDistance}
           percentage={metrics.realDistancePercentage}
           gradient="bg-gradient-to-r from-green-500 to-blue-500"
         />
         <ProgressBar
-          label="Fictional Operations (Rebalancing)"
+          label={t("fictionalOperations")}
           value={metrics.fictionalDistance}
           percentage={metrics.fictionalDistancePercentage}
           gradient="bg-gradient-to-r from-purple-500 to-pink-500"
@@ -34,7 +34,7 @@ export function DistanceBreakdownSection({
             <div className="flex items-center gap-2">
               <Percent className="h-4 w-4 text-accent" />
               <span className="text-xs text-text-secondary">
-                Real vs Fictional Ratio
+               {t("realVsFictionalRatio")}
               </span>
             </div>
             <span className="text-lg font-bold text-accent">
@@ -42,7 +42,7 @@ export function DistanceBreakdownSection({
             </span>
           </div>
           <p className="text-xs text-text-tertiary mt-1">
-            Higher is better (more real operations vs rebalancing)
+            {t("higherIsBetterMoreRealOperationsVsRebalancing")}
           </p>
         </div>
       </div>

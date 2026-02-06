@@ -27,7 +27,7 @@ export function DistanceBarChart({metrics, t}: DistanceBarChartProps) {
         series={[
           {
             data: distances,
-            label: 'Distance (km)',
+            label: t('distance'),
             color: '#8b5cf6',
           },
         ]}
@@ -37,13 +37,13 @@ export function DistanceBarChart({metrics, t}: DistanceBarChartProps) {
       <div className="mt-4 pt-4 border-t border-surface-3">
         <div className="grid grid-cols-2 gap-4 text-xs">
           <div>
-            <p className="text-text-secondary">Total Distance</p>
+            <p className="text-text-secondary">{t("totalDistance")}</p>
             <p className="text-lg font-bold text-text-primary">
               {metrics.totalDistance.toFixed(2)} km
             </p>
           </div>
           <div>
-            <p className="text-text-secondary">Avg per Operation</p>
+            <p className="text-text-secondary">{t("AvgPerPperation")}</p>
             <p className="text-lg font-bold text-text-primary">
               {metrics.avgDistancePerOperation.toFixed(2)} km
             </p>

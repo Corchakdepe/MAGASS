@@ -22,8 +22,12 @@ export default function SimulationPanel({onSimulationComplete}: SimulationPanelP
     setStressType: formState.setStressType,
     simName: formState.simName,
     setSimName: formState.setSimName,
-    onRunSimulation: formState.handleRunSimulation,  // Map handleRunSimulation to onRunSimulation
-    isLoading: formState.isSimulating,  // Map isSimulating to isLoading
+    folderPath: formState.folderPath,
+    setFolderPath: formState.setFolderPath,
+    onFileUpload: formState.handleFileUpload,
+    uploadedFiles: formState.uploadedFiles,
+    onRunSimulation: formState.onRunSimulation,
+    isLoading: formState.isLoading,
   };
 
   return (

@@ -55,19 +55,19 @@ export function MetricsOverviewSection({summary, metrics, t}: MetricsOverviewSec
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md p-3">
-            <p className="text-xs text-text-secondary mb-1">Real Operations</p>
+            <p className="text-xs text-text-secondary mb-1">{t("realOperations")}</p>
             <p className="text-xl font-bold text-text-primary">{metrics.totalRealOperations}</p>
           </div>
           <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md p-3">
-            <p className="text-xs text-text-secondary mb-1">Fictional Operations</p>
+            <p className="text-xs text-text-secondary mb-1">{t("fictionalOperations")}</p>
             <p className="text-xl font-bold text-text-primary">{metrics.totalFictionalOperations}</p>
           </div>
           <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md p-3">
-            <p className="text-xs text-text-secondary mb-1">Rebalancing %</p>
+            <p className="text-xs text-text-secondary mb-1">{t("rebalancing")} %</p>
             <p className="text-xl font-bold text-text-primary">{metrics.rebalancingIntensity.toFixed(0)}%</p>
           </div>
           <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md p-3">
-            <p className="text-xs text-text-secondary mb-1">Avg Distance/Op</p>
+            <p className="text-xs text-text-secondary mb-1">{t("avgDistance/Op")}</p>
             <p className="text-xl font-bold text-text-primary">{metrics.avgDistancePerOperation.toFixed(2)} km</p>
           </div>
         </div>

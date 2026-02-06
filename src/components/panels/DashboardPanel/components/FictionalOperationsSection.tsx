@@ -10,15 +10,15 @@ export function FictionalOperationsSection({
   t,
 }: FictionalOperationsSectionProps) {
   const operations = [
-    {label: "Resolved Pickups", value: summaryData.resolvedFictionalPickups},
-    {label: "Unresolved Pickups", value: summaryData.unresolvedFictionalPickups},
-    {label: "Resolved Dropoffs", value: summaryData.resolvedFictionalDropoffs},
-    {label: "Unresolved Dropoffs", value: summaryData.unresolvedFictionalDropoffs},
+    {label: t("resolvedPickups"), value: summaryData.resolvedFictionalPickups},
+    {label: t("unresolvedPickups"), value: summaryData.unresolvedFictionalPickups},
+    {label: t("resolvedDropoffs"), value: summaryData.resolvedFictionalDropoffs},
+    {label: t("unresolvedDropoffs"), value: summaryData.unresolvedFictionalDropoffs},
   ];
 
   const distances = [
-    {label: "Pickup Distance", value: summaryData.fictionalPickupKms},
-    {label: "Dropoff Distance", value: summaryData.fictionalDropoffKms},
+    {label: t("pickupDistance"), value: summaryData.fictionalPickupKms},
+    {label: t("dropoffDistance"), value: summaryData.fictionalDropoffKms},
   ];
 
   return (

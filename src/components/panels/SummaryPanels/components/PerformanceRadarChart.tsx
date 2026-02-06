@@ -17,7 +17,7 @@ export function PerformanceRadarChart({metrics, t}: PerformanceRadarChartProps) 
   // Calculate performance dimensions
   const performanceData = [
     {
-      metric: 'Success Rate',
+      metric: t("Success Rate"),
       value: metrics.overallSuccessRate,
       max: 100,
     },
@@ -27,7 +27,7 @@ export function PerformanceRadarChart({metrics, t}: PerformanceRadarChartProps) 
       max: 100,
     },
     {
-      metric: 'Real Operations',
+      metric: t("realOperations"),
       value: normalizeValue(
         metrics.totalRealOperations,
         metrics.totalRealOperations + metrics.totalFictionalOperations

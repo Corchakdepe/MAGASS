@@ -38,14 +38,14 @@ export function OperationsComparisonRadar({metrics, t}: OperationsComparisonRada
 
   const series = [
     {
-      label: 'Real Operations',
+      label: t('realOperations'),
       data: realOperationsData,
-      color: '#10b981',
+      color: 'rgba(52,199,89,1)',
     },
     {
-      label: 'Fictional Operations (Rebalancing)',
+      label: t('fictionalOperationsRebalancing'),
       data: fictionalOperationsData,
-      color: '#8b5cf6',
+      color: 'rgba(0,112,245,1)',
     },
   ];
 
@@ -79,19 +79,19 @@ export function OperationsComparisonRadar({metrics, t}: OperationsComparisonRada
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-text-secondary font-medium">Real Operations</span>
+              <span className="text-text-secondary font-medium">{t("realOperations")}</span>
             </div>
             <p className="text-text-tertiary">
-              User-generated demand and actual bike movements
+              {t("userGeneratedDemandActualBikeMovements")}
             </p>
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-3 h-3 rounded-full bg-purple-500" />
-              <span className="text-text-secondary font-medium">Fictional Operations</span>
+              <span className="text-text-secondary font-medium">{t("fictionalOperations")}</span>
             </div>
             <p className="text-text-tertiary">
-              System rebalancing to maintain optimal distribution
+              {t("systemRebalancingMaintainOptimalDistribution")}
             </p>
           </div>
         </div>

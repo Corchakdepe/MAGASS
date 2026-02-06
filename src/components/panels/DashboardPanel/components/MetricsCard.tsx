@@ -13,7 +13,7 @@ export function MetricCard({
   value,
   icon,
   subtext,
-  color = "text-blue-500",
+  color = "rgba(0,122,255,1)",
 }: MetricCardProps) {
   return (
     <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md p-4 hover:border-accent/50 transition-colors">

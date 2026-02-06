@@ -40,13 +40,13 @@ export function EfficiencyGaugeCard({metrics, t}: EfficiencyGaugeCardProps) {
         />
         <div className="mt-4 w-full space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-text-secondary">Overall Success Rate</span>
+            <span className="text-text-secondary">{t("overallSuccessRate")}</span>
             <span className="text-text-primary font-mono">
               {metrics.overallSuccessRate.toFixed(1)}%
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-text-secondary">Distance Efficiency</span>
+            <span className="text-text-secondary">{t("distanceEfficiency")}</span>
             <span className="text-text-primary font-mono">
               {((metrics.realDistance / (metrics.realDistance + metrics.fictionalDistance)) * 100).toFixed(1)}%
             </span>

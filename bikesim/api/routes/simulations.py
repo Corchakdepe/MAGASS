@@ -5,6 +5,12 @@ import os
 from Frontend.simulation_runner import run_simulation
 from Frontend.analysis_models import SimulateArgs
 from datetime import datetime
+import shutil
+from fastapi import UploadFile, File
+import os
+import pandas as pd
+from pathlib import Path
+from fastapi.responses import HTMLResponse
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pathlib import Path
@@ -18,9 +24,9 @@ from bikesim.utils.historymanagement import enrich_history_with_station_info, lo
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.post("/exe/simular-json")
+"""@router.post("/exe/simular-json")
 def exe_simular_json(args: SimulateArgs):
-    """Executes bike simulation with given parameters"""
+    Executes bike simulation with given parameters
     try:
         # Create output folder if not specified
         if not args.ruta_salida:
@@ -50,6 +56,378 @@ def exe_simular_json(args: SimulateArgs):
         return {"ok": True, "output_folder_name": ruta_salida}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    """
+
+
+@router.post("/exe/simular-json")
+def exe_simular_json(args: SimulateArgs):
+    """Executes bike simulation with given parameters"""
+    try:
+        # Use uploaded folder path if provided
+        if not args.ruta_entrada and hasattr(args, 'folderPath') and args.folderPath:
+            args.ruta_entrada = args.folderPath
+
+        # Create output folder if not specified
+        if not args.ruta_salida:
+            output_folder = create_simulation_folder(
+                stress_type=args.stress_type,
+                stress=args.stress,
+                walk_cost=args.walk_cost,
+                delta=args.delta,
+                simname=args.simname,
+            )
+            ruta_salida = str(output_folder)
+        else:
+            ruta_salida = args.ruta_salida
+            os.makedirs(ruta_salida, exist_ok=True)
+
+        # Validate input folder exists
+        if not os.path.exists(args.ruta_entrada):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Input folder does not exist: {args.ruta_entrada}"
+            )
+
+        # Run simulation
+        run_simulation(
+            ruta_entrada=args.ruta_entrada,
+            ruta_salida=ruta_salida,
+            stress_type=args.stress_type,
+            stress=args.stress,
+            walk_cost=args.walk_cost,
+            delta=args.delta,
+            dias=args.dias,
+        )
+
+        return {"ok": True, "output_folder_name": ruta_salida}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload-files")
+async def upload_files(files: list[UploadFile] = File(...)):
+    """Upload CSV files for simulation"""
+    try:
+        # Create uploads directory if it doesn't exist
+        upload_dir = Path("./uploads")
+        upload_dir.mkdir(exist_ok=True)
+
+        # Create a timestamped subdirectory
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        session_dir = upload_dir / f"upload_{timestamp}"
+        session_dir.mkdir(exist_ok=True)
+
+        uploaded_files = []
+        for file in files:
+            if not file.filename.lower().endswith('.csv'):
+                continue
+
+            file_path = session_dir / file.filename
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            uploaded_files.append(file.filename)
+
+        if not uploaded_files:
+            raise HTTPException(status_code=400, detail="No CSV files uploaded")
+
+        return {
+            "success": True,
+            "uploaded_files": uploaded_files,
+            "upload_path": str(session_dir),
+            "message": f"Uploaded {len(uploaded_files)} CSV files"
+        }
+
+    except Exception as e:
+        logger.error(f"File upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+
+
+@router.post("/analyze-upload")
+async def analyze_uploaded_files(request: dict):
+    """Analyze uploaded CSV files to extract station and bike information"""
+    try:
+        folder_path = request.get("folderPath")
+        if not folder_path:
+            raise HTTPException(status_code=400, detail="No folder path provided")
+
+        folder = Path(folder_path)
+        if not folder.exists():
+            raise HTTPException(status_code=404, detail=f"Folder not found: {folder_path}")
+
+        # Look for station and trip files
+        csv_files = list(folder.glob("*.csv"))
+        if not csv_files:
+            raise HTTPException(status_code=400, detail="No CSV files found in upload folder")
+
+        station_data = {}
+        city_name = "Unknown City"
+
+        # Try to find station information
+        for csv_file in csv_files:
+            try:
+                df = pd.read_csv(csv_file, nrows=10)  # Read first 10 rows for inspection
+
+                # Check if this looks like a stations file
+                station_columns = ['station_id', 'station_name', 'lat', 'lon', 'capacity', 'available_bikes']
+                has_station_info = any(col in df.columns for col in station_columns)
+
+                if has_station_info:
+                    # Read full file if it's reasonable size
+                    df_full = pd.read_csv(csv_file) if csv_file.stat().st_size < 10_000_000 else df
+
+                    # Try to extract city name from filename or data
+                    if 'city' in df_full.columns:
+                        city_name = str(df_full['city'].iloc[0])
+                    elif 'city_name' in df_full.columns:
+                        city_name = str(df_full['city_name'].iloc[0])
+
+                    # Extract station data
+                    for _, row in df_full.iterrows():
+                        station_id = str(row.get('station_id') or row.get('id') or '')
+                        if station_id:
+                            station_data[station_id] = {
+                                'id': station_id,
+                                'name': str(row.get('station_name') or row.get('name') or station_id),
+                                'lat': float(row.get('lat') or row.get('latitude') or 0),
+                                'lng': float(row.get('lon') or row.get('lng') or row.get('longitude') or 0),
+                                'capacity': int(row.get('capacity') or row.get('total_docks') or 10),
+                                'available_bikes': int(
+                                    row.get('available_bikes') or row.get('num_bikes_available') or 0)
+                            }
+
+                    break  # Found station data
+
+            except Exception as e:
+                logger.warning(f"Could not read {csv_file.name}: {e}")
+                continue
+
+        # If no station data found, create mock data
+        if not station_data:
+            logger.info("No station data found in CSV files, creating mock data")
+            # Try to get trip data to infer stations
+            trip_data = None
+            for csv_file in csv_files:
+                try:
+                    df = pd.read_csv(csv_file)
+                    if 'start_station_id' in df.columns or 'end_station_id' in df.columns:
+                        trip_data = df
+                        break
+                except:
+                    continue
+
+            if trip_data is not None:
+                # Extract unique station IDs from trip data
+                start_stations = trip_data.get('start_station_id', pd.Series([])).dropna().unique()
+                end_stations = trip_data.get('end_station_id', pd.Series([])).dropna().unique()
+                all_stations = set(start_stations) | set(end_stations)
+
+                for i, station_id in enumerate(list(all_stations)[:20]):  # Limit to 20 stations for preview
+                    station_data[str(station_id)] = {
+                        'id': str(station_id),
+                        'name': f"Station {i + 1}",
+                        'lat': 40.4168 + (i * 0.01) - 0.05,  # Mock coordinates around a city center
+                        'lng': -3.7038 + (i * 0.01) - 0.05,
+                        'capacity': 20 + (i % 10),
+                        'available_bikes': (20 + (i % 10)) // 2
+                    }
+                city_name = "City Data"
+            else:
+                # Create minimal mock data
+                for i in range(5):
+                    station_data[f"station_{i}"] = {
+                        'id': f"station_{i}",
+                        'name': f"Station {i + 1}",
+                        'lat': 40.4168 + (i * 0.01),
+                        'lng': -3.7038 + (i * 0.01),
+                        'capacity': 15 + (i * 2),
+                        'available_bikes': 5 + i
+                    }
+
+        stations = list(station_data.values())
+        total_bikes = sum(s['available_bikes'] for s in stations)
+
+        return {
+            "success": True,
+            "city": city_name,
+            "totalStations": len(stations),
+            "totalBikes": total_bikes,
+            "stations": stations,
+            "fileCount": len(csv_files),
+            "message": f"Analyzed {len(csv_files)} CSV files"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analyzing upload: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error analyzing upload: {str(e)}")
+
+
+
+
+
+@router.get("/station-map-preview")
+async def get_station_map_preview(folder_path: str = Query(...)):
+    """Generate a simple HTML station map preview"""
+    try:
+        # First analyze the upload to get station data
+        analysis_result = await analyze_uploaded_files({"folderPath": folder_path})
+
+        if not analysis_result.get("success"):
+            raise HTTPException(status_code=400, detail="Could not analyze station data")
+
+        stations = analysis_result.get("stations", [])
+
+        # Generate Leaflet-based HTML map
+        html_content = generate_station_map_html(stations, analysis_result.get("city", "Unknown City"))
+
+        return HTMLResponse(content=html_content)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating map preview: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating map preview: {str(e)}")
+
+
+def generate_station_map_html(stations: list, city_name: str) -> str:
+    """Generate HTML with Leaflet map showing stations"""
+
+    # Convert stations to JavaScript array
+    stations_js = ",\n            ".join([
+        f"{{id: '{s['id']}', name: '{s['name']}', "
+        f"lat: {s['lat']}, lng: {s['lng']}, "
+        f"capacity: {s['capacity']}, available: {s['available_bikes']}, "
+        f"utilization: {s['available_bikes'] / s['capacity'] * 100:.1f}}}"
+        for s in stations
+    ])
+
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Station Map Preview - {city_name}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {{ margin: 0; padding: 0; }}
+        #map {{ height: 400px; width: 100%; }}
+        .station-marker {{ 
+            border-radius: 50%; 
+            text-align: center; 
+            color: white; 
+            font-weight: bold; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }}
+        .legend {{ 
+            background: white; 
+            padding: 10px; 
+            border-radius: 5px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }}
+        .legend-item {{ display: flex; align-items: center; margin: 5px 0; }}
+        .legend-color {{ width: 20px; height: 20px; border-radius: 50%; margin-right: 8px; }}
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Station data
+        const stations = [
+            {stations_js}
+        ];
+
+        // Calculate center
+        const avgLat = stations.reduce((sum, s) => sum + s.lat, 0) / stations.length;
+        const avgLng = stations.reduce((sum, s) => sum + s.lng, 0) / stations.length;
+
+        // Initialize map
+        const map = L.map('map').setView([avgLat, avgLng], 13);
+
+        // Add tile layer
+        L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+            attribution: '© OpenStreetMap contributors',
+            subdomains: ['a','b','c']
+        }}).addTo(map);
+
+        // Add station markers
+        stations.forEach(station => {{
+            // Determine color based on utilization
+            let color;
+            if (station.utilization > 80) {{
+                color = '#ef4444'; // red
+            }} else if (station.utilization > 50) {{
+                color = '#f59e0b'; // yellow
+            }} else {{
+                color = '#10b981'; // green
+            }}
+
+            // Create marker
+            const marker = L.circleMarker(
+                [station.lat, station.lng],
+                {{
+                    radius: Math.max(5, station.capacity / 5),
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                }}
+            ).addTo(map);
+
+            // Add popup
+            marker.bindPopup(`
+                <strong>${station.name}</strong><br>
+                ID: ${station.id}<br>
+                Capacity: ${station.capacity} bikes<br>
+                Available: ${station.available} bikes<br>
+                Utilization: ${station.utilization}%<br>
+                Location: ${station.lat.toFixed(4)}, ${station.lng.toFixed(4)}
+            `);
+        }});
+
+        // Add legend
+        const legend = L.control({{position: 'bottomright'}});
+        legend.onAdd = function(map) {{
+            const div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <h4>Station Status</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981"></div>
+                    <span>High availability (>50%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #f59e0b"></div>
+                    <span>Medium availability (20-50%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444"></div>
+                    <span>Low availability (<20%)</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px;">
+                    Circle size = Station capacity
+                </div>
+            `;
+            return div;
+        }};
+        legend.addTo(map);
+
+        // Fit bounds to all stations
+        if (stations.length > 0) {{
+            const bounds = L.latLngBounds(stations.map(s => [s.lat, s.lng]));
+            map.fitBounds(bounds, {{padding: [50, 50]}});
+        }}
+    </script>
+</body>
+</html>
+"""
+    return html
 
 
 # NEW: This is your main list endpoint using the service layer
@@ -270,3 +648,5 @@ async def get_dashboard_initial_data(
             status_code=500,
             detail=f"Error fetching initial data: {str(e)}"
         )
+
+

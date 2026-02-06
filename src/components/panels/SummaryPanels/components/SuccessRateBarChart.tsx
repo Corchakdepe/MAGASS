@@ -21,8 +21,8 @@ export function SuccessRateBarChart({metrics, t}: SuccessRateBarChartProps) {
       <BarChart
         xAxis={[{scaleType: 'band', data: categories}]}
         series={[
-          {data: resolvedData, label: 'Resolved', color: '#10b981'},
-          {data: unresolvedData, label: 'Unresolved', color: '#ef4444'},
+          {data: resolvedData, label: t('Resolved'), color: '#10b981'},
+          {data: unresolvedData, label: t('Unresolved'), color: '#ef4444'},
         ]}
         height={300}
         slotProps={{

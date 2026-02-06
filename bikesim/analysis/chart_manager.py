@@ -91,6 +91,17 @@ class ChartManager:
                 charts.append(chart)
                 logger.info(f"Generated matrix comparison chart: {chart.id}")
 
+                # Matrix comparison chart
+            """if args.NuevaGrafLinea:
+                chart = self.generator.generate_comparison_chart(
+                    matrix,
+                    args.graf_linea_comp_est
+                )
+                charts.append(chart)
+                logger.info(f"Generated comparison chart: {chart.id}")
+            """
+
+
         except Exception as e:
             logger.error(f"Error generating charts: {e}", exc_info=True)
 

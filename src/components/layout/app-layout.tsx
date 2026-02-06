@@ -1,19 +1,18 @@
 "use client";
 
-import {useState} from "react";
-import {SidebarProvider} from "@/components/ui/sidebar";
-import {useLayoutMode} from "@/components/layout/hooks/useLayoutMode";
-import {useSimulationState} from "@/components/layout/hooks/useSimulationState";
-import {useStationPicker} from "@/components/layout/hooks/useStationPicker";
+import { useState } from "react";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { useLayoutMode } from "@/components/layout/hooks/useLayoutMode";
+import { useSimulationState } from "@/components/layout/hooks/useSimulationState";
+import { useStationPicker } from "@/components/layout/hooks/useStationPicker";
 import LeftSidebar from "@/components/layout/components/LeftSidebar";
 import RightSidebar from "@/components/layout/components/RightSidebar";
 import MainContentArea from "@/components/layout/components/MainContentArea";
-import BottomPanelContainer from "@/components/layout/components/BottomPanelContainer";
-import type {AppLayoutProps} from "@/components/layout/types/layout";
+import type { AppLayoutProps } from "@/components/layout/types/layout";
 
-export default function AppLayout({children}: AppLayoutProps) {
+export default function AppLayout({ children }: AppLayoutProps) {
   // Get mode and setters from the hook
-  const {mode, panelMode, showBottomPanel, showRightSidebar} = useLayoutMode();
+  const { mode, panelMode, showBottomPanel, showRightSidebar } = useLayoutMode();
 
   const {
     simulationData,
@@ -32,8 +31,6 @@ export default function AppLayout({children}: AppLayoutProps) {
 
   const [bottomOffset, setBottomOffset] = useState(0);
 
-  console.log("AppLayout render - mode:", mode); // Debug
-
   return (
     <div className="flex min-h-screen w-full bg-surface-0 text-text-primary overflow-hidden">
       <SidebarProvider defaultOpen>
@@ -49,28 +46,26 @@ export default function AppLayout({children}: AppLayoutProps) {
             refreshTrigger={refreshTrigger}
             mode={mode}
             onStationPick={onStationPick}
-            bottomOffset={bottomOffset}
+            bottomOffset={0} // No longer needed for sidebar style
             showBottomPanel={showBottomPanel}
           />
         </div>
       </SidebarProvider>
 
-      {showRightSidebar && (
+      {/* Right sidebar - shows either run history OR bottom panel content */}
+      {(showRightSidebar || showBottomPanel) && (
         <RightSidebar
           currentRunId={currentRunId}
           onRunIdChange={setCurrentRunId}
           onSimulationComplete={handleSimulationComplete}
-        />
-      )}
-
-      {showBottomPanel && (
-        <BottomPanelContainer
+          // Bottom panel specific props
           panelMode={panelMode}
-          currentRunId={currentRunId}
           externalStationsMaps={externalStationsMaps}
           onHeightChange={setBottomOffset}
-          onSimulationComplete={handleSimulationComplete}
           onClearExternalStationsMaps={onClearSharedStations}
+          // Which content to show
+          showBottomPanel={showBottomPanel}
+          showRunHistory={showRightSidebar}
         />
       )}
     </div>

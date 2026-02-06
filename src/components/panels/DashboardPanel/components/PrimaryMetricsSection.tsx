@@ -14,34 +14,37 @@ export function PrimaryMetricsSection({
   metrics,
   t,
 }: PrimaryMetricsSectionProps) {
+
+
+
   const primaryMetrics = [
     {
       label: t("simulationDuration") || "Simulation Duration",
       value: `${summaryData.deltaMinutes} min`,
       icon: <Clock className="h-5 w-5" />,
-      subtext: "Total runtime",
-      color: "text-blue-500",
+      subtext: t("totalRunTime"),
+      color: "rgba(0,122,255,1)",
     },
     {
       label: t("systemStress") || "System Stress",
       value: `${summaryData.stressPercentage.toFixed(1)}%`,
       icon: <Activity className="h-5 w-5" />,
-      subtext: "Peak capacity usage",
-      color: summaryData.stressPercentage > 80 ? "text-red-500" : "text-green-500",
+      subtext: t("peakCapacityUsage"),
+      color: summaryData.stressPercentage > 80 ? "rgba(255,149,0,1)" : "rgba(52,199,89,1)",
     },
     {
       label: t("totalDistance") || "Total Distance",
       value: `${metrics.totalDistance.toFixed(1)} km`,
       icon: <Route className="h-5 w-5" />,
       subtext: `Avg ${metrics.avgDistancePerPickup.toFixed(2)} km/pickup`,
-      color: "text-purple-500",
+      color: "rgba(0,122,255,1)",
     },
     {
       label: t("totalOperations") || "Total Operations",
       value: metrics.totalOperations,
       icon: <Zap className="h-5 w-5" />,
       subtext: `${metrics.totalPickups} pickups, ${metrics.totalDropoffs} dropoffs`,
-      color: "text-orange-500",
+      color: "rgba(255,149,0,1)",
     },
   ];
 

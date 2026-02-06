@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {API_BASE} from "@/lib/analysis/constants";
 
 export function useSimulationForm(onSimulationComplete?: () => void) {
   const [stress, setStress] = useState(50);
@@ -6,7 +7,48 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
   const [delta, setDelta] = useState(60);
   const [stressType, setStressType] = useState('0');
   const [simName, setSimName] = useState('');
+  const [folderPath, setFolderPath] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+
+  const handleFileUpload = async (files: File[]) => {
+    if (files.length === 0) return null;
+
+    setIsLoading(true);
+    const formData = new FormData();
+
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      // Upload files to backend
+      const response = await fetch(`${API_BASE}/upload-files`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      console.log('Upload successful:', data);
+
+      // Use the path returned by the backend
+      const uploadPath = data.upload_path || data.uploadPath || './uploads';
+      setFolderPath(uploadPath);
+      setUploadedFiles(files);
+
+      return uploadPath;
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      alert('Failed to upload files');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleRunSimulation = async () => {
     if (!simName.trim()) {
@@ -14,27 +56,35 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
       return;
     }
 
+    if (!folderPath) {
+      alert('Please upload CSV files first');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Replace '/api/simulate' with your actual API endpoint
-      const response = await fetch('/api/simulate', {
+      // Use the correct endpoint and format
+      const response = await fetch(`${API_BASE}/exe/simular-json`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: simName,
+          simname: simName,
           stress: stress,
-          walkCost: walkCost,
+          walk_cost: walkCost,
           delta: delta,
-          stressType: parseInt(stressType),
+          stress_type: parseInt(stressType),
+          ruta_entrada: folderPath,
+          ruta_salida: '',
+          dias: null,
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Simulation failed');
+        throw new Error(error.detail || error.message || 'Simulation failed');
       }
 
       const data = await response.json();
@@ -53,7 +103,6 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
     }
   };
 
-  // Return with the correct prop names
   return {
     stress,
     setStress,
@@ -65,7 +114,11 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
     setStressType,
     simName,
     setSimName,
-    onRunSimulation: handleRunSimulation,  // <- Match the form prop name
-    isLoading,  // <- Match the form prop name
+    folderPath,
+    setFolderPath,
+    uploadedFiles,
+    handleFileUpload,
+    onRunSimulation: handleRunSimulation,
+    isLoading,
   };
 }
