@@ -1,15 +1,19 @@
 import asyncio
 import logging
 from http.client import HTTPException
-from idlelib.query import Query
 
+
+from fastapi import APIRouter, Query
 from starlette.responses import HTMLResponse
 from Frontend.analysis_models import AnalysisArgs
 from bikesim.analysis import run_analysis
-from bikesim.api.routes.simulations import router
+from bikesim.api.routes.simulations import router, logger
+from bikesim.core.models import AnalysisRequest
 from bikesim.utils.file_utils import find_run_folder
-from bikesim.utils.historymanagement import load_history, enrich_history_with_station_info
+from bikesim.utils.historymanagement import load_history,enrich_history_with_station_info
 
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
 @router.get("/dashboard/initial-data")
 async def get_dashboard_initial_data(run: str = Query(..., description="Simulation folder name")):
@@ -57,139 +61,46 @@ async def get_dashboard_initial_data(run: str = Query(..., description="Simulati
         )
 
 
-@router.get("/dashboard/stations-map")
-async def get_dashboard_stations_map(run: str = Query(..., description="Simulation folder name")):
-    """
-    Generates and returns a stations circle map for dashboard (async version)
-    Creates a circle map at instant 0 with all stations if it doesn't exist
-    """
+
+
+@router.post("/dashboard/mapainicial")
+async def createInitialMap(req: AnalysisRequest):
+    """Executes analysis with optional filtering for maps/graphs"""
     try:
-        # Get simulation folder
-        folder = find_run_folder(run)
+        # === STANDARD ANALYSIS ===
+        final_args = AnalysisArgs(
+            input_folder=req.input_folder,
+            output_folder=req.output_folder,
+            seleccion_agregacion="0",
+            delta_media=req.delta_media,
+            delta_acumulada=req.delta_acumulada,
+            graf_barras_est_med=req.graf_barras_est_med,
+            graf_barras_est_acum=req.graf_barras_est_acum,
+            graf_barras_dia=req.graf_barras_dia,
+            graf_linea_comp_est=req.graf_linea_comp_est,
+            graf_linea_comp_mats=req.graf_linea_comp_mats,
+            mapa_densidad=req.mapa_densidad,
+            video_densidad=req.video_densidad,
+            mapa_voronoi=req.mapa_voronoi,
+            mapa_circulo="0",
+            mapa_desplazamientos=req.mapa_desplazamientos,
+            filtrado_EstValor=req.filtrado_EstValor,
+            filtrado_EstValorDias=req.filtrado_EstValorDias,
+            filtrado_Horas=req.filtrado_Horas,
+            filtrado_PorcentajeEstaciones=req.filtrado_PorcentajeEstaciones,
+            filtro=req.filtro,
+            tipo_filtro=req.tipo_filtro,
+            use_filter_for_maps=False,
+            use_filter_for_graphs=False,
+            filter_result_filename=None,
+        )
 
-        if not folder:
-            raise HTTPException(status_code=404, detail=f"Simulation folder not found: {run}")
-
-        # Look for existing dashboard circle map
-        dashboard_map_name = "Dashboard_MapaCirculos_Instant0.html"
-        dashboard_map_path = folder / dashboard_map_name
-
-        # If dashboard map exists, return it immediately
-        if dashboard_map_path.exists():
-            logging.info(f"Serving existing dashboard map: {dashboard_map_path}")
-            html_content = dashboard_map_path.read_text(encoding="utf-8")
-            return HTMLResponse(content=html_content)
-
-        # Generate new circle map at instant 0 with all stations
-        logging.info(f"Generating dashboard circle map for: {run}")
-
-        try:
-            # Create analysis args for circle map generation
-            analysis_args = AnalysisArgs(
-                input_folder=str(folder),
-                output_folder=str(folder),
-                seleccion_agregacion="1",
-                delta_media=None,
-                delta_acumulada=None,
-                graf_barras_est_med=None,
-                graf_barras_est_acum=None,
-                graf_barras_dia=None,
-                graf_linea_comp_est=None,
-                graf_linea_comp_mats=None,
-                mapa_densidad=None,
-                video_densidad=None,
-                mapa_voronoi=None,
-                mapa_circulo="0",
-                mapa_desplazamientos=None,
-                filtrado_EstValor=None,
-                filtrado_EstValorDias=None,
-                filtrado_Horas=None,
-                filtrado_PorcentajeEstaciones=None,
-                filtro=None,
-                tipo_filtro=None,
-            )
-
-            # Run analysis in thread pool to avoid blocking
-            logging.info("Running analysis to generate circle map (async)...")
-            result = await asyncio.to_thread(run_analysis, analysis_args)
-            logging.info(f"Analysis completed: {result}")
-
-            # Find the generated circle map
-            circle_maps = sorted(
-                folder.glob("*MapaCirculos*.html"),
-                key=lambda x: x.stat().st_mtime,
-                reverse=True
-            )
-
-            if circle_maps:
-                generated_map = circle_maps[0]
-                html_content = generated_map.read_text(encoding="utf-8")
-
-                # Save dashboard copy for future quick access
-                try:
-                    dashboard_map_path.write_text(html_content, encoding="utf-8")
-                    logging.info(f"Created dashboard map copy: {dashboard_map_path}")
-                except Exception as copy_error:
-                    logging.warning(f"Could not create dashboard map copy: {copy_error}")
-
-                return HTMLResponse(content=html_content)
-            else:
-                raise Exception("Map generation completed but no HTML file found")
-
-        except Exception as gen_error:
-            logging.error(f"Error generating circle map: {gen_error}")
-
-            # Return fallback HTML
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Mapa de Estaciones - Error</title>
-                <meta charset="utf-8">
-                <style>
-                    body {{
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        margin: 0;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    }}
-                    .message {{
-                        text-align: center;
-                        padding: 3rem;
-                        background: white;
-                        border-radius: 12px;
-                        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                        max-width: 500px;
-                    }}
-                    h2 {{
-                        color: #333;
-                        margin-bottom: 1rem;
-                    }}
-                    p {{
-                        color: #666;
-                        line-height: 1.6;
-                    }}
-                    .icon {{ font-size: 3rem; margin-bottom: 1rem; }}
-                </style>
-            </head>
-            <body>
-                <div class="message">
-                    <div class="icon">⚠️</div>
-                    <h2>Error al Generar Mapa</h2>
-                    <p>No se pudo generar el mapa de estaciones automáticamente.</p>
-                    <p><small>{str(gen_error)}</small></p>
-                </div>
-            </body>
-            </html>
-            """
-
-            return HTMLResponse(content=html_content)
+        return run_analysis(final_args)
 
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Error in dashboard stations map endpoint: {e}")
-        raise HTTPException(status_code=500, detail=f"Error fetching stations map: {e}")
+        logger.error(f"Analysis execution failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+

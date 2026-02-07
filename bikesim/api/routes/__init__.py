@@ -1,6 +1,6 @@
 """API routes package."""
 from fastapi import APIRouter
-from bikesim.api.routes import simulations, analysis, results, filters
+from bikesim.api.routes import simulations, analysis, results, filters, dashboard
 
 # Create main API router
 api_router = APIRouter()
@@ -28,4 +28,10 @@ api_router.include_router(
 api_router.include_router(
     simulations.router,
     tags=["simulations"]
+)
+
+api_router.include_router(
+    dashboard.router,
+    tags=["dashboard"]
+
 )

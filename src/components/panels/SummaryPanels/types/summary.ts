@@ -1,3 +1,5 @@
+import {SummaryMetrics} from "@/components/panels/SummaryPanels/hooks/useSummaryMetrics";
+
 export interface SummaryMetrics {
     deltaMinutes: number;
     stressPercentage: number;
@@ -18,5 +20,5 @@ export interface SummaryMetrics {
 export interface SummaryPanelProps {
     summary: SummaryMetrics,
     loading?: boolean,
-
+    runId?: string
 }

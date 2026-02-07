@@ -179,6 +179,114 @@
       "numberOfBikes": null,
       "simdata": {},
       "simdataId": "20260206_200049_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "spit fuma porro",
+      "simfolder": "20260206_201705_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260206_201705_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "new",
+      "simfolder": "20260207_130337_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_130337_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "non ono",
+      "simfolder": "20260207_132603_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_132603_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "finalmente",
+      "simfolder": "20260207_133021_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_133021_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "ahorasi",
+      "simfolder": "20260207_133800_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_133800_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "pica",
+      "simfolder": "20260207_134359_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_134359_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "Aruba",
+      "simfolder": "20260207_134553_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_134553_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "none",
+      "simfolder": "20260207_135424_sim_ST0_S0.50_WC0.50_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_135424_sim_ST0_S0.50_WC0.50_D60"
+    },
+    {
+      "simname": "no",
+      "simfolder": "20260207_135731_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_135731_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "ultima",
+      "simfolder": "20260207_140032_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_140032_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "mema",
+      "simfolder": "20260207_140642_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_140642_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "test",
+      "simfolder": "20260207_142510_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260207_142510_sim_ST0_S50.00_WC50.00_D60"
     }
   ]
 }

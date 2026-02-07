@@ -209,7 +209,9 @@ export function MainContentArea({
             {mode === "simulations" && (
                 <>
                     {summaryData ? (
-                        <SummaryPanel summary={summaryData} />
+                        <SummaryPanel summary={summaryData}
+                                      runId={effectiveRunId}
+                                         loading={false}/>
                     ) : (
                         <div className="flex h-full w-full items-center justify-center">
                             <div className="text-center p-6">

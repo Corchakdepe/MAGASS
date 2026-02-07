@@ -7,7 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from bikesim.config.settings import UPLOADS_FOLDER, RESULTS_BASE_FOLDER
-from bikesim.api.routes import api_router  # Add this import
+from bikesim.api.routes import api_router
 
 app = FastAPI(title="BikeSim API", version="1.0")
 
@@ -43,5 +43,6 @@ async def root():
             "analysis": "/analysis/...",
             "results": "/results/...",
             "filters": "/filters/...",
+            "dashboard": "/dashboard/...",
         },
     }

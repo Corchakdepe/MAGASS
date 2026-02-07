@@ -262,7 +262,8 @@ export default function VisualizationMaps({
      <div className="h-screen flex flex-col">
             <div
                 
-                className="w-full h-[90vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">        <MapHeader
+                className="w-full h-[90vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
+                <MapHeader
                          displayName={displayName}
                 isFavorite={isFav}
                 onPrevious={() => selectIndex(Math.max(0, selectedIndex - 1))}
