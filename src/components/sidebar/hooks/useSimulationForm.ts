@@ -40,7 +40,7 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
                 tipo_filtro: null,
             };
 
-            const response = await fetch(`${API_BASE}/dashboard/mapainicial`, {
+            const response = await fetch(`${API_BASE}/dashboard/mapacapacidades`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(mapRequest),

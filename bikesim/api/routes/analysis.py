@@ -46,6 +46,7 @@ async def analizar(req: AnalysisRequest):
                 mapa_voronoi=None,
                 mapa_circulo=None,
                 mapa_desplazamientos=None,
+                mapa_capacidad=None,
                 filtrado_EstValor=req.filtrado_EstValor,
                 filtrado_EstValorDias=req.filtrado_EstValorDias,
                 filtrado_Horas=req.filtrado_Horas,
@@ -53,6 +54,7 @@ async def analizar(req: AnalysisRequest):
                 filtro=req.filtro,
                 tipo_filtro=req.tipo_filtro,
                 apply_filter_to_line_comp=False,
+                user_map_name=None,
             )
 
             _ = run_analysis(solo_filtro_args)
@@ -88,6 +90,7 @@ async def analizar(req: AnalysisRequest):
                 mapa_voronoi=req.mapa_voronoi,
                 mapa_circulo=add_estaciones(req.mapa_circulo),
                 mapa_desplazamientos=req.mapa_desplazamientos,
+                mapa_capacidad= req.mapa_capacidad,
                 filtrado_EstValor=req.filtrado_EstValor,
                 filtrado_EstValorDias=req.filtrado_EstValorDias,
                 filtrado_Horas=req.filtrado_Horas,
@@ -96,6 +99,7 @@ async def analizar(req: AnalysisRequest):
                 tipo_filtro=req.tipo_filtro,
                 apply_filter_to_line_comp=False,
                 filter_result_filename=filter_path.name if filter_path else None,
+                user_map_name=req.user_map_name,
             )
 
             return run_analysis(final_args)
@@ -125,6 +129,7 @@ async def analizar(req: AnalysisRequest):
                 mapa_voronoi=None,
                 mapa_circulo=None,
                 mapa_desplazamientos=None,
+                mapa_capacidad=None,
                 filtrado_EstValor=req.filtrado_EstValor,
                 filtrado_EstValorDias=req.filtrado_EstValorDias,
                 filtrado_Horas=req.filtrado_Horas,
@@ -134,6 +139,7 @@ async def analizar(req: AnalysisRequest):
                 use_filter_for_maps=False,
                 use_filter_for_graphs=False,
                 filter_result_filename=None,
+                user_name_map=req.user_name_map
             )
 
             _ = run_analysis(solo_filtro_args)
@@ -185,6 +191,7 @@ async def analizar(req: AnalysisRequest):
                 mapa_voronoi=None,
                 mapa_circulo=None,
                 mapa_desplazamientos=None,
+                mapa_capacidad=None,
                 filtrado_EstValor=req.filtrado_EstValor,
                 filtrado_EstValorDias=req.filtrado_EstValorDias,
                 filtrado_Horas=req.filtrado_Horas,
@@ -194,6 +201,7 @@ async def analizar(req: AnalysisRequest):
                 use_filter_for_maps=False,
                 use_filter_for_graphs=False,
                 filter_result_filename=filter_path.name if filter_path else None,
+                user_name_map=req.user_name_map
             )
 
             return run_analysis(final_args)
@@ -215,6 +223,7 @@ async def analizar(req: AnalysisRequest):
             mapa_voronoi=req.mapa_voronoi,
             mapa_circulo=req.mapa_circulo,
             mapa_desplazamientos=req.mapa_desplazamientos,
+            mapa_capacidad=req.mapa_capacidad,
             filtrado_EstValor=req.filtrado_EstValor,
             filtrado_EstValorDias=req.filtrado_EstValorDias,
             filtrado_Horas=req.filtrado_Horas,
@@ -224,6 +233,7 @@ async def analizar(req: AnalysisRequest):
             use_filter_for_maps=False,
             use_filter_for_graphs=False,
             filter_result_filename=None,
+            user_name_map=req.user_name_map
         )
 
         return run_analysis(final_args)
@@ -233,6 +243,3 @@ async def analizar(req: AnalysisRequest):
     except Exception as e:
         logger.error(f"Analysis execution failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-
-

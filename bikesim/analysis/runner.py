@@ -72,6 +72,7 @@ def run_filter_only(
         mapa_voronoi=None,
         mapa_circulo=None,
         mapa_desplazamientos=None,
+        mapa_capacidad = None,
         filtrado_EstValor=None,
         filtrado_EstValorDias=None,
         filtrado_Horas=None,
@@ -80,6 +81,7 @@ def run_filter_only(
         tipo_filtro=tipo_filtro,
         use_filter_for_maps=False,
         filter_result_filename=None,
+        user_name_map = None
     )
 
     run_analysis(args)
@@ -113,12 +115,14 @@ def run_full_analysis(
         mapa_voronoi: Optional[str],
         mapa_circulo: Optional[str],
         mapa_desplazamientos: Optional[str],
+        mapa_capacidad: Optional[str],
         filtro: Optional[str],
         tipo_filtro: Optional[str],
         filtrado_EstValor: Optional[str],
         filtrado_EstValorDias: Optional[str],
         filtrado_Horas: Optional[str],
-        filtrado_PorcentajeEstaciones: Optional[str]
+        filtrado_PorcentajeEstaciones: Optional[str],
+        user_name_map: Optional[str]
 ) -> dict:
     """
     Run full analysis with all parameters.
@@ -144,6 +148,7 @@ def run_full_analysis(
         mapa_voronoi=mapa_voronoi,
         mapa_circulo=mapa_circulo,
         mapa_desplazamientos=mapa_desplazamientos,
+        mapa_capacidad = mapa_capacidad,
         filtrado_EstValor=filtrado_EstValor,
         filtrado_EstValorDias=filtrado_EstValorDias,
         filtrado_Horas=filtrado_Horas,
@@ -152,6 +157,7 @@ def run_full_analysis(
         tipo_filtro=tipo_filtro,
         use_filter_for_maps=False,
         filter_result_filename=None,
+        user_name_map = user_name_map
     )
 
     return run_analysis(args)

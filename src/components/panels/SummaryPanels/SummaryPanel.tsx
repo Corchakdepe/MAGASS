@@ -4,6 +4,7 @@ import * as React from "react";
 import {useLanguage} from "@/contexts/LanguageContext";
 import {Skeleton} from "@/components/ui/skeleton";
 import {useSummaryMetrics} from "./hooks/useSummaryMetrics";
+import {useSimulationInfo} from "./hooks/useSimulationInfo"
 import type {SummaryPanelProps} from "./types/summary";
 import {KeyInsightsSection} from "./components/KeyInsightsSection";
 import {MetricsOverviewSection} from "./components/MetricsOverviewSection";
@@ -13,52 +14,41 @@ import {DistanceBarChart} from "./components/DistanceBarChart";
 import {EfficiencyGaugeCard} from "./components/EfficiencyGaugeCard";
 import {PerformanceRadarChart} from "./components/PerformanceRadarChart";
 import {OperationsComparisonRadar} from "./components/OperationsComparisonRadar";
-import {API_BASE} from "@/lib/analysis/constants"
-import {useMapsAnalysis} from "@/components/sidebar/hooks/useMapsAnalysis";
-import {useMapsAnalysisState} from "@/components/sidebar/hooks/useMapsAnalysisState";
+import {API_BASE} from "@/lib/analysis/constants";
+import {SimulationInfoPanel} from "./components/InfoCard";
+import {AlertTriangle} from "lucide-react";
 
 
-
-
-
-
-
-
-
-
-export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProps) {{
+export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProps) {
     const {t} = useLanguage();
     const metrics = useSummaryMetrics(summary);
 
+    // Fetch simulation info from the new API endpoint
+    const {data: simulationInfo, loading: infoLoading, error: infoError} = useSimulationInfo(runId);
 
-
-
-    // Construct the iframe URL
+    // Construct the iframe URL for the capacity map
     const iframeUrl = React.useMemo(() => {
-        console.log('runId in iframeUrl memo:', runId);
-        console.log('API_BASE:', API_BASE);
-        if (!runId) {
-            console.log('No runId provided');
-            return null;
-        }
-
-        // Ensure proper URL construction
-        const url = `${API_BASE}/results/file/${runId}/MapaInicial.html`;
-        console.log('Constructed iframe URL:', url);
-        return url;
+        if (!runId) return null;
+        return `${API_BASE}/results/file/${runId}/MapaCapacidades.html`;
     }, [runId]);
 
-
-
-    if (loading) {
+    if (loading || infoLoading) {
         return (
             <div className="space-y-4 p-6">
                 <Skeleton className="h-8 w-48"/>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                        <Skeleton key={i} className="h-24"/>
+                    {[1, 2, 3, 4].map((i) => (
+                        <Skeleton key={i} className="h-32"/>
                     ))}
                 </div>
+            </div>
+        );
+    }
+
+    if (!runId) {
+        return (
+            <div className="h-full w-full flex items-center justify-center text-text-secondary">
+                No simulation selected
             </div>
         );
     }
@@ -67,45 +57,69 @@ export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProp
         return null;
     }
 
+    // Use data from the new API endpoint or fallbacks
+    const cityName = simulationInfo?.city || "Unknown City";
+    const stationCount = simulationInfo?.stations || 0;
+    const totalCapacity = simulationInfo?.total_capacity || 0;
+    const bikeCount = simulationInfo?.active_bikes || 0;
+
     return (
-        <div className="space-y-3 flex-4 overflow-auto p-4 h-full w-full">
+        <div className="space-y-6 flex-1 overflow-auto p-6 h-full w-full">
             {/* Header */}
-            <div>
-                <h1 className="text-xl font-bold text-text-primary mb-1">
+            <div className="space-y-2">
+                <h1 className="text-2xl font-bold text-text-primary">
                     {t("simulationSummary") || "Simulation Summary"}
-
                 </h1>
-                <h2 className="text-xl font-bold text-text-primary mb-1">
-
-                    {t("initialCapacityMap") || "Initial capacity map"}
-                </h2>
-                <p className="text-sm text-text-secondary">
+                <p className="text-base text-text-secondary">
                     {t("detailedMetricsFromSimulation") || "Detailed metrics and insights from your simulation"}
                 </p>
             </div>
 
+            <SimulationInfoPanel
+                cityName={cityName}
+                stationCount={stationCount}
+                totalCapacity={totalCapacity}
+                bikeCount={bikeCount}
+                className="mb-6"
+            />
 
-            <div
-                className="h-96 w-full rounded-md border border-surface-3 bg-surface-0/60">
-                {/* Iframe */}
-                {iframeUrl ? (
-                    <iframe
-                        src={iframeUrl}
-                        className="h-full w-full"
-                        loading="lazy"
-                        title="Initial Capacity Map"
-                        // Optional: add error handling
-                        onError={(e) => {
-                            console.error("Failed to load iframe:", e);
-                        }}
-                    />
-                ) : (
-                    <div className="h-full w-full flex items-center justify-center text-text-secondary">
-                        No run ID provided or unable to load map
-                    </div>
-                )}
+
+            {/* Map Section */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-text-primary">
+                        {t("initialCapacityMap") || "Initial Capacity Map"}
+                    </h2>
+                    {simulationInfo && (
+                        <div className="text-sm text-text-tertiary">
+                            Showing {simulationInfo.stations} stations in {simulationInfo.city}
+                        </div>
+                    )}
+                </div>
+
+                <div
+                    className="h-[500px] w-full rounded-lg border border-surface-3 bg-surface-0/60 shadow-mac-panel overflow-hidden">
+                    {iframeUrl ? (
+                        <iframe
+                            src={iframeUrl}
+                            className="h-full w-full"
+                            loading="lazy"
+                            title="Initial Capacity Map"
+                            onError={(e) => {
+                                console.error("Failed to load iframe:", e);
+                            }}
+                        />
+                    ) : (
+                        <div
+                            className="h-full w-full flex flex-col items-center justify-center text-text-secondary bg-surface-1">
+                            <div className="text-lg font-medium mb-2">Map Not Available</div>
+                            <div className="text-sm text-text-tertiary">
+                                Capacity map not generated for this simulation
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
-
 
             {/* Key Insights */}
             <KeyInsightsSection metrics={metrics} t={t}/>
@@ -120,7 +134,7 @@ export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProp
             </div>
 
             {/* Radar Charts */}
-            <div className="space-y-2">
+            <div className="space-y-6">
                 <PerformanceRadarChart metrics={metrics} t={t}/>
                 <OperationsComparisonRadar metrics={metrics} t={t}/>
             </div>

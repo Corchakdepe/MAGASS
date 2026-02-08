@@ -86,6 +86,13 @@ class MapManager:
                 maps.append(displacement_map)
                 logger.info(f"Generated displacement map: {displacement_map.id}")
 
+            if args.mapa_capacidad:
+                capacity_map = self.generator.generate_capacity_map(args)  # CORRECTED
+                maps.append(capacity_map)
+                logger.info(f"Generated capacity map: {capacity_map.id}")
+
+
+
         except Exception as e:
             logger.error(f"Error generating maps: {e}", exc_info=True)
 

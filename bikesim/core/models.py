@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Optional, List, Dict, Any, Literal, Union
 from pathlib import Path
 from datetime import datetime
+from webbrowser import Opera
+
 from pydantic import BaseModel, Field, validator
 from Frontend.analysis_models import  StationDays
 
@@ -168,6 +170,7 @@ class AnalysisArgs(BaseModel):
     mapa_voronoi: Optional[str] = None
     mapa_circulo: Optional[str] = None
     mapa_desplazamientos: Optional[str] = None
+    mapa_capacidad: Optional[str] = None
 
     # Filters
     filtrado_EstValor: Optional[str] = None
@@ -183,7 +186,7 @@ class AnalysisArgs(BaseModel):
     use_filter_for_graphs: bool = False
     filter_result_filename: Optional[str] = None
     apply_filter_to_line_comp: bool = False
-
+    user_name_map:  Optional[str] = None
 
 
 
@@ -193,6 +196,7 @@ class AnalysisRequest(AnalysisArgs):
     use_filter_for_graphs: bool = False
     filter_result_filename: Optional[str] = None
     graf_linea_comp_est: Optional[List[StationDays]] = None
+    mapa_capacidad: Optional[str] = Field(None)
 
 
 # ============================================
@@ -213,7 +217,7 @@ class ChartMetadata(BaseModel):
 class MapMetadata(BaseModel):
     """Metadata for a generated map."""
     id: str
-    kind: Literal["density", "circle", "voronoi", "displacement"]
+    kind: Literal["density", "circle", "voronoi", "displacement","capacity"]
     format: Literal["html", "png"]
     name: str
     url: str

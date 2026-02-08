@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class StationDays(BaseModel):
@@ -31,6 +31,10 @@ class AnalysisArgs(BaseModel):
     mapa_voronoi: Optional[str] = None
     mapa_circulo: Optional[str] = None
     mapa_desplazamientos: Optional[str] = None
+    mapa_capacidad: Optional[str] = Field(
+        None,
+        description="Capacity map specification. Format: 'all' or 'all+0;5;10' or 'all-L'"
+    )
 
     filtrado_EstValor: Optional[str] = None
     filtrado_EstValorDias: Optional[str] = None

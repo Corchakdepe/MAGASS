@@ -1,4 +1,5 @@
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import type { StressTypeValue } from "../types/types";
 import {
   Select,
   SelectContent,
@@ -6,31 +7,51 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useLanguage } from "@/contexts/LanguageContext";
-import type { StressTypeValue } from "../types/types";
 
-type StressTypeProps = {
+interface StressTypeProps {
   stressType: StressTypeValue;
   setStressType: (v: StressTypeValue) => void;
-};
+  compact?: boolean;
+}
 
-export default function StressType({ stressType, setStressType }: StressTypeProps) {
-  const { t } = useLanguage();
+const options: Array<{ value: StressTypeValue; label: string }> = [
+  { value: 0, label: "No stress" },
+  { value: 1, label: "Stress Bikes" },
+  { value: 2, label: "Stress Walk" },
+  { value: 3, label: "Stress boss" }
+];
+
+export default function StressType({ stressType, setStressType, compact = false }: StressTypeProps) {
+  const handleChange = (value: string) => {
+    const numValue = parseInt(value, 10) as StressTypeValue;
+    setStressType(numValue);
+  };
 
   return (
-    <div className="space-y-1">
-      <Label className="text-[11px] text-text-secondary">{t("stressType")}</Label>
-
-      <Select value={stressType} onValueChange={setStressType}>
-        <SelectTrigger className="h-9 text-xs bg-surface-1 border border-surface-3 focus:ring-2 focus:ring-accent/25 focus:border-accent/30">
-          <SelectValue placeholder={t("selectStressType")} />
+    <div className={compact ? "space-y-1" : "space-y-2"}>
+      <label className={cn(
+        "font-medium",
+        compact ? "text-xs text-text-secondary" : "text-sm text-text-secondary"
+      )}>
+        Stress Type
+      </label>
+      <Select value={stressType.toString()} onValueChange={handleChange}>
+        <SelectTrigger className={cn(
+          "w-full",
+          compact ? "h-8 text-xs" : "h-9 text-sm"
+        )}>
+          <SelectValue placeholder="Select stress type" />
         </SelectTrigger>
-
-        <SelectContent className="bg-surface-1 border border-surface-3 shadow-mac-panel">
-          <SelectItem value="0">{t("stressTypeNone")}</SelectItem>
-          <SelectItem value="1">{t("stressTypeBike")}</SelectItem>
-          <SelectItem value="2">{t("stressTypeMovement")}</SelectItem>
-          <SelectItem value="3">{t("stressTypeBoth")}</SelectItem>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value.toString()}
+              className={compact ? "text-xs" : "text-sm"}
+            >
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

@@ -287,6 +287,51 @@
       "numberOfBikes": null,
       "simdata": {},
       "simdataId": "20260207_142510_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "test",
+      "simfolder": "20260208_210043_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260208_210043_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "newMapa",
+      "simfolder": "20260208_210432_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260208_210432_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "same",
+      "simfolder": "20260209_004443_sim_ST0_S0.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260209_004443_sim_ST0_S0.00_WC50.00_D15"
+    },
+    {
+      "simname": "Sevilla",
+      "simfolder": "20260209_004844_sim_ST0_S0.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260209_004844_sim_ST0_S0.00_WC50.00_D15"
+    },
+    {
+      "simname": "Sevilla",
+      "simfolder": "20260209_005017_sim_ST0_S0.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260209_005017_sim_ST0_S0.00_WC50.00_D15"
     }
   ]
 }

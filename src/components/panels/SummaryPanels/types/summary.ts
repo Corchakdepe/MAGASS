@@ -1,4 +1,5 @@
 import {SummaryMetrics} from "@/components/panels/SummaryPanels/hooks/useSummaryMetrics";
+import {LucideIcon} from "lucide-react";
 
 export interface SummaryMetrics {
     deltaMinutes: number;
@@ -21,4 +22,24 @@ export interface SummaryPanelProps {
     summary: SummaryMetrics,
     loading?: boolean,
     runId?: string
+}
+
+export interface SimulationInfoPanelProps {
+  cityName: string;
+  stationCount: number;
+  totalCapacity: number;
+  bikeCount?: number;
+  className?: string;
+  // Optional additional data from the new API
+  averageCapacity?: number;
+  capacityRange?: string;
+  country?: string;
+}
+
+export interface InfoCardProps {
+  icon: LucideIcon;
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  className?: string;
 }
