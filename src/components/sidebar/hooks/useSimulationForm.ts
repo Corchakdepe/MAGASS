@@ -30,7 +30,8 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
                 mapa_densidad: null,
                 video_densidad: null,
                 mapa_voronoi: null,
-                mapa_circulo: "0",
+                mapa_circulo: null,
+                mapa_capacidad: "all",
                 mapa_desplazamientos: null,
                 filtrado_EstValor: null,
                 filtrado_EstValorDias: null,
@@ -133,6 +134,7 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
 
             if (!response.ok) {
                 const error = await response.json();
+                console.log("im here");
                 throw new Error(error.detail || error.message || 'Simulation failed');
             }
 
@@ -144,9 +146,7 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
 
             // First check for output_folder_name
             if (data.output_folder_name) {
-                // Extract the folder name from the full path
-                // Path format: "/Users/ageudepetris/Desktop/TFG project/results/20260207_140032_sim_ST0_S50.00_WC50.00_D60"
-                const pathParts = data.output_folder_name.split('/');
+               const pathParts = data.output_folder_name.split('/');
                 if (pathParts.length > 0) {
                     runId = pathParts[pathParts.length - 1]; // Get the last part (folder name)
                     console.log('Extracted run ID from output_folder_name:', runId);
@@ -158,9 +158,8 @@ export function useSimulationForm(onSimulationComplete?: () => void) {
                 runId = data.runId;
             } else if (!runId && data.simfolder) {
                 runId = data.simfolder;
-            } else if (!runId && data.simname) {
-                runId = data.simname;
-            } else if (!runId && typeof data === 'string') {
+            }
+             else if (!runId && typeof data === 'string') {
                 runId = data;
             }
 

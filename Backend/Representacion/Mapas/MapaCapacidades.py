@@ -119,7 +119,7 @@ class MapaCapacidades:
 
         # Save map
         if Constantes.RUTA_SALIDA != "":
-            nombre = auxiliar_ficheros.formatoArchivo("MapaCapacidades", "html")
+            nombre = "MapaCapacidades.html"
             self.mapa.save(join(Constantes.RUTA_SALIDA, nombre))
 
         # Always save a copy in current directory for API access

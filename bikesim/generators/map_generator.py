@@ -342,20 +342,7 @@ class MapGenerator:
             # Look for capacity data file
             capacidades_file = input_path / "capacidades.csv"
 
-            if not capacidades_file.exists():
-                logger.warning(f"Capacity file not found: {capacidades_file}")
-                # Try alternative names
-                possible_files = [
-                    input_path / "station_capacities.csv",
-                    input_path / "capacities.csv",
-                    input_path.parent / "capacidades.csv",
-                ]
-                for file_path in possible_files:
-                    if file_path.exists():
-                        capacidades_file = file_path
-                        break
-                else:
-                    return self._generate_capacity_placeholder(args, "Capacity file not found")
+
 
             # Load capacity data
             capacidades = pd.read_csv(capacidades_file, header=None)
@@ -364,21 +351,7 @@ class MapGenerator:
             # Load coordinates
             coordenadas_file = input_path / "coordenadas.csv"
 
-            if not coordenadas_file.exists():
-                logger.warning(f"Coordinates file not found: {coordenadas_file}")
-                # Try alternative names
-                possible_files = [
-                    input_path / "coordinates.csv",
-                    input_path / "estaciones.csv",
-                    input_path.parent / "coordenadas.csv",
-                    input_path.parent / "coordinates.csv",
-                ]
-                for file_path in possible_files:
-                    if file_path.exists():
-                        coordenadas_file = file_path
-                        break
-                else:
-                    return self._generate_capacity_placeholder(args, "Coordinates file not found")
+
 
             # Load coordinates - format: station_id, lat, lon
             coordenadas_df = pd.read_csv(coordenadas_file, header=None)

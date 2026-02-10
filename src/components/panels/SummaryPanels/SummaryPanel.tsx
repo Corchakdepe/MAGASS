@@ -32,7 +32,8 @@ export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProp
         return `${API_BASE}/results/file/${runId}/MapaCapacidades.html`;
     }, [runId]);
 
-    if (loading || infoLoading) {
+
+   if (loading || infoLoading) {
         return (
             <div className="space-y-4 p-6">
                 <Skeleton className="h-8 w-48"/>
@@ -44,6 +45,7 @@ export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProp
             </div>
         );
     }
+
 
     if (!runId) {
         return (
@@ -57,7 +59,7 @@ export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProp
         return null;
     }
 
-    // Use data from the new API endpoint or fallbacks
+    // Use data from the JSON file or fallbacks
     const cityName = simulationInfo?.city || "Unknown City";
     const stationCount = simulationInfo?.stations || 0;
     const totalCapacity = simulationInfo?.total_capacity || 0;
@@ -82,6 +84,7 @@ export function SummaryPanel({summary, runId, loading = false}: SummaryPanelProp
                 bikeCount={bikeCount}
                 className="mb-6"
             />
+
 
 
             {/* Map Section */}

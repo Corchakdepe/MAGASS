@@ -1,0 +1,22 @@
+{
+  "CITY": "Error",
+  "COUNTRY": "",
+  "FULL_LOCATION": "",
+  "STATIONS": {
+    "count": 0,
+    "avg_capacity": 0.0
+  },
+  "TOTAL_CAPACITY": 0.0,
+  "MIN_CAPACITY": 0.0,
+  "MAX_CAPACITY": 0.0,
+  "CAPACITY_RANGE": "0-0",
+  "ACTIVE_BIKES": 0,
+  "UTILIZATION": {
+    "percentage": 0.0,
+    "description": "0% utilization"
+  },
+  "COORDINATES": null,
+  "SIMULATION_ID": "20260210_151721_sim_ST0_S50.00_WC50.00_D60",
+  "GENERATED_AT": "2026-02-10T15:17:47.363956",
+  "ERROR": "'NoneType' object has no attribute 'get'"
+}

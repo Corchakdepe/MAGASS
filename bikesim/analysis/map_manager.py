@@ -87,7 +87,7 @@ class MapManager:
                 logger.info(f"Generated displacement map: {displacement_map.id}")
 
             if args.mapa_capacidad:
-                capacity_map = self.generator.generate_capacity_map(args)  # CORRECTED
+                capacity_map = self.generator.generate_capacity_map(args)
                 maps.append(capacity_map)
                 logger.info(f"Generated capacity map: {capacity_map.id}")
 

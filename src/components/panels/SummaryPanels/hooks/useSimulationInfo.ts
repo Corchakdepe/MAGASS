@@ -1,6 +1,6 @@
-// Hook to fetch simulation info from the new API endpoint
-import {API_BASE} from "@/lib/analysis/constants";
+// Hook to fetch simulation info from the persistent JSON file
 import React from "react";
+import {API_BASE} from "@/lib/analysis/constants";
 
 export function useSimulationInfo(runId: string | undefined) {
   const [data, setData] = React.useState<{
@@ -35,19 +35,36 @@ export function useSimulationInfo(runId: string | undefined) {
       setError(null);
 
       try {
-        const response = await fetch(
-          `${API_BASE}/dashboard/simulation-info/${encodeURIComponent(runId)}`
-        );
+        // Construct the correct path to the JSON file
+        // The JSON is located at: /results/{runId}/simulation_info.json
+        const jsonUrl = `${API_BASE}/results/file/${runId}/simulation_info.json`;
+
+        console.log(`Fetching simulation info from: ${jsonUrl}`);
+
+        const response = await fetch(jsonUrl);
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error(`Simulation "${runId}" not found`);
+            // Try with sim_ prefix if not present
+            if (!runId.startsWith('sim_')) {
+              const altJsonUrl = `/results/sim_${encodeURIComponent(runId)}/simulation_info.json`;
+              console.log(`Trying alternative URL: ${altJsonUrl}`);
+              const altResponse = await fetch(altJsonUrl);
+
+              if (altResponse.ok) {
+                const result = await altResponse.json();
+                setData(transformJsonToApiFormat(result, runId));
+                return;
+              }
+            }
+            throw new Error(`Simulation info not found for "${runId}"`);
           }
           throw new Error(`Failed to fetch simulation info: ${response.statusText}`);
         }
 
-        const result = await response.json();
-        setData(result);
+        const jsonData = await response.json();
+        console.log('Received JSON data:', jsonData);
+        setData(transformJsonToApiFormat(jsonData, runId));
       } catch (err) {
         console.error('Error fetching simulation info:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -61,4 +78,25 @@ export function useSimulationInfo(runId: string | undefined) {
   }, [runId]);
 
   return { data, loading, error };
+}
+
+// Helper function to transform JSON format to API response format
+function transformJsonToApiFormat(jsonData: any, runId: string) {
+  // Log for debugging
+  console.log('Transforming JSON data:', jsonData);
+
+  return {
+    city: jsonData.CITY || "Unknown City",
+    stations: jsonData.STATIONS?.count || 0,
+    total_capacity: jsonData.TOTAL_CAPACITY || 0,
+    active_bikes: jsonData.ACTIVE_BIKES || 0,
+    average_capacity: jsonData.STATIONS?.avg_capacity || 0,
+    min_capacity: jsonData.MIN_CAPACITY || 0,
+    max_capacity: jsonData.MAX_CAPACITY || 0,
+    capacity_range: jsonData.CAPACITY_RANGE || `0-${jsonData.MAX_CAPACITY || 0}`,
+    simulation_id: runId,
+    country: jsonData.COUNTRY || "",
+    full_location: jsonData.FULL_LOCATION || "",
+    coordinates: jsonData.COORDINATES || undefined
+  };
 }
