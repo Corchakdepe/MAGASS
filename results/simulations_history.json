@@ -1,24 +1,154 @@
 {
   "simulations": [
     {
-      "simname": "age",
-      "simfolder": "20260129_165042_sim_ST3_S0.32_WC0.39_D15",
-      "simdataId": "20260129_165042_sim_ST3_S0.32_WC0.39_D15",
-      "cityname": "Seville",
+      "simname": "testlocura",
+      "simfolder": "20260212_120638_sim_ST0_S50.00_WC50.00_D60",
+      "simdataId": "20260212_120638_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": "Sevilla",
       "numberOfStations": 260,
       "numberOfBikes": 2512,
-      "simdata": {},
-      "path": "/Users/ageudepetris/Desktop/TFG project/results/20260129_165042_sim_ST3_S0.32_WC0.39_D15",
-      "created": null
+      "total_capacity": 5089.0,
+      "avg_capacity": 19.573076923076922,
+      "min_capacity": 10.0,
+      "max_capacity": 40.0,
+      "coordinates": {
+        "avg_lat": 37.38890088461538,
+        "avg_lon": -5.977624423076923
+      },
+      "simdata": {
+        "stress_type": 0,
+        "stress": 50.0,
+        "walk_cost": 50.0,
+        "delta": 60,
+        "dias": []
+      },
+      "path": "results/20260212_120638_sim_ST0_S50.00_WC50.00_D60",
+      "created": "2026-02-12T12:06:39.772437"
     },
     {
-      "simname": "asd",
-      "simfolder": "20260129_171338_sim_ST0_S0.00_WC1.00_D15",
-      "cityname": "Seville",
+      "simname": "teee",
+      "simfolder": "20260212_200510_sim_ST0_S0.00_WC50.00_D15",
+      "simdataId": "20260212_200510_sim_ST0_S0.00_WC50.00_D15",
+      "cityname": "Sevilla",
       "numberOfStations": 260,
       "numberOfBikes": 2512,
-      "simdata": {},
-      "simdataId": "20260129_171338_sim_ST0_S0.00_WC1.00_D15"
+      "total_capacity": 5089.0,
+      "avg_capacity": 19.573076923076922,
+      "min_capacity": 10.0,
+      "max_capacity": 40.0,
+      "coordinates": {
+        "avg_lat": 37.38890088461538,
+        "avg_lon": -5.977624423076923
+      },
+      "simdata": {
+        "stress_type": 0,
+        "stress": 0.0,
+        "walk_cost": 50.0,
+        "delta": 15,
+        "dias": []
+      },
+      "path": "results/20260212_200510_sim_ST0_S0.00_WC50.00_D15",
+      "created": "2026-02-12T20:05:12.250751"
+    },
+    {
+      "simname": "MA viernes p1",
+      "simfolder": "20260212_201217_sim_ST0_S0.00_WC50.00_D15",
+      "simdataId": "20260212_201217_sim_ST0_S0.00_WC50.00_D15",
+      "cityname": "Sevilla",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "total_capacity": 5089.0,
+      "avg_capacity": 19.573076923076922,
+      "min_capacity": 10.0,
+      "max_capacity": 40.0,
+      "coordinates": {
+        "avg_lat": 37.38890088461538,
+        "avg_lon": -5.977624423076923
+      },
+      "simdata": {
+        "stress_type": 0,
+        "stress": 0.0,
+        "walk_cost": 50.0,
+        "delta": 15,
+        "dias": []
+      },
+      "path": "results/20260212_201217_sim_ST0_S0.00_WC50.00_D15",
+      "created": "2026-02-12T20:12:19.224454"
+    },
+    {
+      "simname": "Sevilla mañana",
+      "simfolder": "20260212_204648_sim_ST0_S50.00_WC50.00_D60",
+      "simdataId": "20260212_204648_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": "Sevilla",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "total_capacity": 5089.0,
+      "avg_capacity": 19.573076923076922,
+      "min_capacity": 10.0,
+      "max_capacity": 40.0,
+      "coordinates": {
+        "avg_lat": 37.38890088461538,
+        "avg_lon": -5.977624423076923
+      },
+      "simdata": {
+        "stress_type": 0,
+        "stress": 50.0,
+        "walk_cost": 50.0,
+        "delta": 60,
+        "dias": []
+      },
+      "path": "results/20260212_204648_sim_ST0_S50.00_WC50.00_D60",
+      "created": "2026-02-12T20:46:50.633262"
+    },
+    {
+      "simname": "Sevilla tarde stress alto",
+      "simfolder": "20260212_204724_sim_ST3_S100.00_WC100.00_D60",
+      "simdataId": "20260212_204724_sim_ST3_S100.00_WC100.00_D60",
+      "cityname": "Sevilla",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "total_capacity": 5089.0,
+      "avg_capacity": 19.573076923076922,
+      "min_capacity": 10.0,
+      "max_capacity": 40.0,
+      "coordinates": {
+        "avg_lat": 37.38890088461538,
+        "avg_lon": -5.977624423076923
+      },
+      "simdata": {
+        "stress_type": 3,
+        "stress": 100.0,
+        "walk_cost": 100.0,
+        "delta": 60,
+        "dias": []
+      },
+      "path": "results/20260212_204724_sim_ST3_S100.00_WC100.00_D60",
+      "created": "2026-02-12T20:47:26.410928"
+    },
+    {
+      "simname": "Sevilla noche festivo",
+      "simfolder": "20260212_204800_sim_ST0_S0.00_WC0.00_D15",
+      "simdataId": "20260212_204800_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": "Sevilla",
+      "numberOfStations": 260,
+      "numberOfBikes": 2512,
+      "total_capacity": 5089.0,
+      "avg_capacity": 19.573076923076922,
+      "min_capacity": 10.0,
+      "max_capacity": 40.0,
+      "coordinates": {
+        "avg_lat": 37.38890088461538,
+        "avg_lon": -5.977624423076923
+      },
+      "simdata": {
+        "stress_type": 0,
+        "stress": 0.0,
+        "walk_cost": 0.0,
+        "delta": 15,
+        "dias": []
+      },
+      "path": "results/20260212_204800_sim_ST0_S0.00_WC0.00_D15",
+      "created": "2026-02-12T20:48:01.437976"
     }
   ]
 }
