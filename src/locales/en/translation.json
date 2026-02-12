@@ -722,7 +722,7 @@
   "advancedSettings": "Advanced settings",
   "advancedUser": "Advanced user",
   "analyticsView": "Analytics view",
-    "uploadCSVFiles": "Upload CSV Files",
+  "uploadCSVFiles": "Upload CSV Files",
   "dragDropCSVFiles": "Drag & drop CSV files here",
   "orClickToBrowse": "or click to browse",
   "selectedFiles": "Selected Files",
@@ -732,5 +732,7 @@
   "uploading": "Uploading...",
   "uploadFiles": "Upload Files",
   "upload": "Upload",
-  "uploadedFiles": "Uploaded Files"
+  "uploadedFiles": "Uploaded Files",
+  "initialCapacityMap": "Initial capacity map",
+  "newSimulation": "New simulation"
 }

@@ -14,7 +14,7 @@ app = FastAPI(title="BikeSim API", version="1.0")
 # Get allowed origins from environment variable or use defaults
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:8000"
+    "*"
 ).split(",")
 
 app.add_middleware(

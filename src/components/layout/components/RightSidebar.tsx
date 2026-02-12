@@ -1,5 +1,5 @@
 import { SidebarProvider, Sidebar } from "@/components/ui/sidebar";
-import SidebarRunHistory from "@/components/sidebar/components/SidebarRunHistory";
+import SidebarRunHistory from "@/components/sidebar/components/history/SidebarRunHistory";
 import MapsAnalysisPanel from "@/components/sidebar/components/MapsAnalysisPanel";
 import GraphAnalysisPanel from "@/components/sidebar/components/GraphAnalysisPanel";
 import type { SimulationData } from "@/types/simulation";

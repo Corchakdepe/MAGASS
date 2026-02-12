@@ -6,14 +6,13 @@ from Frontend.simulation_runner import run_simulation
 from Frontend.analysis_models import SimulateArgs
 from datetime import datetime
 import shutil
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Path
 import os
 import pandas as pd
-from pathlib import Path
 from fastapi.responses import HTMLResponse
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
-from pathlib import Path
+from pathlib import Path as Pathlib
 from bikesim.core.models import SimulationMetadata, SimulationHistory
 from bikesim.core.exceptions import SimulationNotFoundError
 from bikesim.services.simulation_service import SimulationService
@@ -21,13 +20,23 @@ from bikesim.api.dependencies import get_simulation_service
 from bikesim.utils.file_utils import get_latest_simulation_folder, create_simulation_folder
 from bikesim.utils.historymanagement import enrich_history_with_station_info, load_history
 
+from fastapi import APIRouter, HTTPException
+import os
+import shutil
+from pathlib import Path as PathLib
+import urllib.parse
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-"""@router.post("/exe/simular-json")
+""""@router.post("/exe/simular-json")
 def exe_simular_json(args: SimulateArgs):
-    Executes bike simulation with given parameters
+    
     try:
+        # Use uploaded folder path if provided
+        if not args.ruta_entrada and hasattr(args, 'folderPath') and args.folderPath:
+            args.ruta_entrada = args.folderPath
+
         # Create output folder if not specified
         if not args.ruta_salida:
             output_folder = create_simulation_folder(
@@ -41,6 +50,15 @@ def exe_simular_json(args: SimulateArgs):
         else:
             ruta_salida = args.ruta_salida
             os.makedirs(ruta_salida, exist_ok=True)
+
+        # Validate input folder exists
+        if not os.path.exists(args.ruta_entrada):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Input folder does not exist: {args.ruta_entrada}"
+            )
+
+
 
         # Run simulation
         run_simulation(
@@ -56,7 +74,8 @@ def exe_simular_json(args: SimulateArgs):
         return {"ok": True, "output_folder_name": ruta_salida}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    """
+
+"""
 
 
 @router.post("/exe/simular-json")
@@ -88,7 +107,7 @@ def exe_simular_json(args: SimulateArgs):
                 detail=f"Input folder does not exist: {args.ruta_entrada}"
             )
 
-        # Run simulation
+        # Run simulation - PASS simname to capture bike count
         run_simulation(
             ruta_entrada=args.ruta_entrada,
             ruta_salida=ruta_salida,
@@ -97,6 +116,7 @@ def exe_simular_json(args: SimulateArgs):
             walk_cost=args.walk_cost,
             delta=args.delta,
             dias=args.dias,
+            simname=args.simname,  # Pass simname to simulation
         )
 
         return {"ok": True, "output_folder_name": ruta_salida}
@@ -109,7 +129,7 @@ async def upload_files(files: list[UploadFile] = File(...)):
     """Upload CSV files for simulation"""
     try:
         # Create uploads directory if it doesn't exist
-        upload_dir = Path("./uploads")
+        upload_dir = PathLib("./uploads")
         upload_dir.mkdir(exist_ok=True)
 
         # Create a timestamped subdirectory
@@ -142,8 +162,6 @@ async def upload_files(files: list[UploadFile] = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
-
-
 @router.post("/analyze-upload")
 async def analyze_uploaded_files(request: dict):
     """Analyze uploaded CSV files to extract station and bike information"""
@@ -152,7 +170,7 @@ async def analyze_uploaded_files(request: dict):
         if not folder_path:
             raise HTTPException(status_code=400, detail="No folder path provided")
 
-        folder = Path(folder_path)
+        folder = Pathlib(folder_path)
         if not folder.exists():
             raise HTTPException(status_code=404, detail=f"Folder not found: {folder_path}")
 
@@ -265,12 +283,10 @@ async def analyze_uploaded_files(request: dict):
         raise HTTPException(status_code=500, detail=f"Error analyzing upload: {str(e)}")
 
 
-
-
 # NEW: This is your main list endpoint using the service layer
 @router.get("/list-simulations")
 async def list_simulations_legacy(
-    service: SimulationService = Depends(get_simulation_service)
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Lists all simulation folders with enriched metadata (legacy endpoint)"""
     try:
@@ -341,8 +357,8 @@ async def get_simulation_by_name(name: str = Query(...)):
 
 @router.get("/simulation-summary")
 async def get_simulation_summary(
-    folder: Optional[str] = Query(default=None),
-    service: SimulationService = Depends(get_simulation_service)
+        folder: Optional[str] = Query(default=None),
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Returns simulation summary data as comma-separated string"""
     try:
@@ -377,12 +393,12 @@ async def get_simulation_summary(
 
 @router.get("/validate-folder")
 async def validate_folder(
-    path: str = Query(...),
-    service: SimulationService = Depends(get_simulation_service)
+        path: str = Query(...),
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Validates if folder exists and counts files"""
     try:
-        folder_path = Path(path)
+        folder_path = Pathlib(path)
         if not folder_path.is_absolute():
             folder_path = service.config.root_dir / folder_path
 
@@ -402,7 +418,7 @@ async def validate_folder(
 # Keep the service-based endpoints below (they use dependency injection)
 @router.get("/history", response_model=SimulationHistory)
 async def get_history(
-    service: SimulationService = Depends(get_simulation_service)
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Get simulation history with metadata."""
     try:
@@ -419,8 +435,8 @@ async def get_history(
 
 @router.get("/by-name", response_model=SimulationMetadata)
 async def get_by_name(
-    name: str = Query(..., description="Simulation name"),
-    service: SimulationService = Depends(get_simulation_service)
+        name: str = Query(..., description="Simulation name"),
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Get simulation by name."""
     try:
@@ -444,8 +460,8 @@ async def get_by_name(
 
 @router.get("/{folder_name}", response_model=SimulationMetadata)
 async def get_simulation(
-    folder_name: str,
-    service: SimulationService = Depends(get_simulation_service)
+        folder_name: str,
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Get simulation by folder name."""
     try:
@@ -462,8 +478,8 @@ async def get_simulation(
 
 @router.get("/dashboard/initial-data")
 async def get_dashboard_initial_data(
-    run: str = Query(..., description="Simulation folder name"),
-    service: SimulationService = Depends(get_simulation_service)
+        run: str = Query(..., description="Simulation folder name"),
+        service: SimulationService = Depends(get_simulation_service)
 ):
     """Get initial data for dashboard (city, bikes, stations)."""
     try:
@@ -487,3 +503,55 @@ async def get_dashboard_initial_data(
         )
 
 
+@router.delete("/simulations/{runId}")
+async def delete_simulation(
+        runId: str = Path(..., description="The run ID to delete")
+):
+    try:
+        # 1. Decode URL-encoded parameter
+        folder_name = urllib.parse.unquote(runId)
+
+        # 3. Create safe absolute path
+        base_dir = PathLib("./results").resolve()  # Get absolute path
+        target_path = (base_dir / folder_name).resolve()
+
+        # 4. SECURITY CHECK: Ensure the target path is within base directory
+        # Prevents path traversal attacks like "../../etc/passwd"
+        if not str(target_path).startswith(str(base_dir)):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid path - attempted directory traversal"
+            )
+
+        # 5. Check if folder exists
+        if not target_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Simulation folder '{folder_name}' not found"
+            )
+
+        # 6. Optional: Check if it's actually a directory
+        if not target_path.is_dir():
+            raise HTTPException(
+                status_code=400,
+                detail=f"'{folder_name}' is not a directory"
+            )
+
+        # 7. Delete folder
+        shutil.rmtree(target_path)
+
+        return {
+            "success": True,
+            "message": f"Simulation folder '{folder_name}' deleted successfully"
+        }
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (404, 400, etc.)
+        raise
+    except Exception as e:
+        # Log the actual error for debugging
+        print(f"Error deleting folder {runId}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error while deleting simulation"
+        )

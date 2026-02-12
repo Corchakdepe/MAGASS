@@ -722,5 +722,7 @@
   "advancedSettings": "Configuración avanzada",
   "advancedUser": "Usuario avanzado",
   "analyticsView": "Vista de análisis",
-  "highEfficiency": "Alta eficiencia"
+  "highEfficiency": "Alta eficiencia",
+  "initialCapacityMap": "Mapa de capacidades inicial",
+  "newSimulation": "Nueva simulación"
 }
