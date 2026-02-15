@@ -1,6 +1,7 @@
 """Chart generation management."""
 
 import logging
+
 from pathlib import Path
 from typing import List
 import pandas as pd
@@ -50,16 +51,19 @@ class ChartManager:
             if args.graf_barras_est_med:
                 chart = self.generator.generate_station_mean_chart(
                     matrix,
-                    args.graf_barras_est_med
+                    args.graf_barras_est_med,
+                    args.seleccion_agregacion
                 )
+
                 charts.append(chart)
                 logger.info(f"Generated station mean chart: {chart.id}")
 
             # Station cumulative chart
             if args.graf_barras_est_acum:
-                chart = self.generator.generate_station_cumulative_chart(
+                chart = self.generator.generate_station_mean_chart(
                     matrix,
-                    args.graf_barras_est_acum
+                    args.graf_barras_est_acum,
+                    args.seleccion_agregacion
                 )
                 charts.append(chart)
                 logger.info(f"Generated station cumulative chart: {chart.id}")
@@ -68,7 +72,8 @@ class ChartManager:
             if args.graf_barras_dia:
                 chart = self.generator.generate_day_chart(
                     matrix,
-                    args.graf_barras_dia
+                    args.graf_barras_dia,
+                    args.seleccion_agregacion
                 )
                 charts.append(chart)
                 logger.info(f"Generated day chart: {chart.id}")
@@ -77,7 +82,8 @@ class ChartManager:
             if args.graf_linea_comp_est:
                 chart = self.generator.generate_comparison_chart(
                     matrix,
-                    args.graf_linea_comp_est
+                    args.graf_linea_comp_est,
+                    args.seleccion_agregacion
                 )
                 charts.append(chart)
                 logger.info(f"Generated comparison chart: {chart.id}")
@@ -86,7 +92,8 @@ class ChartManager:
             if args.graf_linea_comp_mats:
                 chart = self.generator.generate_matrix_comparison_chart(
                     matrix,
-                    args.graf_linea_comp_mats
+                    args.graf_linea_comp_mats,
+                    args.seleccion_agregacion
                 )
                 charts.append(chart)
                 logger.info(f"Generated matrix comparison chart: {chart.id}")

@@ -38,6 +38,7 @@ export function useGraphData(
       if (jsonMode && chartsFromApi && chartsFromApi.length > 0) {
         console.log("JSON mode - searching in chartsFromApi");
         const chart = chartsFromApi.find((c) => String(c.id) === id);
+
         if (!chart) {
           console.warn("Chart not found in chartsFromApi");
           setContent(null);

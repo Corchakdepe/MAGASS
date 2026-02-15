@@ -75,18 +75,7 @@ export function GraphHeader({
               </Badge>
             )}
           </div>
-          <div
-            className="mt-0.5 text-[11px] text-text-secondary truncate"
-            title={String(active.name ?? "")}
-          >
-            {String(active.name ?? "")}
-          </div>
           <div className="mt-2 text-[11px] text-text-tertiary flex flex-wrap items-center gap-2">
-            <span>
-              {t("format")}: {String(active.format ?? "")} · {t("kind")}:{" "}
-              {String(active.kind ?? "")}
-            </span>
-            <Separator orientation="vertical" className="h-4 bg-surface-3" />
             <span>
               {selectedIndex + 1} / {totalFiltered} ({t("filtered")}) ·{" "}
               {totalGraphs} ({t("total")})

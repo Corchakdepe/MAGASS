@@ -926,6 +926,33 @@
       "numberOfBikes": null,
       "simdata": {},
       "simdataId": "20260212_204800_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "testOnly",
+      "simfolder": "20260214_193340_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260214_193340_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "asd",
+      "simfolder": "20260215_130130_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260215_130130_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "Most Functional Version",
+      "simfolder": "20260215_130350_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260215_130350_sim_ST0_S0.00_WC0.00_D15"
     }
   ]
 }

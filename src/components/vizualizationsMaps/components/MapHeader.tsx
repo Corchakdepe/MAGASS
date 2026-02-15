@@ -12,6 +12,8 @@ import {
   StarOff,
   Copy,
   RefreshCw,
+  Settings,
+  Map,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +44,8 @@ interface MapHeaderProps {
   onCopyLink: () => void;
   onCopyName: () => void;
   onResetView: () => void;
+  onToggleViewMode: () => void; // New prop for toggling view mode
+  viewMode: 'map' | 'config'; // Current view mode
 }
 
 export function MapHeader({
@@ -60,6 +64,8 @@ export function MapHeader({
   onCopyLink,
   onCopyName,
   onResetView,
+  onToggleViewMode,
+  viewMode,
 }: MapHeaderProps) {
   const { t } = useLanguage();
 
@@ -89,6 +95,9 @@ export function MapHeader({
             <span>
               {selectedIndex + 1} / {totalFiltered} ({t("filtered")}) · {totalMaps}{" "}
               ({t("total")})
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 bg-surface-2 rounded">
+              {viewMode === 'map' ? t("mapView") : t("configurationView")}
             </span>
           </div>
         </div>
@@ -130,6 +139,24 @@ export function MapHeader({
             title={t("nextArrow")}
           >
             <ChevronRight className="h-4 w-4 text-text-primary" />
+          </Button>
+
+          {/* View Mode Toggle Button */}
+          <Button
+            variant={viewMode === 'config' ? "default" : "outline"}
+            size="icon"
+            className={viewMode === 'config'
+              ? "bg-accent text-white hover:bg-accent/90"
+              : "bg-surface-1 border border-surface-3 hover:bg-surface-0"
+            }
+            onClick={onToggleViewMode}
+            title={viewMode === 'map' ? t("showConfiguration") : t("showMap")}
+          >
+            {viewMode === 'map' ? (
+              <Settings className="h-4 w-4" />
+            ) : (
+              <Map className="h-4 w-4" />
+            )}
           </Button>
 
           {/* More Actions Menu */}

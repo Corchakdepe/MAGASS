@@ -8,8 +8,6 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import hashlib
-
-
 class ChartBuilder:
     """Builder for creating standardized chart JSON."""
 
@@ -21,6 +19,7 @@ class ChartBuilder:
         stations: List[int],
         days: List[int],
         aggregation: str,
+        matrix_type: str,  # Add parameter
         output_path: str
     ) -> dict:
         """
@@ -33,6 +32,7 @@ class ChartBuilder:
             stations: Station IDs
             days: Day indices
             aggregation: Aggregation type (mean, sum)
+            matrix_type: Type of matrix used
             output_path: Path to save JSON
 
         Returns:
@@ -75,7 +75,8 @@ class ChartBuilder:
                 "title": title,
                 "stations": stations,
                 "days": days,
-                "aggregation": aggregation
+                "aggregation": aggregation,
+                "matrix_type": matrix_type  # Add field
             }
         }
 
@@ -92,6 +93,7 @@ class ChartBuilder:
         series_data: Dict[str, List[float]],
         stations: List[int],
         days: List[int],
+        matrix_type: str,  # Add parameter
         output_path: str
     ) -> dict:
         """Create cumulative/accumulation chart JSON."""
@@ -131,7 +133,8 @@ class ChartBuilder:
                 "title": title,
                 "stations": stations,
                 "days": days,
-                "aggregation": "cumulative"
+                "aggregation": "cumulative",
+                "matrix_type": matrix_type  # Add field
             }
         }
 
@@ -147,6 +150,7 @@ class ChartBuilder:
         frequencies: List[int],
         days: List[int],
         value_type: str,
+        matrix_type: str,  # Add parameter
         output_path: str
     ) -> dict:
         """Create distribution/histogram chart JSON."""
@@ -180,7 +184,8 @@ class ChartBuilder:
             "context": {
                 "title": title,
                 "days": days,
-                "value_type": value_type
+                "value_type": value_type,
+                "matrix_type": matrix_type  # Add field
             }
         }
 
@@ -196,6 +201,7 @@ class ChartBuilder:
         values: List[float],
         days: List[int],
         value_type: str,
+        matrix_type: str,  # Add parameter
         output_path: str
     ) -> dict:
         """Create station series chart JSON."""
@@ -229,7 +235,8 @@ class ChartBuilder:
             "context": {
                 "title": title,
                 "days": days,
-                "value_type": value_type
+                "value_type": value_type,
+                "matrix_type": matrix_type  # Add field
             }
         }
 
@@ -244,6 +251,7 @@ class ChartBuilder:
         x_hours: List[int],
         series_specs: List[Dict],
         global_context: Dict,
+        matrix_type: str,  # Add parameter
         output_path: str
     ) -> dict:
         """Create comparison chart JSON."""
@@ -274,6 +282,12 @@ class ChartBuilder:
                 }
             })
 
+        # Add matrix_type to global_context
+        global_context_with_matrix = {
+            **global_context,
+            "matrix_type": matrix_type
+        }
+
         chart_json = {
             "id": chart_id,
             "kind": "comparison",
@@ -294,7 +308,7 @@ class ChartBuilder:
             },
             "context": {
                 "title": title,
-                **global_context
+                **global_context_with_matrix
             }
         }
 
@@ -313,6 +327,7 @@ class ChartBuilder:
         is_mean: bool,
         stations1: List[int],
         stations2: List[int],
+        matrix_type: str,  # Add parameter
         output_path: str
     ) -> dict:
         """Create matrix comparison chart JSON."""
@@ -362,7 +377,8 @@ class ChartBuilder:
                 "delta": delta,
                 "is_mean": is_mean,
                 "stations1": stations1,
-                "stations2": stations2
+                "stations2": stations2,
+                "matrix_type": matrix_type  # Add field
             }
         }
 
@@ -370,20 +386,3 @@ class ChartBuilder:
             json.dump(chart_json, f, ensure_ascii=False, indent=2)
 
         return chart_json
-
-
-def create_chart_json(chart_data: dict, output_path: str) -> dict:
-    """
-    Helper function to create and save chart JSON.
-
-    Args:
-        chart_data: Chart data dictionary
-        output_path: Path to save JSON
-
-    Returns:
-        Chart data dictionary
-    """
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(chart_data, f, ensure_ascii=False, indent=2)
-
-    return chart_data

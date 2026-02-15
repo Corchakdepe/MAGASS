@@ -724,5 +724,13 @@
   "analyticsView": "Visualização de análise",
   "highEfficiency": "Alta eficácia",
   "initialCapacityMap": "Mapa de capacidades inicial",
-  "newSimulation": "Nova simulação"
+  "newSimulation": "Nova simulação",
+   "matrixType": "Matrix de agregação",
+   "meanDelta": "Delta media",
+  "instant": "Instante",
+  "stationCount": "Número de estações",
+   "generated": "Gerado",
+   "mapView": "Modo Mapa",
+    "configurationView": "Parametros de criação",
+    "showLabels": "Mostrar etiqueta"
 }

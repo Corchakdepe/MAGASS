@@ -38,39 +38,6 @@ export function GraphFooter({
   return (
     <div className="w-full border-t border-surface-3 bg-surface-1/85 p-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-[11px] text-text-secondary">
-            {showAnalytics ? t("analyticsView") : t("selectedGraph")}
-          </div>
-          <div className="text-xs font-semibold text-text-primary truncate">
-            {meta.title || displayName || t("noTitle")}
-          </div>
-          <div className="mt-1 text-[11px] text-text-tertiary flex flex-wrap items-center gap-2">
-            {!showAnalytics && (
-              <>
-                <span>
-                  X: <span className="font-medium text-text-primary">{xLabel}</span>
-                </span>
-                <span>·</span>
-                <span>
-                  Y: <span className="font-medium text-text-primary">{yLabel}</span>
-                </span>
-                {ySeries.some((s) => s.derived) && (
-                  <>
-                    <span>·</span>
-                    <span className="italic">{t("includesDerivedSeries")}</span>
-                  </>
-                )}
-              </>
-            )}
-            {showAnalytics && (
-              <span className="text-accent">
-                {t("viewingStatisticalAnalysis")}
-              </span>
-            )}
-          </div>
-        </div>
-
         <div className="flex items-center gap-2">
           {/* Favorite Button */}
           <Button

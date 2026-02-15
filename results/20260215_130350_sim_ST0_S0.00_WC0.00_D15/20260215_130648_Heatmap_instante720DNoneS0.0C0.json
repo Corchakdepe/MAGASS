@@ -1,0 +1,18 @@
+{
+  "map_name": null,
+  "matrix_type": "1",
+  "delta_media": null,
+  "generated_at": "2026-02-15T13:06:48.355992",
+  "map_kind": "density",
+  "status": "error",
+  "files": {
+    "html": "20260215_130648_Heatmap_instante720DNoneS0.0C0.0.html",
+    "json": "20260215_130648_Heatmap_instante720DNoneS0.0C0.0.json",
+    "csv": "20260215_130648_Heatmap_instante720DNoneS0.0C0.0.csv"
+  },
+  "error": "\nImage export using the \"kaleido\" engine requires the kaleido package,\nwhich can be installed using pip:\n    $ pip install -U kaleido\n",
+  "instant": 720,
+  "stations": "all",
+  "stations_count": "all",
+  "spec": "720"
+}

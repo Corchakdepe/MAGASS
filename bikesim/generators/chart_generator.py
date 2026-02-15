@@ -56,33 +56,33 @@ class ChartGenerator:
             List of chart metadata
         """
         charts = []
+        matrix_type = args.seleccion_agregacion  # Get matrix type from args
 
         try:
             if args.graf_barras_est_med:
                 charts.append(self.generate_station_mean_chart(
-                    matrix, args.graf_barras_est_med
+                    matrix, args.graf_barras_est_med, matrix_type
                 ))
 
             if args.graf_barras_est_acum:
                 charts.append(self.generate_station_cumulative_chart(
-                    matrix, args.graf_barras_est_acum
+                    matrix, args.graf_barras_est_acum, matrix_type
                 ))
 
             if args.graf_barras_dia:
                 charts.append(self.generate_day_chart(
-                    matrix, args.graf_barras_dia
+                    matrix, args.graf_barras_dia, matrix_type
                 ))
 
             if args.graf_linea_comp_est:
                 charts.append(self.generate_comparison_chart(
-                    matrix, args.graf_linea_comp_est
+                    matrix, args.graf_linea_comp_est, matrix_type
                 ))
 
             if args.graf_linea_comp_mats:
                 charts.append(self.generate_matrix_comparison_chart(
-                    matrix, args.graf_linea_comp_mats
+                    matrix, args.graf_linea_comp_mats, matrix_type
                 ))
-
 
         except Exception as e:
             logger.error(f"Error generating charts: {e}")
@@ -93,7 +93,8 @@ class ChartGenerator:
     def generate_station_mean_chart(
             self,
             matrix: pd.DataFrame,
-            spec: str
+            spec: str,
+            matrix_type: str  # Add parameter
     ) -> ChartMetadata:
         """
         Generate mean occupancy chart for stations.
@@ -101,6 +102,7 @@ class ChartGenerator:
         Args:
             matrix: Data matrix
             spec: Specification string "station1;station2-days"
+            matrix_type: Type of matrix used
 
         Returns:
             Chart metadata
@@ -130,6 +132,7 @@ class ChartGenerator:
             stations=station_ids,
             days=days,
             aggregation="mean",
+            matrix_type=matrix_type,  # Add parameter
             output_path=str(json_path)
         )
 
@@ -139,7 +142,8 @@ class ChartGenerator:
     def generate_station_cumulative_chart(
             self,
             matrix: pd.DataFrame,
-            spec: str
+            spec: str,
+            matrix_type: str  # Add parameter
     ) -> ChartMetadata:
         """
         Generate cumulative occupancy chart for stations.
@@ -147,6 +151,7 @@ class ChartGenerator:
         Args:
             matrix: Data matrix
             spec: Specification string
+            matrix_type: Type of matrix used
 
         Returns:
             Chart metadata
@@ -186,6 +191,7 @@ class ChartGenerator:
             series_data=series_data,
             stations=station_ids,
             days=days,
+            matrix_type=matrix_type,  # Add parameter
             output_path=str(json_path)
         )
 
@@ -195,7 +201,8 @@ class ChartGenerator:
     def generate_day_chart(
             self,
             matrix: pd.DataFrame,
-            spec: str
+            spec: str,
+            matrix_type: str  # Add parameter
     ) -> ChartMetadata:
         """
         Generate day-based chart (distribution or station series).
@@ -203,6 +210,7 @@ class ChartGenerator:
         Args:
             matrix: Data matrix
             spec: Specification string "days-M/A[-Frec]"
+            matrix_type: Type of matrix used
 
         Returns:
             Chart metadata
@@ -253,6 +261,7 @@ class ChartGenerator:
                 frequencies=counts.tolist(),
                 days=days,
                 value_type="mean" if is_mean else "sum",
+                matrix_type=matrix_type,  # Add parameter
                 output_path=str(json_path)
             )
         else:
@@ -271,6 +280,7 @@ class ChartGenerator:
                 values=vals,
                 days=days,
                 value_type="mean" if is_mean else "sum",
+                matrix_type=matrix_type,  # Add parameter
                 output_path=str(json_path)
             )
 
@@ -280,7 +290,8 @@ class ChartGenerator:
     def generate_comparison_chart(
             self,
             matrix: pd.DataFrame,
-            specs: List[StationDaySpec]
+            specs: List[StationDaySpec],
+            matrix_type: str  # Add parameter
     ) -> ChartMetadata:
         """
         Generate station comparison chart.
@@ -288,6 +299,7 @@ class ChartGenerator:
         Args:
             matrix: Data matrix
             specs: List of station-day specifications
+            matrix_type: Type of matrix used
 
         Returns:
             Chart metadata
@@ -332,6 +344,7 @@ class ChartGenerator:
             x_hours=x_hours,
             series_specs=series_specs,
             global_context={},
+            matrix_type=matrix_type,  # Add parameter
             output_path=str(json_path)
         )
 
@@ -341,7 +354,8 @@ class ChartGenerator:
     def generate_matrix_comparison_chart(
             self,
             matrix: pd.DataFrame,
-            spec: str
+            spec: str,
+            matrix_type: str  # Add parameter
     ) -> ChartMetadata:
         """
         Generate matrix comparison chart.
@@ -349,6 +363,7 @@ class ChartGenerator:
         Args:
             matrix: Current matrix
             spec: Specification string "delta;stations1;stations2;M/A"
+            matrix_type: Type of matrix used
 
         Returns:
             Chart metadata
@@ -389,9 +404,9 @@ class ChartGenerator:
             is_mean=is_mean,
             stations1=stations1,
             stations2=stations2,
+            matrix_type=matrix_type,  # Add parameter
             output_path=str(json_path)
         )
 
         logger.info("Generated matrix comparison chart")
         return ChartMetadata(**chart_json)
-

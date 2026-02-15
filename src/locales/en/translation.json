@@ -734,5 +734,13 @@
   "upload": "Upload",
   "uploadedFiles": "Uploaded Files",
   "initialCapacityMap": "Initial capacity map",
-  "newSimulation": "New simulation"
+  "newSimulation": "New simulation",
+  "matrixType": "Matrix type",
+  "meanDelta": "Mean delta",
+  "instant": "Instant",
+  "stationCount": "Number of stations",
+  "generated": "Generated",
+   "mapView": "Map mode",
+  "configurationView": "Creation parameters",
+    "showLabels": "Show labels"
 }

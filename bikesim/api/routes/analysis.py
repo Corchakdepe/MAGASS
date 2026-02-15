@@ -6,8 +6,8 @@ from typing import Optional, List
 
 from Frontend.analysis_models import AnalysisArgs, StationDays
 from fastapi import APIRouter, HTTPException, Depends
-from Frontend.analysis_runnerBackUp import run_analysis
 
+from bikesim.analysis import run_analysis
 from bikesim.core.models import AnalysisRequest, AnalysisResult
 from bikesim.services.analysis_service import AnalysisService
 from bikesim.api.dependencies import get_analysis_service

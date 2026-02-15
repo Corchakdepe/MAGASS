@@ -34,7 +34,7 @@ export function useSidebarHistory(
       try {
         //  1. Intentar con simulation_info.json
         const infoUrl = `${API_BASE}/results/file/${selectedItem.simfolder}/simulation_info.json`;
-        console.log('🔵 Fetching simulation info from:', infoUrl);
+        console.log(' Fetching simulation info from:', infoUrl);
 
         let response = await fetch(infoUrl);
 

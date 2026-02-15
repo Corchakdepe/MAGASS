@@ -46,7 +46,7 @@ class AnalysisArgs(BaseModel):
 
     use_filter_for_maps: bool = False
     filter_result_filename: Optional[str] = None
-    map_user_name: Optional[str] = None
+    user_name_map: Optional[str] = None
 
 
 class SimulateArgs(BaseModel):

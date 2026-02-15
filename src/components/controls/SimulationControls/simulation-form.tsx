@@ -42,7 +42,7 @@ const DEFAULT_VALUES = {
     stress: 50,
     walkCost: 30,
     delta: 60,
-    stressType: "distance" as StressTypeValue,
+    stressType: "0" as StressTypeValue,
 };
 
 // Memoize the step section to prevent re-renders
@@ -153,7 +153,7 @@ export default function SimulationForm(props: SimulationFormProps) {
             const paramStressType = parameters.stress_type as StressTypeValue;
 
 
-            if (paramStressType && (paramStressType === "0" || paramStressType === "1")) {
+            if (paramStressType && (paramStressType === "0" || paramStressType === "1"  || paramStressType === "2" || paramStressType === "3" )) {
                 props.setStressType(paramStressType);
             } else {
                 props.setStressType(DEFAULT_VALUES.stressType);

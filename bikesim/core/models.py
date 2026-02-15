@@ -218,7 +218,7 @@ class MapMetadata(BaseModel):
     """Metadata for a generated map."""
     id: str
     kind: Literal["density", "circle", "voronoi", "displacement","capacity"]
-    format: Literal["html", "png"]
+    format: Literal["html", "png", "json"]
     name: str
     url: str
     file_path: Optional[str] = None
