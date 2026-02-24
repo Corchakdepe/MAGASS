@@ -2,8 +2,8 @@ from os.path import join
 
 import pandas as pd
 
-from Backend.Auxiliares import auxiliar_ficheros
-from Backend.OperacionesDeltas.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
+from bikesim.auxiliares import auxiliar_ficheros
+from bikesim.utils.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
 from Frontend import Ventana
 import customtkinter as tk
 
@@ -98,7 +98,7 @@ class VentanaGeneradorEstadistico(Ventana):
 
     def realizarGeneracion(self):
 
-        rutaDeltas = auxiliar_ficheros.buscar_archivosEntrada(self.directorioEntrada, ['deltas','Extraccion'])
+        rutaDeltas = auxiliar_ficheros.buscar_archivosEntrada(self.directorioEntrada, ['deltas', 'Extraccion'])
         deltaActual = self.texbox_delta.get("0.0", "end-1c")
         matrizDeltas = pd.read_csv(rutaDeltas[0])
         diasSimular = self.texbox_dias.get("0.0", "end-1c")

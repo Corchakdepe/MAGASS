@@ -1,12 +1,10 @@
-import math
-
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-import Backend.Constantes as Constantes
-from Backend.Auxiliares import auxiliaresCalculos
-from Backend.EstructurasDatos.BiciTransition import BiciTransition
-from Backend.EstructurasDatos.data_matrix import Data_matrix, Desplazamientos_matrix
+import bikesim.Constantes as Constantes
+from bikesim.auxiliares import auxiliaresCalculos
+from bikesim.dataStructure.BiciTransition import BiciTransition
+from bikesim.dataStructure.data_matrix import Data_matrix, Desplazamientos_matrix
 
 
 
@@ -206,7 +204,7 @@ class bike_simulator5:
                     # Calculamos la estación mas cerca disponible y obtenemos la información relacionada.
                     nearest_station, distance, available_spots_or_bikes \
                         = self.__get_nearest_station_with_capacity(movement.index,
-                                                                   tipoPeticion==Constantes.PETICION_DEJAR_BICI,
+                                                                   tipoPeticion == Constantes.PETICION_DEJAR_BICI,
                                                                    solution,
                                                                    occupation,
                                                                    estacionFinal,
@@ -215,7 +213,7 @@ class bike_simulator5:
 
                     asignadas = min(amount_to_move, available_spots_or_bikes)  # Variable con los movimientos a realizar
                     cost = distance * asignadas
-                    if tipoPeticion==Constantes.PETICION_SOLICITAR_BICI:  # Si lo que quieres es dejar la bici, recorreras los kms en la bici, si lo que quieres es
+                    if tipoPeticion== Constantes.PETICION_SOLICITAR_BICI:  # Si lo que quieres es dejar la bici, recorreras los kms en la bici, si lo que quieres es
                         cost *= Constantes.COSTE_ANDAR
                     amount_to_move -= asignadas  # Restamos los movimientos a realizar
 
@@ -286,7 +284,7 @@ class bike_simulator5:
                     # Calculamos la estación mas cerca disponible y obtenemos la información relacionada.
                     nearest_station, distance, available_spots_or_bikes \
                         = self.__get_nearest_station_with_capacity(movement.index,
-                                                                   tipoPeticion==Constantes.PETICION_DEJAR_BICI,
+                                                                   tipoPeticion == Constantes.PETICION_DEJAR_BICI,
                                                                    solution,
                                                                    occupation,
                                                                    estacionFinal,
@@ -297,7 +295,7 @@ class bike_simulator5:
                     asignadas = min(amount_to_move, available_spots_or_bikes)  # Variable con los movimientos a realizar
                     cost = distance * asignadas
 
-                    if tipoPeticion==Constantes.PETICION_SOLICITAR_BICI:  # Si lo que quieres es dejar la bici, recorreras los kms en la bici, si lo que quieres es
+                    if tipoPeticion== Constantes.PETICION_SOLICITAR_BICI:  # Si lo que quieres es dejar la bici, recorreras los kms en la bici, si lo que quieres es
                         cost *= Constantes.COSTE_ANDAR
 
                     amount_to_move -= asignadas  # Restamos los movimientos a realizar
@@ -314,7 +312,7 @@ class bike_simulator5:
                             nPeticionesNoResueltas = abs(movement.amount)
                         primeraIteracion = False
 
-                    matrices[Constantes.DESPLAZAMIENTOS].add_row([movement.index, nearest_station, tipoPeticion, movement.time, abs(asignadas),movement.real])
+                    matrices[Constantes.DESPLAZAMIENTOS].add_row([movement.index, nearest_station, tipoPeticion, movement.time, abs(asignadas), movement.real])
 
                     if tipoPeticion == Constantes.PETICION_DEJAR_BICI:  # Si la acción es dejar la bicicleta, aumentamos las bicis de la ocupacion de la estación.
                         occupation[nearest_station] += asignadas

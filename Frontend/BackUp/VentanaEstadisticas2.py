@@ -1,10 +1,8 @@
+from bikesim import Constantes
+from bikesim.auxiliares import auxiliaresCalculos
+from bikesim.utils import Agrupador
 
-
-from Backend import Constantes
-from Backend.Auxiliares import auxiliaresCalculos
-from Backend.Manipuladores import Agrupador
-
-from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
+from bikesim.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
 from Frontend import Ventana
 import customtkinter as tk
 import tkinter as tt

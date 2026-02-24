@@ -10,8 +10,8 @@ from fastapi.responses import FileResponse
 import pandas as pd
 import numpy as np
 
-from Backend import Constantes
-from Backend.Representacion.ManejadorMapas import manejar_mapaCapacidades
+from bikesim import Constantes
+from bikesim.Representacion.ManejadorMapas import manejar_mapaCapacidades
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

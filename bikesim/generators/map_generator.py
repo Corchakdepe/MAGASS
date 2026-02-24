@@ -12,10 +12,10 @@ from datetime import datetime
 from bikesim.generators.displacement_generator import DisplacementGenerator
 from bikesim.core.models import MapMetadata, AnalysisArgs
 from bikesim.utils.parsers import parse_map_spec, parse_video_spec
-from Backend.Representacion.Mapas.MapaDensidad import MapaDensidad2
-from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
-from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
-from Backend.Representacion.ManejadorMapas.manejar_mapaCapacidades import manejar_mapaCapacidades
+from bikesim.Representacion.Mapas.MapaDensidad import MapaDensidad2
+from bikesim.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
+from bikesim.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
+from bikesim.Representacion.ManejadorMapas.manejar_mapaCapacidades import manejar_mapaCapacidades
 
 logger = logging.getLogger(__name__)
 

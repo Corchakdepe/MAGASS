@@ -11,5 +11,5 @@ export type StationPickPayload = {
   data?: number | null
 };
 
-export type PanelMode = "none" | "maps" | "graphs";
+export type PanelMode = "none" | "maps" | "graphs" | "statisticsAnalyzer" | "dirComparison";
 

@@ -1,17 +1,13 @@
 """Simulation management API routes."""
 
 import logging
-import os
-from Frontend.simulation_runner import run_simulation
-from Frontend.analysis_models import SimulateArgs
+from bikesim.analysis.simulation_runner import run_simulation
+from bikesim.analysis.analysis_models import SimulateArgs
 from datetime import datetime
-import shutil
 from fastapi import UploadFile, File, Path
-import os
 import pandas as pd
-from fastapi.responses import HTMLResponse
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import Query, Depends
 from pathlib import Path as Pathlib
 from bikesim.core.models import SimulationMetadata, SimulationHistory
 from bikesim.core.exceptions import SimulationNotFoundError
@@ -19,6 +15,16 @@ from bikesim.services.simulation_service import SimulationService
 from bikesim.api.dependencies import get_simulation_service
 from bikesim.utils.file_utils import get_latest_simulation_folder, create_simulation_folder
 from bikesim.utils.historymanagement import enrich_history_with_station_info, load_history
+
+
+from fastapi import APIRouter
+from datetime import datetime
+import logging
+
+from bikesim.analysis.directory_ops import run_restar_directorios
+from bikesim.utils.file_utils import create_simulation_folder
+
+
 
 from fastapi import APIRouter, HTTPException
 import os
@@ -554,4 +560,237 @@ async def delete_simulation(
         raise HTTPException(
             status_code=500,
             detail="Internal server error while deleting simulation"
+        )
+
+
+@router.post("/exe/restar-directorios")
+async def exe_restar_directorios_endpoint(request: dict):
+    """
+    Subtract two simulation directories and create a new simulation folder with results.
+
+    Expected request body:
+    {
+        "folder1": "20260215_130350_sim_ST0_S0.00_WC0.00_D15",
+        "folder2": "20260216_141346_sim_ST0_S50.00_WC50.00_D15",
+        "simname": "optional_custom_name"  # Optional
+    }
+    """
+    try:
+        # Extract parameters
+        folder1_name = request.get("folder1")
+        folder2_name = request.get("folder2")
+        custom_simname = request.get("simname")
+
+        if not folder1_name or not folder2_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Both folder1 and folder2 are required"
+            )
+
+        # Define results directory
+        results_dir = PathLib("./results").resolve()
+
+        # Build full paths
+        folder1_path = results_dir / folder1_name
+        folder2_path = results_dir / folder2_name
+
+        # Security check
+        for path in [folder1_path, folder2_path]:
+            if not str(path.resolve()).startswith(str(results_dir)):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid path - attempted directory traversal"
+                )
+
+        # Verify folders exist
+        if not folder1_path.exists() or not folder1_path.is_dir():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Simulation folder '{folder1_name}' not found"
+            )
+
+        if not folder2_path.exists() or not folder2_path.is_dir():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Simulation folder '{folder2_name}' not found"
+            )
+
+        # Check city compatibility using simulation_info.json
+        import json
+
+        def get_city_from_info(folder_path):
+            info_file = folder_path / "simulation_info.json"
+            if not info_file.exists():
+                return None
+            try:
+                with open(info_file, 'r') as f:
+                    info = json.load(f)
+                    return info.get('CITY')
+            except:
+                return None
+
+        city1 = get_city_from_info(folder1_path)
+        city2 = get_city_from_info(folder2_path)
+
+        # If both have city info, verify they're the same
+        if city1 and city2 and city1 != city2:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot subtract simulations from different cities: '{city1}' and '{city2}'"
+            )
+
+        # Extract parameters from folder names for the new folder
+        # Format: YYYYMMDD_HHMMSS_sim_ST{stress_type}_S{stress}_WC{walk_cost}_D{delta}
+        import re
+        pattern = r'.*_sim_ST(\d+)_S([\d.]+)_WC([\d.]+)_D(\d+).*'
+        match1 = re.search(pattern, folder1_name)
+        match2 = re.search(pattern, folder2_name)
+
+        # Default values if pattern doesn't match
+        stress_type = 0
+        stress = 0.0
+        walk_cost = 0.0
+        delta = 15
+
+        if match1:
+            stress_type = int(match1.group(1))
+            stress = float(match1.group(2))
+            walk_cost = float(match1.group(3))
+            delta = int(match1.group(4))
+
+        # Create simulation name
+        if custom_simname:
+            simname = custom_simname
+        else:
+            simname = f"RESTA_{folder1_name}_minus_{folder2_name}"
+
+        # Create output folder using the simulation folder creation process
+        output_folder = create_simulation_folder(
+            stress_type=stress_type,
+            stress=stress,
+            walk_cost=walk_cost,
+            delta=delta,
+            simname=simname,
+        )
+
+        ruta_salida = str(output_folder)
+        logger.info(f"Created output folder for subtraction: {ruta_salida}")
+
+        # Call the run_restar_directorios function
+        run_restar_directorios(
+            ruta_directorio1=str(folder1_path),
+            ruta_directorio2=str(folder2_path),
+            ruta_directorio_salida=ruta_salida,
+        )
+
+        # Copy MapaCapacidades.html from folder1 to output folder
+        mapa_source = folder1_path / "MapaCapacidades.html"
+        if mapa_source.exists():
+            mapa_target = output_folder / "MapaCapacidades.html"
+            shutil.copy2(mapa_source, mapa_target)
+            logger.info(f"Copied MapaCapacidades.html from {folder1_name}")
+        else:
+            logger.warning(f"MapaCapacidades.html not found in {folder1_name}")
+
+        # Copy simulation_info.json from folder1 to output folder and update it
+        info_source = folder1_path / "simulation_info.json"
+        if info_source.exists():
+            try:
+                with open(info_source, 'r') as f:
+                    info_data = json.load(f)
+
+                # Update the simulation ID to the new folder
+                info_data["SIMULATION_ID"] = output_folder.name
+                info_data["GENERATED_AT"] = datetime.now().isoformat()
+                info_data["SUBTRACTION_INFO"] = {
+                    "folder1": folder1_name,
+                    "folder2": folder2_name,
+                    "type": "subtraction"
+                }
+
+                info_target = output_folder / "simulation_info.json"
+                with open(info_target, 'w') as f:
+                    json.dump(info_data, f, indent=2)
+
+                logger.info(f"Created simulation_info.json for subtraction result")
+            except Exception as e:
+                logger.warning(f"Could not process simulation_info.json: {e}")
+
+        # Count created files
+        created_files = list(output_folder.glob("*"))
+
+        return {
+            "ok": True,
+            "output_folder": output_folder.name,
+            "output_path": ruta_salida,
+            "files_created": len(created_files),
+            "message": f"Successfully subtracted {folder1_name} - {folder2_name}"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in subtraction: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error subtracting directories: {str(e)}"
+        )
+
+
+@router.get("/exe/list-available-simulations")
+async def get_available_simulations():
+    """List all available simulation folders for subtraction"""
+    try:
+        results_dir = PathLib("./results").resolve()
+        logger.info(f"Looking for simulations in: {results_dir}")
+
+        if not results_dir.exists():
+            logger.warning(f"Results directory does not exist: {results_dir}")
+            return {"simulations": [], "total": 0}
+
+        # Get all directories that look like simulation folders
+        folders = []
+        for item in results_dir.iterdir():
+            logger.debug(f"Checking item: {item.name}")
+            if item.is_dir() and "_sim_" in item.name:
+                logger.info(f"Found simulation folder: {item.name}")
+
+                # Try to extract timestamp
+                timestamp = item.name[:15] if len(item.name) >= 15 else "unknown"
+
+                # Try to get city from simulation_info.json
+                city = "Unknown"
+                info_file = item / "simulation_info.json"
+                if info_file.exists():
+                    try:
+                        import json
+                        with open(info_file, 'r') as f:
+                            info = json.load(f)
+                            city = info.get('CITY', 'Unknown')
+                            logger.debug(f"Found city {city} for {item.name}")
+                    except Exception as e:
+                        logger.debug(f"Error reading info.json for {item.name}: {e}")
+
+                folders.append({
+                    "name": item.name,
+                    "path": str(item),
+                    "timestamp": timestamp,
+                    "city": city,
+                    "display_name": f"{item.name} ({city})"
+                })
+
+        # Sort by timestamp (newest first)
+        folders.sort(key=lambda x: x["timestamp"], reverse=True)
+
+        logger.info(f"Returning {len(folders)} simulations")
+        return {
+            "simulations": folders,
+            "total": len(folders)
+        }
+
+    except Exception as e:
+        logger.error(f"Error listing simulations: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error listing simulations: {str(e)}"
         )

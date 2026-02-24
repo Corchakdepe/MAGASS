@@ -1,6 +1,6 @@
 from tkinter import Menu
 
-from Backend import Constantes
+from bikesim import Constantes
 
 from Frontend import Ventana
 import customtkinter as tk

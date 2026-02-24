@@ -34,7 +34,11 @@ app.include_router(api_router)  # Add this line
 
 @app.get("/")
 async def root():
-    """API information and available endpoints"""
+    """API information and available endpoints
+
+
+
+    """
     return {
         "name": "BikeSim API",
         "version": "1.0",

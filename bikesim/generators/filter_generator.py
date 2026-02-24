@@ -1,14 +1,13 @@
 """Filter result generation service."""
 
 import logging
-from pathlib import Path
 from typing import List
 import pandas as pd
 
 from bikesim.core.models import FilterResult, AnalysisArgs
 from bikesim.services.filter_service import FilterService
 from bikesim.utils.parsers import parse_days_list
-from Backend.Auxiliares import auxiliar_ficheros
+from bikesim.auxiliares import auxiliar_ficheros
 
 logger = logging.getLogger(__name__)
 

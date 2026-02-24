@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 import operator
 import os
 import json
@@ -13,17 +12,13 @@ import pandas as pd
 from matplotlib.pyplot import clf
 from pydantic import BaseModel
 
-from Backend import Constantes
-from Backend.Auxiliares import auxiliar_ficheros, Extractor, auxiliaresCalculos
-from Backend.GuardarCargarDatos import GuardarCargarMatrices
-from Backend.OperacionesDeltas.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
-from Backend.Manipuladores import Agrupador
-from Backend.Manipuladores.Filtrador import Filtrador
-from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
-from Backend.Representacion.Mapas.MapaDensidad import MapaDensidad2
-from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
-from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
-from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
+from bikesim import Constantes
+from bikesim.auxiliares import Extractor, auxiliar_ficheros, auxiliaresCalculos
+from bikesim.utils import GuardarCargarMatrices, Agrupador
+from bikesim.utils.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
+from bikesim.utils.Filtrador import Filtrador
+from bikesim.Representacion.Mapas.MapaDensidad import MapaDensidad2
+from bikesim.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
 from bike_simulator5 import bike_simulator5
 
 

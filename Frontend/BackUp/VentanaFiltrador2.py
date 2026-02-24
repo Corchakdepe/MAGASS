@@ -1,11 +1,10 @@
 import math
 import operator
 
-
-from Backend import Constantes
-from Backend.Auxiliares import auxiliaresCalculos
-from Backend.Manipuladores import Agrupador
-from Backend.Manipuladores.Filtrador import Filtrador
+from bikesim import Constantes
+from bikesim.auxiliares import auxiliaresCalculos
+from bikesim.utils import Agrupador
+from bikesim.utils.Filtrador import Filtrador
 
 from Frontend import Ventana
 import customtkinter as tk

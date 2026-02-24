@@ -2,11 +2,10 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 import pandas as pd
 from bikesim.generators.filter_generator import FilterGenerator
 from bikesim.core.models import AnalysisArgs, AnalysisResult, StationDaySpec
-from bikesim.core.exceptions import DataLoadError, InvalidDeltaTransformationError
 from bikesim.repositories.matrix_repository import MatrixRepository
 from bikesim.services.filter_service import FilterService
 from bikesim.generators.chart_generator import ChartGenerator
@@ -14,9 +13,9 @@ from bikesim.generators.map_generator import MapGenerator
 from bikesim.config.settings import AppConfig
 from bikesim.config.constants import HOURS_PER_DAY
 
-from Backend import Constantes
-from Backend.Manipuladores import Agrupador
-from Backend.Auxiliares import auxiliaresCalculos
+from bikesim import Constantes
+from bikesim.utils import Agrupador
+from bikesim.auxiliares import auxiliaresCalculos
 
 logger = logging.getLogger(__name__)
 
@@ -224,7 +223,7 @@ class AnalysisService:
 
     def _save_desired_matrix(self, matrix: pd.DataFrame, output_folder: str) -> None:
         """Save the desired matrix to output folder."""
-        from Backend.Auxiliares import auxiliar_ficheros
+        from bikesim.auxiliares import auxiliar_ficheros
 
         filename = auxiliar_ficheros.formatoArchivo("ficheroMatrizDeseada", "csv")
         file_path = Path(output_folder) / filename

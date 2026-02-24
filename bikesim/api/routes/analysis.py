@@ -4,13 +4,11 @@ import logging
 from pathlib import Path
 from typing import Optional, List
 
-from Frontend.analysis_models import AnalysisArgs, StationDays
-from fastapi import APIRouter, HTTPException, Depends
+from bikesim.analysis.analysis_models import AnalysisArgs, StationDays
+from fastapi import APIRouter, HTTPException
 
 from bikesim.analysis import run_analysis
-from bikesim.core.models import AnalysisRequest, AnalysisResult
-from bikesim.services.analysis_service import AnalysisService
-from bikesim.api.dependencies import get_analysis_service
+from bikesim.core.models import AnalysisRequest
 from bikesim.utils.filterutilities import _find_last_filter_file, _load_stations_from_file
 
 logger = logging.getLogger(__name__)
@@ -19,7 +17,9 @@ router = APIRouter()
 
 @router.post("/exe/analizar-json")
 async def analizar(req: AnalysisRequest):
-    """Executes analysis with optional filtering for maps/graphs"""
+    """Executes analysis with optional filtering for maps/graphs
+
+    """
     try:
         # === FILTER FOR MAPS ===
         if req.use_filter_for_maps:

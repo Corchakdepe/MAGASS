@@ -5,24 +5,23 @@ import os
 import shutil
 from pathlib import Path
 import json
-from fastapi import FastAPI, HTTPException
+from fastapi import HTTPException
 from os.path import join
 from typing import Optional, List, Union
 import numpy as np
 import pandas
 import pandas as pd
 from pydantic import BaseModel
-from Backend import Constantes
-from Backend.Auxiliares import auxiliar_ficheros, Extractor, auxiliaresCalculos
-from Backend.GuardarCargarDatos import GuardarCargarMatrices
-from Backend.OperacionesDeltas.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
-from Backend.Manipuladores import Agrupador
-from Backend.Manipuladores.Filtrador import Filtrador
-from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
-from Backend.Representacion.Mapas.MapaDensidad import MapaDensidad2
-from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
-from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
-from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
+from bikesim import Constantes
+from bikesim.auxiliares import Extractor, auxiliar_ficheros, auxiliaresCalculos
+from bikesim.utils import GuardarCargarMatrices, Agrupador
+from bikesim.utils.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
+from bikesim.utils.Filtrador import Filtrador
+from bikesim.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
+from bikesim.Representacion.Mapas.MapaDensidad import MapaDensidad2
+from bikesim.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
+from bikesim.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
+from bikesim.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
 from bike_simulator5 import bike_simulator5
 
 

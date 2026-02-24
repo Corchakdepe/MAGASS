@@ -2,9 +2,9 @@ from tkinter import messagebox
 
 import wx
 
-from Backend import Constantes
-from Backend.Manipuladores import Agrupador
-from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
+from bikesim import Constantes
+from bikesim.utils import Agrupador
+from bikesim.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
 from Frontend import Ventana
 import customtkinter as tk
 
@@ -130,7 +130,7 @@ class VentanaDesplazamientos(Ventana):
                                                                                                                  'end-1c') == "":
                 aux_deltaInicial = int(self.textbox_deltasActuales.get("0.0", 'end-1c'))
                 aux_deltaFinal = int(self.textbox_deltasTransformar.get("0.0", 'end-1c'))
-                matrizDeseada = Agrupador.colapsarDesplazamientos(matrizDeseada,aux_deltaInicial,aux_deltaFinal)
+                matrizDeseada = Agrupador.colapsarDesplazamientos(matrizDeseada, aux_deltaInicial, aux_deltaFinal)
 
             instante =0
             if not self.instanteRepresentar.get("0.0", 'end-1c') == "":
@@ -142,7 +142,7 @@ class VentanaDesplazamientos(Ventana):
             else:
                 tipo = -1
 
-            md = Manejar_Desplazamientos(matrizDeseada,Constantes.COORDENADAS,accion=tipo,tipo=self.check_tipo_peticion.get())
+            md = Manejar_Desplazamientos(matrizDeseada, Constantes.COORDENADAS, accion=tipo, tipo=self.check_tipo_peticion.get())
             #md.cargarMapaInstante(instante)
             app = wx.App()
             frame = MyFrame(None, md,instante)

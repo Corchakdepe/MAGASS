@@ -5,17 +5,16 @@ from os.path import join
 import numpy as np
 import pandas as pd
 from matplotlib.pyplot import clf
-from Backend import Constantes
-from Backend.Auxiliares import auxiliar_ficheros, Extractor, auxiliaresCalculos
-from Backend.GuardarCargarDatos import GuardarCargarMatrices
-from Backend.OperacionesDeltas.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
-from Backend.Manipuladores import Agrupador
-from Backend.Manipuladores.Filtrador import Filtrador
-from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
-from Backend.Representacion.Mapas.MapaDensidad import MapaDensidad2
-from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
-from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
-from Backend.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
+from bikesim import Constantes
+from bikesim.auxiliares import Extractor, auxiliar_ficheros, auxiliaresCalculos
+from bikesim.utils import GuardarCargarMatrices, Agrupador
+from bikesim.utils.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico
+from bikesim.utils.Filtrador import Filtrador
+from bikesim.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
+from bikesim.Representacion.Mapas.MapaDensidad import MapaDensidad2
+from bikesim.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
+from bikesim.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
+from bikesim.estadisticasOcupacionHorarias import estadisticasOcupacionHorarias
 from bike_simulator5 import bike_simulator5
 
 
@@ -55,10 +54,10 @@ def simularCMD(comando: [str]):
     if stress > 0:
 
         ficheroDelta_salidaStress = join(rutaSalida, auxiliar_ficheros.formatoArchivo("Dstress", "csv"))
-        Extractor.extraerStressAplicado(ficheros[0], ficheroDelta_salidaStress, stress, tipoStress=int(tipoStress),listaEstaciones=estaciones_stress)
+        Extractor.extraerStressAplicado(ficheros[0], ficheroDelta_salidaStress, stress, tipoStress=int(tipoStress), listaEstaciones=estaciones_stress)
 
         ficheroTendencias_salidaStress = join(rutaSalida, auxiliar_ficheros.formatoArchivo("Tendencias_stress", "csv"))
-        Extractor.extraerStressAplicado(ficheros[5], ficheroTendencias_salidaStress, stress, tipoStress=int(tipoStress),listaEstaciones=estaciones_stress)
+        Extractor.extraerStressAplicado(ficheros[5], ficheroTendencias_salidaStress, stress, tipoStress=int(tipoStress), listaEstaciones=estaciones_stress)
 
         ficheros[0] = ficheroDelta_salidaStress
         ficheros[5] = ficheroTendencias_salidaStress
@@ -70,7 +69,7 @@ def simularCMD(comando: [str]):
                                                  nearest_stations_idx, nearest_stations_distance)
     resumen = auxiliar_ficheros.hacerResumenMatricesSalida(matricesSalida)
 
-    auxiliar_ficheros.guardarMatricesEnFicheros(matricesSalida, resumen,Constantes.RUTA_SALIDA)
+    auxiliar_ficheros.guardarMatricesEnFicheros(matricesSalida, resumen, Constantes.RUTA_SALIDA)
 
     pd.DataFrame(Constantes.COORDENADAS).to_csv(join(Constantes.RUTA_SALIDA, "coordenadas" + ".csv"), index=False)
     archivoCapacidad = auxiliar_ficheros.buscar_archivosEntrada(rutaEntrada, ["capacidades"])[0]
@@ -292,7 +291,8 @@ def analizarCMD(comando: [str]):
         mapa.cargarDatos(matrizDeseada, lista_estaciones=estaciones)
         nombre = auxiliar_ficheros.formatoArchivo(
             "video_densidad" + str(momentoInicio) + "__" + str(momentoFinal) + "_" + texto_estaciones, "mp4")
-        print("Generar video con " + str(momentoInicio)+ " " + str(momentoFinal) + " " + str(join(Constantes.RUTA_SALIDA, nombre)))
+        print("Generar video con " + str(momentoInicio) + " " + str(momentoFinal) + " " + str(join(
+            Constantes.RUTA_SALIDA, nombre)))
         mapa.realizarVideoHeatmap(momentoInicio, momentoFinal, rutaSalida=join(Constantes.RUTA_SALIDA, nombre))
 
     if mapa_voronoi != Constantes.CARACTER_NULO_CMD:
@@ -331,11 +331,11 @@ def analizarCMD(comando: [str]):
         deltaOrigen = int(arrayOpciones[1])
         deltaTransformacion = int(arrayOpciones[2])
         if deltaOrigen < deltaTransformacion:
-            matrizDeseada = Agrupador.colapsarDesplazamientos(matrizDeseada,deltaOrigen,deltaTransformacion)
+            matrizDeseada = Agrupador.colapsarDesplazamientos(matrizDeseada, deltaOrigen, deltaTransformacion)
 
 
 
-        md = Manejar_Desplazamientos(matrizDeseada,Constantes.COORDENADAS,accion=int(arrayOpciones[3]),tipo=int(arrayOpciones[4]))
+        md = Manejar_Desplazamientos(matrizDeseada, Constantes.COORDENADAS, accion=int(arrayOpciones[3]), tipo=int(arrayOpciones[4]))
         md.cargarMapaInstante(int(arrayOpciones[0]))
         nombrePNG = auxiliar_ficheros.formatoArchivo("MapaDensidad_instante" + str((arrayOpciones[0])), "png")
         md.realizarFoto(join(Constantes.RUTA_SALIDA, nombrePNG))

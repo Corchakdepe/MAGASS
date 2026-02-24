@@ -1,6 +1,6 @@
 from tkinter import Menu
 
-from Backend import Constantes
+from bikesim import Constantes
 from Frontend import Ventana
 import customtkinter as tk
 
@@ -33,16 +33,22 @@ class VentanaMenu(Ventana):
     def __ResumenEjecucion(self,ventana):
 
         cadena = "Summary of execution\n" \
-            "Kilometers to pick a bicycle : " + str(self.soluciones[Constantes.KMS_COGER_BICI])+"\n" \
-            "Kilometers to drop a bicycle : " + str(self.soluciones[Constantes.KMS_DEJAR_BICI])+"\n" \
-            "Unreal kilometers to pick a bicycle : " + str(self.soluciones[Constantes.KMS_FICTICIOS_COGER])+"\n" \
+            "Kilometers to pick a bicycle : " + str(self.soluciones[Constantes.KMS_COGER_BICI]) + "\n" \
+            "Kilometers to drop a bicycle : " + str(self.soluciones[Constantes.KMS_DEJAR_BICI]) + "\n" \
+            "Unreal kilometers to pick a bicycle : " + str(self.soluciones[Constantes.KMS_FICTICIOS_COGER]) + "\n" \
             "Unreal kilometers to drop a bicycle : " + str(self.soluciones[Constantes.KMS_FICTICIOS_DEJAR]) + "\n" \
-            "Solved Petitions to pick a bicycle : " + str(self.soluciones[Constantes.PETICIONES_RESUELTAS_COGER_BICI]) + "\n" \
-            "Solved Petitions to drop a bicycle : " + str(self.soluciones[Constantes.PETICIONES_RESUELTAS_SOLTAR_BICI])+ "\n" \
-            "Not solved Petitions to pick a bicycle : " + str(self.soluciones[Constantes.PETICIONES_NORESUELTAS_COGER_BICI] )+ "\n" \
-            "Not solved Petitions to drop a bicycle : " + str(self.soluciones[Constantes.PETICIONES_NORESUELTAS_SOLTAR_BICI]) + "\n" \
-            "Not solved unreal petitions to pick a bicycle : " + str(self.soluciones[Constantes.PETICIONES_NORESUELTAS_FICTICIAS_COGER_BICI]) + "\n" \
-            "Not solved unreal petitions to drop a bicycle : " + str(self.soluciones[Constantes.PETICIONES_NORESUELTAS_FICTICIAS_DEJAR_BICI]) + "\n"
+            "Solved Petitions to pick a bicycle : " + str(self.soluciones[
+                                                              Constantes.PETICIONES_RESUELTAS_COGER_BICI]) + "\n" \
+            "Solved Petitions to drop a bicycle : " + str(self.soluciones[
+                                                              Constantes.PETICIONES_RESUELTAS_SOLTAR_BICI]) + "\n" \
+            "Not solved Petitions to pick a bicycle : " + str(self.soluciones[
+                                                                  Constantes.PETICIONES_NORESUELTAS_COGER_BICI]) + "\n" \
+            "Not solved Petitions to drop a bicycle : " + str(self.soluciones[
+                                                                  Constantes.PETICIONES_NORESUELTAS_SOLTAR_BICI]) + "\n" \
+            "Not solved unreal petitions to pick a bicycle : " + str(self.soluciones[
+                                                                         Constantes.PETICIONES_NORESUELTAS_FICTICIAS_COGER_BICI]) + "\n" \
+            "Not solved unreal petitions to drop a bicycle : " + str(self.soluciones[
+                                                                         Constantes.PETICIONES_NORESUELTAS_FICTICIAS_DEJAR_BICI]) + "\n"
         texto = tk.CTkLabel(
         master = ventana,
         text = cadena,

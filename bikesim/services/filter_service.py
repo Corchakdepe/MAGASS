@@ -5,11 +5,9 @@ from pathlib import Path
 from typing import List, Optional
 import pandas as pd
 
-from bikesim.core.models import FilterSpec, EstValorDiasFilter, HorasFilter
-from bikesim.core.exceptions import InvalidFilterSpecError
 from bikesim.repositories.result_repository import ResultRepository
 from bikesim.utils.parsers import parse_operator
-from Backend.Manipuladores.Filtrador import Filtrador
+from bikesim.utils.Filtrador import Filtrador
 
 logger = logging.getLogger(__name__)
 

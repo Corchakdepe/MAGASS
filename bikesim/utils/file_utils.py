@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 
-from Backend import Constantes
+from bikesim import Constantes
 from bikesim.config.settings import RESULTS_BASE_FOLDER
 from bikesim.utils.historymanagement import append_simulation_metadata
 

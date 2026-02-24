@@ -1,12 +1,12 @@
 
 import wx
 
-from Backend import Constantes
-from Backend.Auxiliares import auxiliaresCalculos
-from Backend.Manipuladores import Agrupador
-from Backend.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
-from Backend.Representacion.ManejadorMapas.manejar_densidad import Manejar_Densidad
-from Backend.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
+from bikesim import Constantes
+from bikesim.auxiliares import auxiliaresCalculos
+from bikesim.utils import Agrupador
+from bikesim.Representacion.ManejadorMapas.manejar_Voronoi import manejar_Voronoi
+from bikesim.Representacion.ManejadorMapas.manejar_densidad import Manejar_Densidad
+from bikesim.Representacion.ManejadorMapas.manejar_mapaCirculos import manejar_mapaCirculos
 
 from Frontend import Ventana
 import customtkinter as tk
@@ -273,7 +273,7 @@ class VentanaMapa2(Ventana):
                 aux_deltaInicial = int(self.textbox_deltasActuales.get("0.0", 'end-1c'))
                 aux_deltaFinal = int(self.textbox_deltasTransformar.get("0.0", 'end-1c'))
                 if self.delta_media.get():#Si el usuario quiere agrupar por media:
-                    matrizDeseada=Agrupador.colapsarDeltasMedia(matrizDeseada,aux_deltaInicial,aux_deltaFinal)
+                    matrizDeseada= Agrupador.colapsarDeltasMedia(matrizDeseada, aux_deltaInicial, aux_deltaFinal)
                 else:
                     matrizDeseada = Agrupador.colapsarDeltasAcumulacion(matrizDeseada, aux_deltaInicial, aux_deltaFinal)
                 Constantes.DELTA_TIME = aux_deltaFinal
@@ -287,14 +287,14 @@ class VentanaMapa2(Ventana):
                     listaEstaciones = list(map(int, cadenaSinParsear.split(",")))
 
                 if self.combobox.get() == "Density Map":
-                    man_vor = Manejar_Densidad(matrizDeseada, Constantes.COORDENADAS,listaEstaciones=listaEstaciones)
+                    man_vor = Manejar_Densidad(matrizDeseada, Constantes.COORDENADAS, listaEstaciones=listaEstaciones)
                     app = wx.App()
                     frame = MyFrame(None, man_vor)
                     app.MainLoop()
                 else:
                     if self.combobox.get() == "Voronoi Map":
 
-                        man_vor = manejar_Voronoi(matrizDeseada, Constantes.COORDENADAS,escalaPositivos=self.combobox_positivos.get(),escalaNegativos=self.combobox_negativos.get())
+                        man_vor = manejar_Voronoi(matrizDeseada, Constantes.COORDENADAS, escalaPositivos=self.combobox_positivos.get(), escalaNegativos=self.combobox_negativos.get())
                         app = wx.App()
                         frame = MyFrame(None, man_vor)
                         app.MainLoop()

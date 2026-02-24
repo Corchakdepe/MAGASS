@@ -1,7 +1,7 @@
 import csv
 
-from Backend import Constantes
-from Frontend import EjecutadorCMD
+from bikesim import Constantes
+from bikesim.analysis import EjecutadorCMD
 
 
 class EjecutadorExcel:

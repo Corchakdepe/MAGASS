@@ -11,8 +11,8 @@ from bikesim.analysis.matrix_manager import MatrixManager
 from bikesim.analysis.chart_manager import ChartManager
 from bikesim.analysis.map_manager import MapManager
 from bikesim.analysis.filter_manager import FilterManager
-from Backend import Constantes
-from Backend.GuardarCargarDatos import GuardarCargarMatrices
+from bikesim import Constantes
+from bikesim.utils import GuardarCargarMatrices
 
 logger = logging.getLogger(__name__)
 

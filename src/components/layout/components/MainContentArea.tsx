@@ -211,7 +211,7 @@ export function MainContentArea({
                     {summaryData ? (
                         <SummaryPanel summary={summaryData}
                                       runId={effectiveRunId}
-                                         loading={false}/>
+                                      loading={false}/>
                     ) : (
                         <div className="flex h-full w-full items-center justify-center">
                             <div className="text-center p-6">
@@ -228,9 +228,11 @@ export function MainContentArea({
                 </>
             )}
 
-            {(mode === "analyticsGraphs" ||
+            {(  mode === "analyticsGraphs" ||
                 mode === "analyticsMaps" ||
-                mode === "maps") && (
+                mode === "maps" ||
+                mode === "statisticsAnalyzer" ||
+                mode === "dirComparison") && (
                 <VisualizationsPanel
                     mode={mode}
                     apiBase={API_BASE}
@@ -245,6 +247,7 @@ export function MainContentArea({
 
             {mode === "filters" && <FiltersPanel runId={effectiveRunId}/>}
 
+
             {mode === "dashboard" && (
                 <DashboardPanel
                     runId={effectiveRunId}
@@ -252,6 +255,8 @@ export function MainContentArea({
                     simulationContext={simulationContext}
                 />
             )}
+
+
         </div>
     );
 }

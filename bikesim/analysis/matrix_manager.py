@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Dict
 import pandas as pd
 
-from Backend import Constantes
-from Backend.Manipuladores import Agrupador
-from Backend.Auxiliares import auxiliaresCalculos
+from bikesim import Constantes
+from bikesim.utils import Agrupador
+from bikesim.auxiliares import auxiliaresCalculos
 
 logger = logging.getLogger(__name__)
 

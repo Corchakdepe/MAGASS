@@ -1,5 +1,5 @@
-from Backend import Constantes
-from Backend.GuardarCargarDatos import GuardarCargarMatrices
+from bikesim import Constantes
+from bikesim.utils import GuardarCargarMatrices
 from Frontend import Ventana
 import customtkinter as tk
 

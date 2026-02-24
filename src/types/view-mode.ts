@@ -5,4 +5,6 @@ export type MainContentMode =
     | 'analyticsMaps'
     | 'history'
     | 'maps'
-    | 'filters';
+    | 'filters'
+    | 'statisticsAnalyzer'
+    | 'dirComparison';

@@ -11,10 +11,10 @@ import glob
 from bikesim.core.models import MapMetadata
 from bikesim.core.exceptions import MapGenerationError, DataLoadError
 from bikesim.utils.parsers import parse_displacement_spec
-from Backend.Manipuladores import Agrupador
-from Backend.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
-from Backend.Auxiliares import auxiliar_ficheros
-from Backend import Constantes
+from bikesim.utils import Agrupador
+from bikesim.Representacion.ManejadorMapas.Manejar_Desplazamientos import Manejar_Desplazamientos
+from bikesim.auxiliares import auxiliar_ficheros
+from bikesim import Constantes
 
 logger = logging.getLogger(__name__)
 

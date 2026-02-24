@@ -3,7 +3,7 @@ import os
 import wx
 import wx.html2 as html2
 
-from Backend.Representacion.Interfaz_Representacion import Interfaz_Representacion
+from bikesim.Representacion.Interfaz_Representacion import Interfaz_Representacion
 
 
 class MyFrame(wx.Frame):

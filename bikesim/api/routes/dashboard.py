@@ -4,8 +4,8 @@ from datetime import datetime
 from http.client import HTTPException
 from fastapi import APIRouter, Query
 from pathlib import Path
-from Frontend.analysis_models import AnalysisArgs
-from Frontend.simulation_runner import _try_geocode_xyz
+from bikesim.analysis.analysis_models import AnalysisArgs
+from bikesim.analysis.simulation_runner import _try_geocode_xyz
 from bikesim.analysis import run_analysis
 from bikesim.api.routes.simulations import logger
 from bikesim.core.models import AnalysisRequest

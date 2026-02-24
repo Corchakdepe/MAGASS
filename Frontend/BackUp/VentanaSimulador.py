@@ -2,9 +2,9 @@ from os.path import join
 
 import pandas as pd
 
-from Backend import Constantes
-from Backend.Auxiliares import auxiliar_ficheros, Extractor
-from Backend.GuardarCargarDatos import GuardarCargarMatrices
+from bikesim import Constantes
+from bikesim.auxiliares import Extractor, auxiliar_ficheros
+from bikesim.utils import GuardarCargarMatrices
 from Frontend import Ventana
 import customtkinter as tk
 from bike_simulator5 import bike_simulator5

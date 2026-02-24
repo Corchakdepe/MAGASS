@@ -4,21 +4,20 @@ import logging
 import hashlib
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 import pandas as pd
 import numpy as np
-from Backend import Constantes
+from bikesim import Constantes
 from bikesim.core.models import ChartMetadata, AnalysisArgs, StationDaySpec
 from bikesim.core.exceptions import ChartGenerationError
 from bikesim.utils.matrix_utils import (
     calculate_mean_by_hour,
-    calculate_sum_by_hour,
     get_hour_indices,
     get_hour_index_list
 )
 from bikesim.utils.parsers import parse_station_days_spec, parse_days_list
 from bikesim.config.constants import HOURS_PER_DAY
-from Backend.Representacion.ChartBuilder import ChartBuilder
+from bikesim.Representacion.ChartBuilder import ChartBuilder
 
 logger = logging.getLogger(__name__)
 
