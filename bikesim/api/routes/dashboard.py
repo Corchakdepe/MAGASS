@@ -2,8 +2,11 @@ import json
 import logging
 from datetime import datetime
 from http.client import HTTPException
+
+import numpy as np
 from fastapi import APIRouter, Query
 from pathlib import Path
+import pandas as pd
 from bikesim.analysis.analysis_models import AnalysisArgs
 from bikesim.analysis.simulation_runner import _try_geocode_xyz
 from bikesim.analysis import run_analysis

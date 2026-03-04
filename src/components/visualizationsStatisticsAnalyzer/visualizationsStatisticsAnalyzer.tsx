@@ -10,7 +10,8 @@ export default function VisualizationStatisticsAnalyzerPanel() {
 
     return (
         <div className="h-screen flex flex-col">
-           hoola
+           hoolaa
+
         </div>
     );
 }

@@ -1253,6 +1253,177 @@
       "numberOfBikes": null,
       "simdata": {},
       "simdataId": "20260224_153446_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "Sevilla",
+      "simfolder": "20260226_105321_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260226_105321_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "Sevilla",
+      "simfolder": "20260226_105358_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260226_105358_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "Sevilla",
+      "simfolder": "20260226_105434_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260226_105434_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "NUEVA",
+      "simfolder": "20260226_110131_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260226_110131_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "new",
+      "simfolder": "20260304_130241_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_130241_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "testet",
+      "simfolder": "20260304_130920_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_130920_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "testet",
+      "simfolder": "20260304_130928_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_130928_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "testet",
+      "simfolder": "20260304_130929_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_130929_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "RESTA_20260304_130241_sim_ST0_S50.00_WC50.00_D15_minus_20260226_105358_sim_ST0_S50.00_WC50.00_D15",
+      "simfolder": "20260304_131009_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_131009_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "RESTA_20260304_130241_sim_ST0_S50.00_WC50.00_D15_minus_20260226_105358_sim_ST0_S50.00_WC50.00_D15",
+      "simfolder": "20260304_131309_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_131309_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "ads",
+      "simfolder": "20260304_131320_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_131320_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "RESTA_20260226_105358_sim_ST0_S50.00_WC50.00_D15_minus_20260226_105321_sim_ST0_S0.00_WC0.00_D15",
+      "simfolder": "20260304_135519_sim_ST0_S50.00_WC50.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_135519_sim_ST0_S50.00_WC50.00_D15"
+    },
+    {
+      "simname": "test",
+      "simfolder": "20260304_135613_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_135613_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "test",
+      "simfolder": "20260304_135725_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_135725_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "test",
+      "simfolder": "20260304_135755_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_135755_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "test",
+      "simfolder": "20260304_135808_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_135808_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "ForRest",
+      "simfolder": "20260304_140025_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_140025_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "6015",
+      "simfolder": "20260304_140109_sim_ST0_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_140109_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "1560",
+      "simfolder": "20260304_140125_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260304_140125_sim_ST0_S0.00_WC0.00_D15"
     }
   ]
 }
