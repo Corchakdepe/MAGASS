@@ -1,7 +1,7 @@
 """API routes package."""
 from fastapi import APIRouter
 from bikesim.api.routes import simulations, analysis, results, filters, dashboard, difDif
-
+from bikesim.api.routes.statistical_generator_routes import router as statistical_router
 # Create main API router
 api_router = APIRouter()
 
@@ -36,3 +36,4 @@ api_router.include_router(
 
 )
 
+api_router.include_router(statistical_router, prefix="", tags=["statistical-generator"])
