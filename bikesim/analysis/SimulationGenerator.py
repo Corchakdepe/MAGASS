@@ -31,3 +31,4 @@ def simuladorEstadistico(comando: [str]):
     nuevoFicheroDeltas.to_csv(join(rutaSalida,nombre), index=False)
 
 
+

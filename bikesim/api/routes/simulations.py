@@ -88,6 +88,7 @@ def exe_simular_json(args: SimulateArgs):
 def exe_simular_json(args: SimulateArgs):
     """Executes bike simulation with given parameters"""
     try:
+
         # Use uploaded folder path if provided
         if not args.ruta_entrada and hasattr(args, 'folderPath') and args.folderPath:
             args.ruta_entrada = args.folderPath
@@ -741,6 +742,7 @@ async def exe_restar_directorios_endpoint(request: dict):
 async def get_available_simulations():
     """List all available simulation folders for subtraction"""
     try:
+
         results_dir = PathLib("./results").resolve()
         logger.info(f"Looking for simulations in: {results_dir}")
 

@@ -34,15 +34,20 @@ export default function AppLayout({children}: AppLayoutProps) {
 
     const [bottomOffset, setBottomOffset] = useState(0);
 
+    // Determine if sidebars should be hidden based on mode
+    const hideLeftSidebar = mode === 'dirComparison' || mode === 'statisticsAnalyzer';
+    const hideRightSidebar = mode === 'dirComparison' || mode === 'statisticsAnalyzer';
+
     return (
         <div className="flex min-h-screen w-full bg-surface-0 text-text-primary overflow-hidden">
             <SidebarProvider defaultOpen>
                 <div className="flex min-h-screen w-full flex-1 overflow-hidden">
-                    {/* Pass mode and setMode to LeftSidebar */}
-                    <LeftSidebar
-                        simulationName={simulationName}
-                        currentRunId={currentRunId}
-                    />
+                    {/* LeftSidebar - conditionally rendered */}
+
+                        <LeftSidebar
+                            simulationName={simulationName}
+                            currentRunId={currentRunId}
+                        />
 
                     <MainContentArea
                         simulationData={simulationData}
@@ -55,8 +60,8 @@ export default function AppLayout({children}: AppLayoutProps) {
                 </div>
             </SidebarProvider>
 
-            {/* Right sidebar - shows either run history OR bottom panel content */}
-            {(showRightSidebar || showBottomPanel) && (
+            {/* Right sidebar - conditionally rendered based on mode AND existing conditions */}
+            {!hideRightSidebar && (showRightSidebar || showBottomPanel) && (
                 <RightSidebar
                     currentRunId={currentRunId}
                     onRunIdChange={setCurrentRunId}

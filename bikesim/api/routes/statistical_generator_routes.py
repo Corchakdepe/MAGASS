@@ -324,3 +324,39 @@ async def get_generator_folder_contents(folder_name: str):
     except Exception as e:
         logger.error(f"Error getting folder contents: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting folder contents: {str(e)}")
+
+
+# In simulation_routes.py or a new downloads_routes.py
+
+from fastapi.responses import StreamingResponse
+import zipfile, io
+
+@router.post("/exe/download-folder-zip")
+async def download_folder_zip(request: dict):
+    folder_path = request.get("folder_path")
+    if not folder_path:
+        raise HTTPException(status_code=400, detail="folder_path required")
+
+    path = Pathlib(folder_path).resolve()
+    base = Pathlib("./uploads").resolve()
+
+    # Security: only allow zipping inside ./uploads
+    if not str(path).startswith(str(base)):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    if not path.exists() or not path.is_dir():
+        raise HTTPException(status_code=404, detail=f"Folder not found: {folder_path}")
+
+    def zip_stream():
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for file in path.rglob("*"):
+                if file.is_file():
+                    zf.write(file, file.relative_to(path))
+        buf.seek(0)
+        yield from buf
+
+    return StreamingResponse(
+        zip_stream(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{path.name}.zip"'},
+    )

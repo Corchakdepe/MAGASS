@@ -35,7 +35,8 @@ class Data_matrix:
             self.add_row(row)
 
     def colapsarEnUTempDelta(self):
-        self.matrix = self.matrix.groupby("UTempDelta", as_index=False).sum()
+        # FIXED: Add numeric_only=True to avoid FutureWarning
+        self.matrix = self.matrix.groupby("UTempDelta", as_index=False).sum(numeric_only=True)
 
 
 class Desplazamientos_matrix:
@@ -69,6 +70,7 @@ class Ocupacion_Horas:
         delta_horas = (60 / Constantes.DELTA_TIME)
 
         matrizOcupacion.index = np.arange(0, len(matrizOcupacion))
-        self.matrix = matrizOcupacion.groupby(matrizOcupacion.index // delta_horas).sum() / (60 / Constantes.DELTA_TIME)
+        # FIXED: Add numeric_only=True here as well
+        self.matrix = matrizOcupacion.groupby(matrizOcupacion.index // delta_horas).sum(numeric_only=True) / (60 / Constantes.DELTA_TIME)
         self.matrix = self.matrix.drop(self.matrix.columns[[0]], axis=1)
         self.matrix.insert(0, 'hora', range(0, len(self.matrix)))
