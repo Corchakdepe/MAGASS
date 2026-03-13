@@ -1,0 +1,29 @@
+{
+  "map_name": null,
+  "matrix_type": "10",
+  "delta_media": null,
+  "generated_at": "2026-03-10T11:55:44.292370",
+  "map_kind": "density",
+  "status": "error",
+  "files": {
+    "html": "20260310_115544_Heatmap_instante0DNoneS0.0C0.0_stations1_2_3_4_5_12_15_16_77.html",
+    "json": "20260310_115544_Heatmap_instante0DNoneS0.0C0.0_stations1_2_3_4_5_12_15_16_77.json",
+    "csv": "20260310_115544_Heatmap_instante0DNoneS0.0C0.0_stations1_2_3_4_5_12_15_16_77.csv"
+  },
+  "error": "\nImage export using the \"kaleido\" engine requires the kaleido package,\nwhich can be installed using pip:\n    $ pip install -U kaleido\n",
+  "instant": 0,
+  "stations": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    12,
+    15,
+    16,
+    77
+  ],
+  "stations_count": 9,
+  "stations_text": "stations1_2_3_4_5_12_15_16_77",
+  "spec": "0+1;2;3;4;5;12;15;16;77"
+}

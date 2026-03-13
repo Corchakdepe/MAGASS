@@ -1,8 +1,8 @@
-import { API_BASE } from "@/lib/analysis/constants";
-import { buildFiltroFromUnified } from "@/lib/analysis/filters";
-import type { FilterKind, UnifiedFilterState } from "@/types/analysis";
-import type { GraficaKey } from "./types";
-import { buildGraficaArg, nzInt } from "./builders";
+import {API_BASE} from "@/lib/analysis/constants";
+import {buildFiltroFromUnified} from "@/lib/analysis/filters";
+import type {FilterKind, UnifiedFilterState} from "@/types/analysis";
+import type {GraficaKey} from "./types";
+import {buildGraficaArg, nzInt} from "./builders";
 
 export async function analyzeGraphs(params: {
   runId: string;
@@ -16,7 +16,6 @@ export async function analyzeGraphs(params: {
   filterKind: FilterKind;
   filterState: UnifiedFilterState;
 
-  // graph-specific inputs
   barStations: string;
   barDays: string;
 
@@ -31,7 +30,6 @@ export async function analyzeGraphs(params: {
   matsStations1: string;
   matsStations2: string;
   matsMode: "M" | "A";
-
 }) {
   const filtroStr = params.useFilter
     ? buildFiltroFromUnified(params.filterKind, params.filterState, "_")
@@ -56,7 +54,9 @@ export async function analyzeGraphs(params: {
     filter_result_filename: null,
   };
 
-  const requests = params.selectedCharts.map(async (key) => {
+  const results = [];
+
+  for (const key of params.selectedCharts) {
     const arg = buildGraficaArg({
       key,
       barStations: params.barStations,
@@ -72,22 +72,38 @@ export async function analyzeGraphs(params: {
       matsMode: params.matsMode,
     });
 
-    if (arg == null) throw new Error(`ParÃ¡metros invÃ¡lidos para la grÃ¡fica ${key}`);
+    let payloadArg: any;
 
-    const payload: any = { ...commonPayload, [key]: arg };
+    if (key === "graf_linea_comp_est" && params.useFilter) {
+      payloadArg = [];
+    } else if (key === "graf_linea_comp_est") {
+      payloadArg = arg ?? [];
+    } else {
+      payloadArg = arg ?? null;
+    }
+
+    const payload: any = {
+      ...commonPayload,
+      [key]: payloadArg,
+    };
+
+    console.log("payload", payload, "filtro", payload.filtro, "tipo", payload.tipo_filtro);
 
     const res = await fetch(`${API_BASE}/exe/analizar-json`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify(payload),
     });
 
     const json = await res.json().catch(() => null);
     if (!res.ok) {
-      throw new Error(`Error analizando grÃ¡fica ${key}: ${res.status} ${(json as any)?.detail ?? ""}`);
+      throw new Error(
+        `Error analizando gráfica ${key}: ${res.status} ${(json as any)?.detail ?? ""}`
+      );
     }
-    return json;
-  });
 
-  return Promise.all(requests);
+    results.push(json);
+  }
+
+  return results;
 }

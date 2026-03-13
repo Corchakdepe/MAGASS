@@ -69,6 +69,7 @@ export function useMapsAnalysis(runId: string | undefined, state: MapsAnalysisSt
 
       const payload = {...commonPayload, [apiKey]: arg};
 
+      console.log("payload", payload, "filtro", payload.filtro, "tipo", payload.tipo_filtro);
       const res = await fetch(`${API_BASE}/exe/analizar-json`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},

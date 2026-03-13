@@ -1,16 +1,14 @@
-// src/components/visualizations/directory-subtraction/SimulationSelectionPanel.tsx
-
+// src/components/visualizations/directory-subtraction/components/SimulationSelectionPanel.tsx
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState } from "react";
 import {
-  RefreshCw, AlertCircle, FolderOpen, ArrowRight,
-  XCircle, MapPin, CheckCircle2, PlusCircle,
+  Search, Play, Loader2, XCircle, AlertTriangle, X, CheckCircle2, RefreshCw,
 } from "lucide-react";
 import { Simulation } from "../types/types";
-import { extractParams } from "../hooks/utils";
 import SimulationCard from "./SimulationCard";
 import ParameterComparison from "./ParameterComparison";
+import { extractParams } from "../hooks/utils";
 
 interface Props {
   simulations: Simulation[];
@@ -18,13 +16,15 @@ interface Props {
   error: string | null;
   selectedSim1: Simulation | null;
   selectedSim2: Simulation | null;
-  onSelectSim1: (sim: Simulation | null) => void;
-  onSelectSim2: (sim: Simulation | null) => void;
-  searchTerm: string;
-  onSearchTermChange: (value: string) => void;
+  onSelectSim1: (s: Simulation | null) => void;
+  onSelectSim2: (s: Simulation | null) => void;
+  searchTerm1: string;
+  searchTerm2: string;
+  onSearchTerm1Change: (v: string) => void;
+  onSearchTerm2Change: (v: string) => void;
   areCompatible: boolean;
   customName: string;
-  onCustomNameChange: (value: string) => void;
+  onCustomNameChange: (v: string) => void;
   onSubtract: () => void;
   isSubmitting: boolean;
   subtractionError: string | null;
@@ -32,296 +32,267 @@ interface Props {
   onRetry: () => void;
 }
 
-export default function SimulationSelectionPanel({
+// ── Reusable column picker ─────────────────────────────────────────────────────
+
+function SimColumnPicker({
+  label,
+  accent,
   simulations,
   loading,
   error,
-  selectedSim1,
-  selectedSim2,
-  onSelectSim1,
-  onSelectSim2,
+  selected,
+  onSelect,
+  disabledName,
   searchTerm,
   onSearchTermChange,
-  areCompatible,
-  customName,
-  onCustomNameChange,
-  onSubtract,
-  isSubmitting,
-  subtractionError,
-  onClearSelections,
   onRetry,
-}: Props) {
-  const filteredSimulations = useMemo(() => {
-    if (!searchTerm.trim()) return simulations;
-    return simulations.filter(
-      (sim) =>
-        sim.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sim.city.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [simulations, searchTerm]);
-
-  const simulationsByCity = useMemo(() => {
-    const grouped: Record<string, Simulation[]> = {};
-    simulations.forEach((sim) => {
-      const city = sim.city || "Unknown City";
-      if (!grouped[city]) grouped[city] = [];
-      grouped[city].push(sim);
-    });
-    Object.keys(grouped).forEach((city) => {
-      grouped[city].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-    });
-    return grouped;
-  }, [simulations]);
-
-  const handleCardSelect = (sim: Simulation) => {
-    if (selectedSim1?.name === sim.name) {
-      onSelectSim1(null);
-    } else if (selectedSim2?.name === sim.name) {
-      onSelectSim2(null);
-    } else if (!selectedSim1) {
-      onSelectSim1(sim);
-    } else if (!selectedSim2) {
-      onSelectSim2(sim);
-    } else {
-      onSelectSim2(sim);
-    }
-  };
+}: {
+  label: string;
+  accent: boolean;
+  simulations: Simulation[];
+  loading: boolean;
+  error: string | null;
+  selected: Simulation | null;
+  onSelect: (s: Simulation | null) => void;
+  disabledName?: string;
+  searchTerm: string;
+  onSearchTermChange: (v: string) => void;
+  onRetry: () => void;
+}) {
+  const filtered = simulations.filter((s) =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.city.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="bg-white rounded-xl shadow-mac-panel overflow-hidden">
-      <div className="px-6 py-4 border-b border-surface-3">
-        <h2 className="font-medium text-text-primary">Select Simulations</h2>
-        <p className="text-xs text-text-secondary mt-1">Choose two simulations to subtract</p>
+    <div className="flex-1 min-w-0 flex flex-col bg-surface-1 rounded-xl shadow-mac-panel overflow-hidden">
+
+      {/* Column header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-surface-2">
+        <span className={`
+          w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0
+          ${accent ? "bg-accent text-white" : "bg-surface-3 text-text-secondary"}
+        `}>
+          {label}
+        </span>
+        <span className="text-sm font-semibold text-text-primary">
+          {label === "A" ? "Base" : "Subtract"}
+        </span>
+        {selected && (
+          <button
+            type="button"
+            onClick={() => onSelect(null)}
+            className="ml-auto text-text-tertiary hover:text-text-secondary transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
-      <div className="p-6">
-        {/* Loading state */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <RefreshCw className="w-8 h-8 text-accent/30 animate-spin" />
-            <p className="text-sm text-text-secondary mt-4">Loading simulations...</p>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <div className="bg-danger-soft rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-danger mb-1">Error loading simulations</p>
-                <p className="text-xs text-text-secondary mb-3">{error}</p>
-                <button
-                  onClick={onRetry}
-                  className="text-sm text-accent hover:text-accent-hover font-medium flex items-center gap-1"
-                >
-                  Try again <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
+      {/* Selected preview */}
+      {selected && (
+        <div className={`px-4 py-2.5 border-b border-surface-2 ${accent ? "bg-accent/5" : "bg-surface-2/50"}`}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${accent ? "text-accent" : "text-success"}`} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-text-primary truncate">{selected.city}</p>
+              <p className="text-[10px] text-text-tertiary font-code truncate">{selected.name.substring(0, 28)}…</p>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Empty state */}
-        {!loading && !error && simulations.length === 0 && (
-          <div className="text-center py-12">
-            <FolderOpen className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-            <p className="text-text-secondary">No simulations found</p>
-            <p className="text-xs text-text-tertiary mt-2">Run a simulation first to see results here</p>
-          </div>
-        )}
-
-        {/* Main selection UI */}
-        {!loading && !error && simulations.length > 0 && (
-          <div className="space-y-6">
-            {/* Selected summary */}
-            {(selectedSim1 || selectedSim2) && (
-              <div className="bg-surface-0 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">
-                    Selected
-                  </span>
-                  <button
-                    onClick={onClearSelections}
-                    className="text-xs text-accent hover:text-accent-hover flex items-center gap-1"
-                  >
-                    <XCircle className="w-3 h-3" />
-                    Clear all
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  {selectedSim1 ? (
-                    <div className="flex-1 bg-white rounded-lg p-2 border border-accent/30">
-                      <p className="text-xs font-medium truncate">{selectedSim1.city}</p>
-                      <p className="text-[10px] text-text-secondary mt-0.5">
-                        {extractParams(selectedSim1.name).stress} ·{" "}
-                        {extractParams(selectedSim1.name).walkCost} ·
-                        Δ{extractParams(selectedSim1.name).delta}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex-1 bg-white/50 rounded-lg p-2 border border-dashed border-surface-3">
-                      <p className="text-xs text-text-tertiary">Select first...</p>
-                    </div>
-                  )}
-                  <ArrowRight className="w-4 h-4 text-text-tertiary flex-shrink-0" />
-                  {selectedSim2 ? (
-                    <div className="flex-1 bg-white rounded-lg p-2 border border-accent/30">
-                      <p className="text-xs font-medium truncate">{selectedSim2.city}</p>
-                      <p className="text-[10px] text-text-secondary mt-0.5">
-                        {extractParams(selectedSim2.name).stress} ·{" "}
-                        {extractParams(selectedSim2.name).walkCost} ·
-                        Δ{extractParams(selectedSim2.name).delta}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex-1 bg-white/50 rounded-lg p-2 border border-dashed border-surface-3">
-                      <p className="text-xs text-text-tertiary">Select second...</p>
-                    </div>
-                  )}
-                </div>
-                {selectedSim1 && selectedSim2 && (
-                  <div className="mt-3">
-                    <ParameterComparison sim1={selectedSim1} sim2={selectedSim2} />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Search */}
-            <div>
-              <label className="block text-xs font-medium text-text-secondary uppercase tracking-wide mb-2">
-                Search Simulations
-              </label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => onSearchTermChange(e.target.value)}
-                placeholder="Search by city or parameters..."
-                className="w-full px-3 py-2 bg-surface-0 border border-surface-3 rounded-lg text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-              />
-            </div>
-
-            {/* Simulation list by city */}
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-              {Object.entries(simulationsByCity).map(([city, citySims]) => {
-                const filtered = citySims.filter((sim) => filteredSimulations.includes(sim));
-                if (filtered.length === 0) return null;
-                return (
-                  <div key={city}>
-                    <h3 className="text-xs font-medium text-text-secondary mb-2 flex items-center gap-1 sticky top-0 bg-white py-1">
-                      <MapPin className="w-3 h-3" />
-                      {city} ({filtered.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {filtered.map((sim) => (
-                        <SimulationCard
-                          key={sim.name}
-                          sim={sim}
-                          isSelected={
-                            selectedSim1?.name === sim.name || selectedSim2?.name === sim.name
-                          }
-                          onSelect={() => handleCardSelect(sim)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Compatibility indicator */}
-            {selectedSim1 && selectedSim2 && (
-              <div
-                className={`rounded-lg p-4 ${
-                  areCompatible
-                    ? "bg-success-soft border border-success/20"
-                    : "bg-warning-soft border border-warning/20"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      areCompatible ? "bg-success/10" : "bg-warning/10"
-                    }`}
-                  >
-                    {areCompatible ? (
-                      <CheckCircle2 className="w-4 h-4 text-success" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-warning" />
-                    )}
-                  </div>
-                  <div>
-                    <p
-                      className={`text-sm font-medium ${
-                        areCompatible ? "text-success" : "text-warning"
-                      }`}
-                    >
-                      {areCompatible ? "Compatible Simulations" : "Different Cities"}
-                    </p>
-                    <p className="text-xs text-text-secondary mt-0.5">
-                      {areCompatible
-                        ? `Both simulations are from ${selectedSim1.city}`
-                        : `${selectedSim1.city} vs ${selectedSim2.city} — subtraction may not be valid`}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Custom name */}
-            <div>
-              <label className="block text-xs font-medium text-text-secondary uppercase tracking-wide mb-2">
-                Custom Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={customName}
-                onChange={(e) => onCustomNameChange(e.target.value)}
-                placeholder="e.g., Weekend vs Weekday Comparison"
-                className="w-full px-3 py-2 bg-surface-0 border border-surface-3 rounded-lg text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
-              />
-            </div>
-
-            {/* Subtract button */}
-            <button
-              onClick={onSubtract}
-              disabled={!selectedSim1 || !selectedSim2 || isSubmitting}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-sm transition-all flex items-center justify-center gap-2 ${
-                !selectedSim1 || !selectedSim2 || isSubmitting
-                  ? "bg-surface-2 text-text-tertiary cursor-not-allowed"
-                  : areCompatible
-                  ? "bg-accent text-white hover:bg-accent-hover shadow-sm"
-                  : "bg-warning text-white hover:bg-warning/90 shadow-sm"
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="w-4 h-4" />
-                  Subtract Simulations
-                </>
-              )}
+      {/* Search */}
+      <div className="px-3 py-2 border-b border-surface-2">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-2">
+          <Search className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => onSearchTermChange(e.target.value)}
+            placeholder="Search…"
+            className="flex-1 bg-transparent text-xs text-text-primary
+                       placeholder:text-text-tertiary outline-none"
+          />
+          {searchTerm && (
+            <button type="button" onClick={() => onSearchTermChange("")}>
+              <X className="w-3 h-3 text-text-tertiary hover:text-text-secondary" />
             </button>
+          )}
+        </div>
+      </div>
 
-            {/* Subtraction error */}
-            {subtractionError && (
-              <div className="bg-danger-soft rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-danger mb-1">Subtraction Failed</p>
-                    <p className="text-xs text-text-secondary">{subtractionError}</p>
-                  </div>
-                </div>
-              </div>
-            )}
+      {/* List */}
+      <div className="flex-1 overflow-y-auto max-h-96 divide-y divide-surface-2/50">
+        {loading && (
+          <div className="flex items-center justify-center gap-2 py-10 text-xs text-text-tertiary">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading…
           </div>
         )}
+        {error && !loading && (
+          <div className="p-4 space-y-2">
+            <p className="text-xs text-danger">{error}</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-xs text-accent hover:underline flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" /> Retry
+            </button>
+          </div>
+        )}
+        {!loading && !error && filtered.length === 0 && (
+          <div className="py-10 text-center text-xs text-text-tertiary">
+            No simulations match
+          </div>
+        )}
+        {!loading && !error && filtered.map((sim) => {
+          const isDisabled = sim.name === disabledName;
+          return (
+            <div
+              key={sim.name}
+              className={isDisabled ? "opacity-40 pointer-events-none" : ""}
+            >
+              <SimulationCard
+                sim={sim}
+                isSelected={selected?.name === sim.name}
+                onSelect={() => onSelect(selected?.name === sim.name ? null : sim)}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Main panel ─────────────────────────────────────────────────────────────────
+
+export default function SimulationSelectionPanel({
+  simulations, loading, error,
+  selectedSim1, selectedSim2,
+  onSelectSim1, onSelectSim2,
+  searchTerm1, searchTerm2,
+  onSearchTerm1Change, onSearchTerm2Change,
+  areCompatible,
+  customName, onCustomNameChange,
+  onSubtract, isSubmitting,
+  subtractionError,
+  onClearSelections, onRetry,
+}: Props) {
+  return (
+    <div className="space-y-4">
+
+      {/* ── A − B horizontal row ── */}
+      <div className="flex items-stretch gap-3">
+
+        <SimColumnPicker
+          label="A" accent
+          simulations={simulations} loading={loading} error={error}
+          selected={selectedSim1} onSelect={onSelectSim1}
+          disabledName={selectedSim2?.name}
+          searchTerm={searchTerm1} onSearchTermChange={onSearchTerm1Change}
+          onRetry={onRetry}
+        />
+
+        {/* Operator divider */}
+        <div className="flex flex-col items-center justify-center gap-2 py-4 shrink-0">
+          <div className="w-px flex-1 bg-surface-3" />
+          <div className="w-9 h-9 rounded-full border-2 border-surface-3 bg-surface-1
+                          flex items-center justify-center shadow-sm
+                          text-lg font-bold text-text-secondary select-none">
+            −
+          </div>
+          <div className="w-px flex-1 bg-surface-3" />
+        </div>
+
+        <SimColumnPicker
+          label="B" accent={false}
+          simulations={simulations} loading={loading} error={error}
+          selected={selectedSim2} onSelect={onSelectSim2}
+          disabledName={selectedSim1?.name}
+          searchTerm={searchTerm2} onSearchTermChange={onSearchTerm2Change}
+          onRetry={onRetry}
+        />
+      </div>
+
+      {/* ── Incompatibility warning ── */}
+      {!areCompatible && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl
+                        border border-warning/30 bg-warning-soft">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+          <p className="text-xs text-text-secondary">
+            Selected simulations are from different cities — subtraction may not be valid.
+          </p>
+        </div>
+      )}
+
+      {/* ── Parameter diff ── */}
+      {selectedSim1 && selectedSim2 && (
+        <ParameterComparison sim1={selectedSim1} sim2={selectedSim2} />
+      )}
+
+      {/* ── Action bar ── */}
+      <div className="bg-surface-1 rounded-xl shadow-mac-panel p-4 space-y-3">
+        {/* Custom name */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <span className="text-sm font-medium text-text-primary">
+              Output Name
+              <span className="ml-1.5 text-xs font-normal text-text-tertiary">optional</span>
+            </span>
+            <p className="text-xs text-text-secondary mt-0.5">Appended to the result folder</p>
+          </div>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => onCustomNameChange(e.target.value)}
+            placeholder="e.g. delta-comparison"
+            maxLength={40}
+            className="w-40 px-2.5 py-1.5 rounded-md border border-surface-3 bg-surface-1
+                       text-sm text-text-primary placeholder:text-text-tertiary shadow-sm
+                       outline-none focus:border-accent focus:ring-2 focus:ring-accent/20
+                       transition-all font-code"
+          />
+        </div>
+
+        {/* Error */}
+        {subtractionError && (
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl
+                          border border-danger/30 bg-danger-soft">
+            <XCircle className="w-4 h-4 text-danger mt-0.5 shrink-0" />
+            <p className="text-xs text-text-secondary break-all">{subtractionError}</p>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onClearSelections}
+            disabled={!selectedSim1 && !selectedSim2}
+            className="px-4 h-10 rounded-lg text-sm font-medium border border-surface-3
+                       bg-surface-1 text-text-secondary hover:bg-surface-2
+                       disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={onSubtract}
+            disabled={!selectedSim1 || !selectedSim2 || isSubmitting}
+            className="flex-1 h-10 rounded-lg text-sm font-semibold flex items-center
+                       justify-center gap-2 transition-all active:scale-[0.98]
+                       bg-accent hover:bg-accent-hover text-white shadow-sm
+                       disabled:bg-surface-2 disabled:text-text-tertiary
+                       disabled:cursor-not-allowed disabled:shadow-none"
+          >
+            {isSubmitting
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Subtracting…</>
+              : <><Play className="w-4 h-4" /> Run A − B</>
+            }
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,3 @@
-// src/components/visualizations/directory-subtraction/index.tsx
-
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -10,28 +8,25 @@ import SimulationSelectionPanel from "./components/SimulationSelectionPanel";
 import SubtractionResultsPanel from "./components/SubtractionResultsPanel";
 
 export default function VisualizationsDirComparison() {
-  const [simulations, setSimulations] = useState<Simulation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [selectedSim1, setSelectedSim1] = useState<Simulation | null>(null);
-  const [selectedSim2, setSelectedSim2] = useState<Simulation | null>(null);
-  const [customName, setCustomName] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [simulations, setSimulations]       = useState<Simulation[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState<string | null>(null);
+  const [selectedSim1, setSelectedSim1]     = useState<Simulation | null>(null);
+  const [selectedSim2, setSelectedSim2]     = useState<Simulation | null>(null);
+  const [customName, setCustomName]         = useState("");
+  const [searchTerm1, setSearchTerm1]       = useState("");   // ← split per column
+  const [searchTerm2, setSearchTerm2]       = useState("");
+  const [isSubmitting, setIsSubmitting]     = useState(false);
   const [subtractionResult, setSubtractionResult] = useState<SubtractionResponse | null>(null);
-  const [subtractionError, setSubtractionError] = useState<string | null>(null);
+  const [subtractionError, setSubtractionError]   = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSimulations();
-  }, []);
+  useEffect(() => { fetchSimulations(); }, []);
 
   const fetchSimulations = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/exe/list-available-simulations`);
+      const res  = await fetch(`${API_BASE}/exe/list-available-simulations`);
       if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
       const data = await res.json();
       setSimulations(data.simulations || []);
@@ -61,29 +56,21 @@ export default function VisualizationsDirComparison() {
       alert("Please select two different simulations");
       return;
     }
-
     setIsSubmitting(true);
     setSubtractionError(null);
     setSubtractionResult(null);
-
     try {
-      const body: SubtractionRequest = {
-        folder1: selectedSim1.name,
-        folder2: selectedSim2.name,
-      };
+      const body: SubtractionRequest = { folder1: selectedSim1.name, folder2: selectedSim2.name };
       if (customName.trim()) body.simname = customName.trim();
-
       const res = await fetch(`${API_BASE}/exe/restar-directorios`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         const msg = await res.text();
         throw new Error(`Subtraction failed: ${res.status} - ${msg}`);
       }
-
       const data: SubtractionResponse = await res.json();
       setSubtractionResult(data);
       setTimeout(fetchSimulations, 1000);
@@ -97,7 +84,7 @@ export default function VisualizationsDirComparison() {
   return (
     <div className="min-h-screen bg-surface-0 font-body">
       <DirectorySubtractionHeader loading={loading} onRefresh={fetchSimulations} />
-      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">   {/* ← single column */}
         <SimulationSelectionPanel
           simulations={simulations}
           loading={loading}
@@ -106,8 +93,10 @@ export default function VisualizationsDirComparison() {
           selectedSim2={selectedSim2}
           onSelectSim1={setSelectedSim1}
           onSelectSim2={setSelectedSim2}
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
+          searchTerm1={searchTerm1}
+          searchTerm2={searchTerm2}
+          onSearchTerm1Change={setSearchTerm1}
+          onSearchTerm2Change={setSearchTerm2}
           areCompatible={areCompatible}
           customName={customName}
           onCustomNameChange={setCustomName}
