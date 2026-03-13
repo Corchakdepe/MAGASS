@@ -22,6 +22,37 @@ export default function FileUploadDialog({
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const validateFiles = (files: File[]): { isValid: boolean; errors: string[] } => {
+    const fileNames = files.map(f => f.name.toLowerCase());
+    const errors: string[] = [];
+
+    const hasExact = (name: string) => fileNames.includes(name.toLowerCase());
+    const hasSuffix = (suffix: string) => fileNames.some(name => name.endsWith(suffix.toLowerCase()));
+
+    // Mandatory specific files
+    if (!hasExact('indices_andar.csv')) errors.push("Missing 'indices_andar.csv'");
+    if (!hasExact('indices_bicicleta.csv')) errors.push("Missing 'indices_bicicleta.csv'");
+    if (!hasExact('kms_andar.csv')) errors.push("Missing 'kms_andar.csv'");
+    if (!hasExact('kms_bicicleta.csv')) errors.push("Missing 'kms_bicicleta.csv'");
+
+    // Mandatory pattern files
+    if (!hasSuffix('_capacidades.csv')) errors.push("Missing file ending with '_capacidades.csv'");
+    if (!hasSuffix('_coordenadas.csv')) errors.push("Missing file ending with '_coordenadas.csv'");
+    if (!hasSuffix('_deltas.csv')) errors.push("Missing file ending with '_deltas.csv'");
+    if (!hasSuffix('_tendencia_media.csv')) errors.push("Missing file ending with '_tendencia_media.csv'");
+
+    // Exact count check
+    if (files.length !== 8) {
+      errors.push(`Expected exactly 8 files, but found ${files.length}`);
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -52,6 +83,15 @@ export default function FileUploadDialog({
   }, []);
 
   const handleFiles = async (files: File[]) => {
+    setError(null);
+    setValidationErrors([]);
+
+    const { isValid, errors: vErrors } = validateFiles(files);
+    if (!isValid) {
+      setValidationErrors(vErrors);
+      return;
+    }
+
     setIsUploading(true);
     try {
       const result = await onUpload(files);
@@ -146,6 +186,26 @@ export default function FileUploadDialog({
             <div className="flex items-center gap-2 p-3 mt-4 rounded-lg bg-danger-soft border border-danger/20">
               <AlertCircle className="h-4 w-4 text-danger" />
               <p className="text-sm text-text-secondary flex-1">{error}</p>
+            </div>
+          )}
+
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className="mt-4 p-3 rounded-lg bg-warning-soft border border-warning/20">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-warning" />
+                <p className="text-sm font-semibold text-text-primary">Missing or invalid files:</p>
+              </div>
+              <ul className="list-disc list-inside space-y-1">
+                {validationErrors.map((err, i) => (
+                  <li key={i} className="text-xs text-text-secondary">{err}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[10px] text-text-tertiary">
+                Please make sure to upload exactly 8 CSV files: 
+                indices_andar.csv, indices_bicicleta.csv, kms_andar.csv, kms_bicicleta.csv, 
+                and four timestamped files ending with _capacidades.csv, _coordenadas.csv, _deltas.csv, and _tendencia_media.csv.
+              </p>
             </div>
           )}
 
