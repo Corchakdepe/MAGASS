@@ -26,7 +26,8 @@ export function useMapsAnalysis(runId: string | undefined, state: MapsAnalysisSt
       setApiError(t('selectSimulationBeforeAnalyzing'));
       return;
     }
-    if (apiBusy || state.selectedMaps.length === 0) return;
+    if (apiBusy) return;
+    if (state.selectedMaps.length === 0 && !state.useFilterForMaps) return;
 
     setApiBusy(true);
     setApiError(null);
@@ -57,36 +58,60 @@ export function useMapsAnalysis(runId: string | undefined, state: MapsAnalysisSt
       filter_result_filename: null,
     };
 
-    const mapRequests = state.selectedMaps.map(async (apiKey) => {
-      const arg = buildMapArg(
-        apiKey,
-        state.instantesMaps,
-        state.stationsMaps,
-        state.labelsMaps,
-        state.useFilterForMaps
-      );
-      if (!arg) return null;
+    const requests = [];
 
-      const payload = {...commonPayload, [apiKey]: arg};
-
-      console.log("payload", payload, "filtro", payload.filtro, "tipo", payload.tipo_filtro);
-      const res = await fetch(`${API_BASE}/exe/analizar-json`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(
-          `${t('errorAnalyzingMap')} ${apiKey}: ${res.status} ${(json as any)?.detail ?? ""}`
+    if (state.selectedMaps.length > 0) {
+      const mapRequests = state.selectedMaps.map(async (apiKey) => {
+        const arg = buildMapArg(
+          apiKey,
+          state.instantesMaps || {},
+          state.stationsMaps || {},
+          state.labelsMaps || {},
+          state.useFilterForMaps
         );
-      }
-      return json;
-    });
+        if (!arg) return null;
+
+        const payload = {...commonPayload, [apiKey]: arg};
+
+        console.log("payload", payload, "filtro", payload.filtro, "tipo", payload.tipo_filtro);
+        const res = await fetch(`${API_BASE}/exe/analizar-json`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload),
+        });
+
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(
+            `${t('errorAnalyzingMap')} ${apiKey}: ${res.status} ${(json as any)?.detail ?? ""}`
+          );
+        }
+        return json;
+      });
+      requests.push(...mapRequests);
+    } else if (state.useFilterForMaps && filtroStr) {
+      // If NO maps selected but filter is active, just send a request to generate the filter file
+      // We can use any key or just send commonPayload if backend supports it.
+      // Based on analysis.py, it seems it processes the filter if provided.
+      const filterOnlyRequest = async () => {
+        const res = await fetch(`${API_BASE}/exe/analizar-json`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(commonPayload),
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(
+            `${t('errorCreatingFilter') || 'Error creating filter'}: ${res.status} ${(json as any)?.detail ?? ""}`
+          );
+        }
+        return json;
+      };
+      requests.push(filterOnlyRequest());
+    }
 
     try {
-      await Promise.all(mapRequests);
+      await Promise.all(requests);
     } catch (e: any) {
       setApiError(e?.message ?? t('unexpectedError'));
     } finally {

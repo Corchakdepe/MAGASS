@@ -1,12 +1,13 @@
 import { SidebarProvider, Sidebar } from "@/components/ui/sidebar";
 import SidebarRunHistory from "@/components/sidebar/components/history/SidebarRunHistory";
 import MapsAnalysisPanel from "@/components/sidebar/components/MapsAnalysisPanel";
-import GraphAnalysisPanel from "@/components/sidebar/components/GraphAnalysisPanel";
+import FiltersAnalysisPanel from "@/components/sidebar/components/FiltersAnalysisPanel";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { SimulationData } from "@/types/simulation";
 import type { PanelMode } from "@/components/layout/types/layout";
+import GraphAnalysisPanel from "@/components/sidebar/components/GraphAnalysisPanel";
 
 type RightSidebarProps = {
   currentRunId: string | null;
@@ -104,6 +105,10 @@ export default function RightSidebar({
                 <GraphAnalysisPanel runId={currentRunId ?? undefined} />
               )}
 
+              {showBottomPanel && panelMode === "filters" && (
+                <FiltersAnalysisPanel runId={currentRunId ?? undefined} />
+              )}
+
               {showRunHistory && (
                 <SidebarRunHistory
                   onSimulationComplete={onSimulationComplete}
@@ -131,6 +136,11 @@ export default function RightSidebar({
               {showBottomPanel && panelMode === "graphs" && (
                 <div className="text-xs text-muted-foreground rotate-90 whitespace-nowrap mt-4">
                   Graphs
+                </div>
+              )}
+              {showBottomPanel && panelMode === "filters" && (
+                <div className="text-xs text-muted-foreground rotate-90 whitespace-nowrap mt-4">
+                  Filters
                 </div>
               )}
             </div>

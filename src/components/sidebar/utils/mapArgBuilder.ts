@@ -2,11 +2,15 @@ import type {MapKey} from "@/types/analysis";
 
 export function buildMapArg(
   apiKey: MapKey,
-  inst: Record<string, string>,
-  st: Record<string, string>,
-  labels: Record<string, boolean>,
-  useFilter: boolean,
+  inst: Record<string, string> = {},
+  st: Record<string, string> = {},
+  labels: Record<string, boolean> = {},
+  useFilter: boolean = false
 ): string | null {
+  if (!inst) inst = {};
+  if (!st) st = {};
+  if (!labels) labels = {};
+
   if (apiKey === "mapa_desplazamientos") {
     const inst0 = (inst["mapa_desplazamientos_inst"] || "").trim();
     const dOri = (inst["mapa_desplazamientos_d_ori"] || "").trim();

@@ -22,6 +22,7 @@ export function useLayoutMode() {
   const panelMode = useMemo<PanelMode>(() => {
     if (pathname.startsWith("/analyticsMapCreator")) return "maps";
     if (pathname.startsWith("/analyticsGraphCreator")) return "graphs";
+    if (pathname.startsWith("/filters")) return "filters";
     if(pathname.startsWith("/statisticsAnalyzer")) return "statisticsAnalyzer";
     if(pathname.startsWith("/dirComparison")) return "dirComparison";
     return "none";

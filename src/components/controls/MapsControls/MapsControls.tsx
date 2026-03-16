@@ -1,14 +1,15 @@
+// src/components/controls/MapsControls/MapsControls.tsx
 "use client";
 
 import * as React from "react";
-import {ChevronsUpDown, Check} from "lucide-react";
+import { ChevronsUpDown, Check } from "lucide-react";
 
-import {cn} from "@/lib/utils";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {useLanguage} from "@/contexts/LanguageContext";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     Command,
     CommandEmpty,
@@ -18,10 +19,10 @@ import {
     CommandList,
 } from "@/components/ui/command";
 
-import {InstantesInput} from "@/components/controls/CommunControls/instantes-input";
-import {StationsSelector} from "@/components/controls/CommunControls/StationsSelector";
+import { InstantesInput } from "@/components/controls/CommunControls/instantes-input";
+import { StationsSelector } from "@/components/controls/CommunControls/StationsSelector";
 
-type MapKey =
+export type MapKey =
     | "mapa_densidad"
     | "mapa_circulo"
     | "mapa_voronoi"
@@ -29,7 +30,7 @@ type MapKey =
 
 type StationsTargetKey = "mapa_densidad" | "mapa_voronoi" | "mapa_circulo";
 
-type MapOption = {label: string; arg: MapKey};
+type MapOption = { label: string; arg: MapKey };
 
 export type MapsControlsProps = {
     MAPAS: MapOption[];
@@ -37,49 +38,53 @@ export type MapsControlsProps = {
     setMapUserName: React.Dispatch<React.SetStateAction<string>>;
     selectedMaps: MapKey[];
     setSelectedMaps: React.Dispatch<React.SetStateAction<MapKey[]>>;
-
     stationsMaps: Record<MapKey, string>;
     setStationsMaps: React.Dispatch<React.SetStateAction<Record<MapKey, string>>>;
-
     instantesMaps: Record<string, string>;
     setInstantesMaps: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-
     deltaOutMin: number;
     useFilterForMaps: boolean;
-
     onActiveStationsTargetKeyChange?: (key: StationsTargetKey) => void;
     onClearExternalStationsMaps?: () => void;
 };
 
+// Default empty stations object
+const DEFAULT_STATIONS_MAPS: Record<MapKey, string> = {
+    mapa_densidad: "",
+    mapa_circulo: "",
+    mapa_voronoi: "",
+    mapa_desplazamientos: "",
+};
+
 export function MapsControls({
-                                 MAPAS,
-                                 selectedMaps,
-                                 setSelectedMaps,
-                                 stationsMaps,
-                                 setStationsMaps,
-                                 instantesMaps,
-                                 setInstantesMaps,
-                                 deltaOutMin,
-                                 useFilterForMaps,
-                                 onActiveStationsTargetKeyChange,
-                                 onClearExternalStationsMaps,
-                                 mapUserName,
-                                 setMapUserName,
-                             }: MapsControlsProps) {
-    const {t} = useLanguage();
+    MAPAS,
+    selectedMaps = [],
+    setSelectedMaps,
+    stationsMaps = DEFAULT_STATIONS_MAPS,
+    setStationsMaps,
+    instantesMaps = {},
+    setInstantesMaps,
+    deltaOutMin,
+    useFilterForMaps = false,
+    onActiveStationsTargetKeyChange,
+    onClearExternalStationsMaps,
+    mapUserName = "",
+    setMapUserName,
+}: MapsControlsProps) {
+    const { t } = useLanguage();
     const selectedMap = selectedMaps[0];
 
     const setStationsFor = (key: MapKey, next: string) => {
-        setStationsMaps((prev) => ({...prev, [key]: next}));
+        setStationsMaps((prev) => ({ ...prev, [key]: next }));
     };
 
     const clearStationsFor = (key: MapKey) => {
-        setStationsMaps((prev) => ({...prev, [key]: ""}));
+        setStationsMaps((prev) => ({ ...prev, [key]: "" }));
         onClearExternalStationsMaps?.();
     };
 
     const setInstantesFor = (key: string, next: string) => {
-        setInstantesMaps((prev) => ({...prev, [key]: next}));
+        setInstantesMaps((prev) => ({ ...prev, [key]: next }));
     };
 
     const [mapPickerOpen, setMapPickerOpen] = React.useState(false);
@@ -87,10 +92,15 @@ export function MapsControls({
     const selectedMapLabel =
         MAPAS.find((m) => m.arg === (selectedMap ?? ""))?.label ?? t('selectMap');
 
+    // Safety check - if stationsMaps is undefined, use default
+    const safeStationsMaps = React.useMemo(() => {
+        return stationsMaps || DEFAULT_STATIONS_MAPS;
+    }, [stationsMaps]);
+
     return (
         <div className="space-y-4">
             {/* Map selector and name input */}
-            <div className=" gap-3">
+            <div className="space-y-3">
                 <div className="space-y-1.5">
                     <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                         {t('selectMap')}
@@ -107,7 +117,7 @@ export function MapsControls({
                                 <span className="truncate flex-1 text-left font-medium">
                                     {selectedMapLabel}
                                 </span>
-                                <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary"/>
+                                <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary" />
                             </Button>
                         </PopoverTrigger>
 
@@ -222,7 +232,7 @@ export function MapsControls({
                                 </Label>
                                 <StationsSelector
                                     mapKey="mapa_densidad"
-                                    value={stationsMaps["mapa_densidad"] ?? ""}
+                                    value={safeStationsMaps["mapa_densidad"] ?? ""}
                                     disabled={useFilterForMaps}
                                     onChange={(_, next) => setStationsFor("mapa_densidad", next)}
                                     onClear={() => clearStationsFor("mapa_densidad")}
@@ -240,7 +250,7 @@ export function MapsControls({
                                 </Label>
                                 <StationsSelector
                                     mapKey="mapa_circulo"
-                                    value={stationsMaps["mapa_circulo"] ?? ""}
+                                    value={safeStationsMaps["mapa_circulo"] ?? ""}
                                     disabled={useFilterForMaps}
                                     onChange={(_, next) => setStationsFor("mapa_circulo", next)}
                                     onClear={() => clearStationsFor("mapa_circulo")}
@@ -332,8 +342,8 @@ export function MapsControls({
                                     value={instantesMaps["mapa_desplazamientos_mov"] ?? ""}
                                     onValueChange={(v) => setInstantesFor("mapa_desplazamientos_mov", v)}
                                     options={[
-                                        {label: t('arrivals'), value: "1"},
-                                        {label: t('departures'), value: "-1"},
+                                        { label: t('arrivals'), value: "1" },
+                                        { label: t('departures'), value: "-1" },
                                     ]}
                                 />
 
@@ -344,9 +354,9 @@ export function MapsControls({
                                     value={instantesMaps["mapa_desplazamientos_tipo"] ?? ""}
                                     onValueChange={(v) => setInstantesFor("mapa_desplazamientos_tipo", v)}
                                     options={[
-                                        {label: t('real'), value: "1"},
-                                        {label: t('fictitious'), value: "0"},
-                                        {label: t('all'), value: ""},
+                                        { label: t('real'), value: "1" },
+                                        { label: t('fictitious'), value: "0" },
+                                        { label: t('all'), value: "" },
                                     ]}
                                 />
                             </div>
@@ -359,19 +369,19 @@ export function MapsControls({
 }
 
 function SelectLikeCombobox({
-                                label,
-                                placeholder,
-                                value,
-                                onValueChange,
-                                options,
-                            }: {
+    label,
+    placeholder,
+    value,
+    onValueChange,
+    options,
+}: {
     label: string;
     placeholder: string;
     value: string;
     onValueChange: (v: string) => void;
-    options: {label: string; value: string}[];
+    options: { label: string; value: string }[];
 }) {
-    const {t} = useLanguage();
+    const { t } = useLanguage();
     const [open, setOpen] = React.useState(false);
     const selectedLabel =
         options.find((o) => o.value === value)?.label ?? placeholder;
@@ -393,7 +403,7 @@ function SelectLikeCombobox({
                         <span className="truncate flex-1 text-left font-medium">
                             {selectedLabel}
                         </span>
-                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary"/>
+                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent

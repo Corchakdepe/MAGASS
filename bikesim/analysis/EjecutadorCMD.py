@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 from bikesim import Constantes
+from bikesim.analysis import run_analysis
 from bikesim.auxiliares import Extractor, auxiliar_ficheros
 from bikesim.utils import GuardarCargarMatrices, Agrupador
 from bikesim.utils.SimuladorDeltasEstadistico import SimuladorDeltasEstadistico

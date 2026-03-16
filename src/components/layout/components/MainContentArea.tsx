@@ -61,6 +61,7 @@ export function MainContentArea({
 
     const [maps, setMaps] = useState<MapItem[]>([]);
     const [graphs, setGraphs] = useState<GraphItem[]>([]);
+    const [filters, setFilters] = useState<GraphItem[]>([]);
     const [chartsFromApi, setChartsFromApi] = useState<any[]>([]);
 
     function artifactToRawItem(artifact: AnalysisArtifact): GraphItem {
@@ -106,6 +107,17 @@ export function MainContentArea({
             setGraphs(graphArtifacts);
         } else {
             setGraphs([]);
+        }
+
+        if (mode === "filters") {
+            const filterArtifacts = Array.from(
+                simulationContext.artifacts.filters.values()
+            )
+                .map((artifact) => artifactToRawItem(artifact))
+                .filter((x) => x.format === "csv" || x.format === "json");
+            setFilters(filterArtifacts);
+        } else {
+            setFilters([]);
         }
 
         setChartsFromApi([]);
@@ -245,8 +257,13 @@ export function MainContentArea({
                 />
             )}
 
-            {mode === "filters" && <FiltersPanel runId={effectiveRunId}/>}
-
+            {mode === "filters" && (
+                <FiltersPanel
+                    runId={effectiveRunId}
+                    filters={filters}
+                    onRefresh={reload}
+                />
+            )}
 
             {mode === "dashboard" && (
                 <DashboardPanel

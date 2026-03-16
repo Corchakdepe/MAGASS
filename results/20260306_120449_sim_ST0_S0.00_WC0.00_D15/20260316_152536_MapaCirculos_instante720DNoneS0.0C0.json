@@ -1,0 +1,27 @@
+{
+  "map_name": null,
+  "matrix_type": "1",
+  "delta_media": null,
+  "generated_at": "2026-03-16T15:25:36.845433",
+  "map_kind": "circle",
+  "status": "success",
+  "files": {
+    "html": "20260316_152536_MapaCirculos_instante720DNoneS0.0C0.0_stations123.html",
+    "json": "20260316_152536_MapaCirculos_instante720DNoneS0.0C0.0_stations123.json",
+    "csv": "20260316_152536_MapaCirculos_instante720DNoneS0.0C0.0_stations123.csv"
+  },
+  "instant": 720,
+  "stations": [
+    123
+  ],
+  "stations_count": 1,
+  "stations_text": "stations123",
+  "csv_file": "20260316_152536_MapaCirculos_instante720DNoneS0.0C0.csv",
+  "show_labels": false,
+  "total_stations_selected": 1,
+  "data_summary": {
+    "min_value": 93.33333333333334,
+    "max_value": 93.33333333333334,
+    "mean_value": 93.33333333333334
+  }
+}
