@@ -33,7 +33,7 @@ export function MatrixComparisonConfig({
     <div className="space-y-3 pt-2 border-t border-surface-3/50">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
             {t('delta')}
           </Label>
           <Input
@@ -46,7 +46,7 @@ export function MatrixComparisonConfig({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
             {t('mode')}
           </Label>
           <Select value={mode} onValueChange={onModeChange}>
@@ -63,7 +63,7 @@ export function MatrixComparisonConfig({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
             {t('stationsSet1')}
           </Label>
           <Input
@@ -76,7 +76,7 @@ export function MatrixComparisonConfig({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
             {t('stationsSet2')}
           </Label>
           <Input

@@ -48,41 +48,43 @@ export function BarChartConfig({
   return (
     <div className="space-y-3 pt-2 border-t border-surface-3/50">
       <div className="space-y-1.5">
-        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
           {t('stations')}
         </Label>
         <Input
           type="text"
-          className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors"
+          className="h-8 text-sm rounded-md border-surface-3 bg-surface-1 focus:bg-surface-0 transition-colors text-text-primary placeholder:text-text-tertiary"
           value={stations}
           onChange={(e) => onStationsChange(e.target.value)}
           disabled={useFilter}
           placeholder={useFilter ? t('usingFilter') : "1;2;3..."}
         />
         {useFilter && (
-          <p className="text-[10px] text-warning px-1">{t('filterOverridesStations')}</p>
+          <p className="text-xs text-warning/90 px-1 font-medium">{t('filterOverridesStations')}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
           {t('dayRange')}
         </Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between text-left text-xs h-8 font-normal rounded-md border-surface-3 bg-surface-1/50 hover:bg-surface-0 transition-colors px-2"
+              className="w-full justify-between text-left text-sm h-8 font-normal rounded-md border-surface-3 bg-surface-1 hover:bg-surface-0 transition-colors px-2 text-text-primary"
             >
               <div className="flex items-center truncate">
-                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-text-tertiary" />
+                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-text-secondary" />
                 <RangeLabel range={daysRange} />
               </div>
-              <span className="text-[10px] text-text-tertiary ml-2 shrink-0">{days}</span>
+              <span className="text-xs text-text-secondary ml-2 shrink-0 font-mono bg-surface-2/50 px-1.5 py-0.5 rounded">
+                {days}
+              </span>
             </Button>
           </PopoverTrigger>
           <PopoverContent
-            className="w-auto p-0 rounded-lg border-surface-3 bg-surface-1/95 backdrop-blur-md shadow-mac-panel"
+            className="w-auto p-0 rounded-lg border-surface-3 bg-surface-1 shadow-lg"
             align="start"
           >
             <Calendar
@@ -90,7 +92,7 @@ export function BarChartConfig({
               selected={daysRange}
               onSelect={handleRangeChange}
               initialFocus
-              className="rounded-md border-0"
+              className="rounded-md border-0 text-text-primary"
             />
           </PopoverContent>
         </Popover>

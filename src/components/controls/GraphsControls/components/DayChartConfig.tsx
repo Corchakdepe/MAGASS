@@ -51,7 +51,7 @@ export function DayChartConfig({
   return (
     <div className="space-y-3 pt-2 border-t border-surface-3/50">
       <div className="space-y-1.5">
-        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
           {t('dayRange')}
         </Label>
         <Popover>
@@ -61,7 +61,7 @@ export function DayChartConfig({
               className="w-full justify-between text-left text-xs h-8 font-normal rounded-md border-surface-3 bg-surface-1/50 hover:bg-surface-0 transition-colors px-2"
             >
               <div className="flex items-center truncate">
-                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-text-tertiary" />
+                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-text-primary" />
                 <RangeLabel range={daysRange} />
               </div>
               <span className="text-[10px] text-text-tertiary ml-2 shrink-0">{days}</span>
@@ -82,9 +82,9 @@ export function DayChartConfig({
         </Popover>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className=" gap-3">
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
             {t('mode')}
           </Label>
           <Select value={mode} onValueChange={onModeChange}>
@@ -99,7 +99,7 @@ export function DayChartConfig({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
             {t('frequency')}
           </Label>
           <Input

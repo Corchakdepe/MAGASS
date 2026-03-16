@@ -61,14 +61,8 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-1">
-        <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-widest font-bold text-text-tertiary">
-            {t('graphs')}
-          </div>
-        </div>
-
         {useFilter && (
-          <div className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent border border-accent/20">
+          <div className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning border border-warning/20">
             {t('activeFilter')}
           </div>
         )}

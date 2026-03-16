@@ -90,7 +90,7 @@ export function MapsControls({
     return (
         <div className="space-y-4">
             {/* Map selector and name input */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className=" gap-3">
                 <div className="space-y-1.5">
                     <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                         {t('selectMap')}

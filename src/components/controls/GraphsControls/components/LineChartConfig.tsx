@@ -48,7 +48,7 @@ export function LineChartConfig({
   return (
     <div className="space-y-3 pt-2 border-t border-surface-3/50">
       <div className="space-y-1.5">
-        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
           {t('stations')}
         </Label>
         <Input
@@ -65,7 +65,7 @@ export function LineChartConfig({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
           {t('dayRange')}
         </Label>
         <Popover>

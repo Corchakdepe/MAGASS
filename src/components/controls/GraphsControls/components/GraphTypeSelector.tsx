@@ -37,7 +37,7 @@ export function GraphTypeSelector({options, selected, onChange}: GraphTypeSelect
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+      <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
         {t('selection')}
       </Label>
 

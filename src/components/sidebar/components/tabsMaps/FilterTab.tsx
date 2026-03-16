@@ -17,7 +17,7 @@ export function FilterTab({state, actions}: FilterTabProps) {
     <CardContent className="space-y-4">
       <div>
         <div className="text-xs font-semibold text-text-primary">{t('filter')}</div>
-        <div className="text-[11px] text-text-secondary">
+        <div className="text-[11px] text-text-primary">
           {t('restrictStationsByValueAndDayRange')}
         </div>
       </div>

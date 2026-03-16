@@ -41,7 +41,6 @@ export default function VisualizationMaps({
 
   // State
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'map' | 'config'>('map'); // Add view mode state
   const [iframeLoading, setIframeLoading] = useState(true);
   const [iframeError, setIframeError] = useState<string | null>(null);
   const [iframeReloadKey, setIframeReloadKey] = useState(0);
@@ -96,7 +95,6 @@ export default function VisualizationMaps({
     setMapJsonData(null);
     setIframeError(null);
     setIframeLoading(true);
-    setViewMode('map'); // Reset to map view when changing maps
   };
 
   const toggleFavorite = (id: string) => {
@@ -126,10 +124,6 @@ export default function VisualizationMaps({
   const handleResetView = () => {
     sendToMap(iframeRef, { type: "MAP_COMMAND", command: "RESET_VIEW" });
     toast({ title: t("commandSent"), description: t("resetViewIfSupported") });
-  };
-
-  const toggleViewMode = () => {
-    setViewMode(prev => prev === 'map' ? 'config' : 'map');
   };
 
   // Fetch companion JSON file
@@ -272,8 +266,8 @@ export default function VisualizationMaps({
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="w-full h-[90vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
+    <div className="h-full flex flex-col">
+      <div className="w-full h-[120vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
         <MapHeader
           displayName={displayName}
           isFavorite={isFav}
@@ -290,13 +284,12 @@ export default function VisualizationMaps({
           onCopyLink={() => copyToClipboard(href, t("linkCopied"))}
           onCopyName={() => copyToClipboard(displayName, t("mapNameCopied"))}
           onResetView={handleResetView}
-          onToggleViewMode={toggleViewMode}
-          viewMode={viewMode}
         />
 
-        {/* Content area that switches between MapViewer and MapConfiguration */}
-        <div className="flex-1 overflow-hidden">
-          {viewMode === 'map' ? (
+        {/* Main content area with flex column layout */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Map takes all available space */}
+          <div className="flex-1 min-h-0">
             <MapViewer
               isHtml={isHtml}
               href={href}
@@ -322,14 +315,15 @@ export default function VisualizationMaps({
               onRetry={handleReload}
               onOpen={() => window.open(href, "_blank", "noreferrer")}
             />
-          ) : (
-            <div className="h-full overflow-y-auto overflow-x-hidden p-4">
-              <MapConfiguration
-                map={active}
-                mapJson={mapJsonData}
-              />
-            </div>
-          )}
+          </div>
+
+          {/* Configuration panel - scrollable if needed */}
+          <div className="border-t border-surface-3 max-h-[30vh] overflow-y-auto">
+            <MapConfiguration
+              map={active}
+              mapJson={mapJsonData}
+            />
+          </div>
         </div>
 
         <MapFooter
