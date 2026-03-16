@@ -49,23 +49,22 @@ export function DayChartConfig({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-xs font-semibold text-text-primary">
-        {t('dayByDayChartConfiguration')}
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-[11px] font-medium text-text-secondary">
+    <div className="space-y-3 pt-2 border-t border-surface-3/50">
+      <div className="space-y-1.5">
+        <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
           {t('dayRange')}
         </Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-start text-left text-xs h-9 font-normal rounded-md border-surface-3 bg-surface-1 hover:bg-surface-0/70"
+              className="w-full justify-between text-left text-xs h-8 font-normal rounded-md border-surface-3 bg-surface-1/50 hover:bg-surface-0 transition-colors px-2"
             >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              <RangeLabel range={daysRange} />
+              <div className="flex items-center truncate">
+                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-text-tertiary" />
+                <RangeLabel range={daysRange} />
+              </div>
+              <span className="text-[10px] text-text-tertiary ml-2 shrink-0">{days}</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -81,18 +80,15 @@ export function DayChartConfig({
             />
           </PopoverContent>
         </Popover>
-        <p className="text-[10px] text-text-tertiary">
-          {t('currentValue')}: {days}
-        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[11px] font-medium text-text-secondary">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
             {t('mode')}
           </Label>
           <Select value={mode} onValueChange={onModeChange}>
-            <SelectTrigger className="h-9 text-xs rounded-md border-surface-3 bg-surface-1">
+            <SelectTrigger className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-surface-3 bg-surface-1/95 backdrop-blur-md">
@@ -102,13 +98,13 @@ export function DayChartConfig({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-[11px] font-medium text-text-secondary">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
             {t('frequency')}
           </Label>
           <Input
             type="text"
-            className="h-9 text-xs rounded-md border-surface-3 bg-surface-1"
+            className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors"
             value={freq}
             onChange={(e) => onFreqChange(e.target.value)}
             placeholder="1, 7, 30…"

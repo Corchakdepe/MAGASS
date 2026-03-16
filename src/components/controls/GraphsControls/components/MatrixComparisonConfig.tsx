@@ -1,8 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Autocomplete from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
@@ -32,31 +30,27 @@ export function MatrixComparisonConfig({
   const {t} = useLanguage();
 
   return (
-    <div className="space-y-4">
-      <div className="text-xs font-semibold text-text-primary">
-        {t('matrixComparisonConfiguration')}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[11px] font-medium text-text-secondary">
+    <div className="space-y-3 pt-2 border-t border-surface-3/50">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
             {t('delta')}
           </Label>
           <Input
             type="text"
-            className="h-9 text-xs rounded-md border-surface-3 bg-surface-1"
+            className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors"
             value={delta}
             onChange={(e) => onDeltaChange(e.target.value)}
             placeholder="1440"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-[11px] font-medium text-text-secondary">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
             {t('mode')}
           </Label>
           <Select value={mode} onValueChange={onModeChange}>
-            <SelectTrigger className="h-9 text-xs rounded-md border-surface-3 bg-surface-1">
+            <SelectTrigger className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-surface-3 bg-surface-1/95 backdrop-blur-md">
@@ -67,54 +61,32 @@ export function MatrixComparisonConfig({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-[11px] font-medium text-text-secondary">
-          {t('stationsSet1')}
-        </Label>
-        <Autocomplete
-          freeSolo
-          options={[]}
-          value={stations1}
-          onInputChange={(_, val) => onStations1Change(val)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="1;2;3;…"
-              size="small"
-              sx={{
-                "& .MuiInputBase-root": {
-                  fontSize: "0.75rem",
-                  height: "2.25rem",
-                },
-              }}
-            />
-          )}
-        />
-      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+            {t('stationsSet1')}
+          </Label>
+          <Input
+            type="text"
+            className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors"
+            value={stations1}
+            onChange={(e) => onStations1Change(e.target.value)}
+            placeholder="1;2;3..."
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label className="text-[11px] font-medium text-text-secondary">
-          {t('stationsSet2')}
-        </Label>
-        <Autocomplete
-          freeSolo
-          options={[]}
-          value={stations2}
-          onInputChange={(_, val) => onStations2Change(val)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="4;5;6;…"
-              size="small"
-              sx={{
-                "& .MuiInputBase-root": {
-                  fontSize: "0.75rem",
-                  height: "2.25rem",
-                },
-              }}
-            />
-          )}
-        />
+        <div className="space-y-1.5">
+          <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary">
+            {t('stationsSet2')}
+          </Label>
+          <Input
+            type="text"
+            className="h-8 text-xs rounded-md border-surface-3 bg-surface-1/50 focus:bg-surface-1 transition-colors"
+            value={stations2}
+            onChange={(e) => onStations2Change(e.target.value)}
+            placeholder="4;5;6..."
+          />
+        </div>
       </div>
     </div>
   );

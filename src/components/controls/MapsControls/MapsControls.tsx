@@ -90,9 +90,9 @@ export function MapsControls({
     return (
         <div className="space-y-4">
             {/* Map selector and name input */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label className="text-[11px] font-medium text-text-secondary">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                         {t('selectMap')}
                     </Label>
                     <Popover open={mapPickerOpen} onOpenChange={setMapPickerOpen}>
@@ -102,26 +102,26 @@ export function MapsControls({
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={mapPickerOpen}
-                                className="h-9 w-full rounded-md border border-surface-3 bg-surface-1 text-xs text-text-primary hover:bg-surface-0/70 flex items-center justify-between"
+                                className="h-8 w-full rounded-md border border-surface-3 bg-surface-1/50 text-xs text-text-primary hover:bg-surface-0 transition-colors flex items-center justify-between px-2"
                             >
-                                <span className="truncate flex-1 text-left">
+                                <span className="truncate flex-1 text-left font-medium">
                                     {selectedMapLabel}
                                 </span>
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-text-secondary"/>
+                                <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary"/>
                             </Button>
                         </PopoverTrigger>
 
                         <PopoverContent
                             align="start"
-                            className="w-[--radix-popover-trigger-width] p-2 rounded-lg border border-surface-3 bg-surface-1/95 backdrop-blur-md shadow-mac-panel"
+                            className="w-[--radix-popover-trigger-width] p-1 rounded-lg border border-surface-3 bg-surface-1/95 backdrop-blur-md shadow-mac-panel"
                         >
                             <Command className="bg-transparent">
                                 <CommandInput
                                     placeholder={t('searchMap')}
-                                    className="h-9 text-xs"
+                                    className="h-8 text-xs border-none focus:ring-0"
                                 />
-                                <CommandList>
-                                    <CommandEmpty className="py-2 text-xs text-text-secondary">
+                                <CommandList className="custom-scrollbar">
+                                    <CommandEmpty className="py-2 text-xs text-text-secondary px-2">
                                         {t('noResults')}
                                     </CommandEmpty>
                                     <CommandGroup>
@@ -143,15 +143,15 @@ export function MapsControls({
                                                         }
                                                         setMapPickerOpen(false);
                                                     }}
-                                                    className="text-xs"
+                                                    className="text-xs rounded-md mx-1 my-0.5"
                                                 >
                                                     <Check
                                                         className={cn(
-                                                            "mr-2 h-4 w-4",
+                                                            "mr-2 h-3.5 w-3.5",
                                                             isSelected ? "opacity-100 text-accent" : "opacity-0",
                                                         )}
                                                     />
-                                                    <span className="truncate">{m.label}</span>
+                                                    <span className={cn("truncate", isSelected && "text-accent font-medium")}>{m.label}</span>
                                                 </CommandItem>
                                             );
                                         })}
@@ -159,11 +159,11 @@ export function MapsControls({
                                 </CommandList>
                             </Command>
 
-                            <div className="pt-2">
+                            <div className="pt-1 border-t border-surface-3/50 mt-1">
                                 <Button
                                     type="button"
                                     variant="ghost"
-                                    className="w-full h-8 text-xs text-text-secondary hover:bg-surface-0/70"
+                                    className="w-full h-7 text-[10px] text-text-tertiary hover:bg-surface-0 rounded-md"
                                     onClick={() => {
                                         setSelectedMaps([]);
                                         setMapPickerOpen(false);
@@ -176,12 +176,12 @@ export function MapsControls({
                     </Popover>
                 </div>
 
-                <div className="space-y-2">
-                    <Label className="text-[11px] font-medium text-text-secondary">
+                <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                         {t('mapDescriptiveName')}
                     </Label>
                     <Input
-                        className="h-9 w-full rounded-md border border-surface-3 bg-surface-1 text-xs text-text-primary hover:bg-surface-0/70 focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:border-accent/30"
+                        className="h-8 w-full rounded-md border border-surface-3 bg-surface-1/50 text-xs text-text-primary hover:bg-surface-0 transition-colors focus-visible:ring-2 focus-visible:ring-accent/25 px-2"
                         placeholder={t('mapDescriptiveName')}
                         value={mapUserName}
                         onChange={(e) => setMapUserName(e.target.value)}
@@ -191,8 +191,9 @@ export function MapsControls({
 
             {/* Filter warning */}
             {useFilterForMaps && (
-                <div className="flex items-center gap-2 rounded-md bg-warning-soft px-3 py-2 border border-warning/30">
-                    <span className="text-xs font-medium text-warning">
+                <div className="flex items-center gap-2 rounded-md bg-accent/5 px-2 py-1.5 border border-accent/20 animate-in fade-in slide-in-from-top-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">
                         {t('activeFilter')}
                     </span>
                 </div>
@@ -200,16 +201,12 @@ export function MapsControls({
 
             {/* Map-specific configuration */}
             {selectedMap && (
-                <div className="rounded-lg border border-surface-3 bg-surface-0/60 p-4 space-y-4">
+                <div className="space-y-4 pt-4 border-t border-surface-3/50 animate-in fade-in slide-in-from-top-2 duration-300">
                     {/* Mapa densidad */}
                     {selectedMap === "mapa_densidad" && (
                         <div className="space-y-4">
-                            <div className="text-xs font-semibold text-text-primary">
-                                {t('densityMap')}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-medium text-text-secondary">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                     {t('instants')}
                                 </Label>
                                 <InstantesInput
@@ -219,7 +216,7 @@ export function MapsControls({
                                 />
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Label className="text-[11px] font-medium text-text-secondary">
                                     {t('stations')}
                                 </Label>
@@ -237,12 +234,8 @@ export function MapsControls({
                     {/* Mapa círculos */}
                     {selectedMap === "mapa_circulo" && (
                         <div className="space-y-4">
-                            <div className="text-xs font-semibold text-text-primary">
-                                {t('circleMap')}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-medium text-text-secondary">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                     {t('stations')}
                                 </Label>
                                 <StationsSelector
@@ -254,8 +247,8 @@ export function MapsControls({
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-medium text-text-secondary">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                     {t('instants')}
                                 </Label>
                                 <InstantesInput
@@ -270,12 +263,8 @@ export function MapsControls({
                     {/* Mapa Voronoi */}
                     {selectedMap === "mapa_voronoi" && (
                         <div className="space-y-4">
-                            <div className="text-xs font-semibold text-text-primary">
-                                {t('voronoiMap')}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-medium text-text-secondary">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                     {t('instants')}
                                 </Label>
                                 <InstantesInput
@@ -290,12 +279,8 @@ export function MapsControls({
                     {/* Mapa de desplazamientos */}
                     {selectedMap === "mapa_desplazamientos" && (
                         <div className="space-y-4">
-                            <div className="text-xs font-semibold text-text-primary">
-                                {t('displacementMap')}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-medium text-text-secondary">
+                            <div className="space-y-1.5">
+                                <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                     {t('instants')}
                                 </Label>
                                 <Input
@@ -306,12 +291,12 @@ export function MapsControls({
                                         setInstantesFor("mapa_desplazamientos_inst", e.target.value)
                                     }
                                 />
-                                <p className="text-[11px] text-text-secondary">{t('timeList')}</p>
+                                <p className="text-[10px] text-text-tertiary px-1">{t('timeList')}</p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-medium text-text-secondary">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                         {t('originTimeWindow')}
                                     </Label>
                                     <Input
@@ -324,8 +309,8 @@ export function MapsControls({
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label className="text-[11px] font-medium text-text-secondary">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                                         {t('destinationTimeWindow')}
                                     </Label>
                                     <Input
@@ -339,30 +324,32 @@ export function MapsControls({
                                 </div>
                             </div>
 
-                            {/* Movimiento */}
-                            <SelectLikeCombobox
-                                label={t('movement')}
-                                placeholder={t('movement')}
-                                value={instantesMaps["mapa_desplazamientos_mov"] ?? ""}
-                                onValueChange={(v) => setInstantesFor("mapa_desplazamientos_mov", v)}
-                                options={[
-                                    {label: t('arrivals'), value: "1"},
-                                    {label: t('departures'), value: "-1"},
-                                ]}
-                            />
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {/* Movimiento */}
+                                <SelectLikeCombobox
+                                    label={t('movement')}
+                                    placeholder={t('movement')}
+                                    value={instantesMaps["mapa_desplazamientos_mov"] ?? ""}
+                                    onValueChange={(v) => setInstantesFor("mapa_desplazamientos_mov", v)}
+                                    options={[
+                                        {label: t('arrivals'), value: "1"},
+                                        {label: t('departures'), value: "-1"},
+                                    ]}
+                                />
 
-                            {/* Tipo */}
-                            <SelectLikeCombobox
-                                label={t('type')}
-                                placeholder={t('type')}
-                                value={instantesMaps["mapa_desplazamientos_tipo"] ?? ""}
-                                onValueChange={(v) => setInstantesFor("mapa_desplazamientos_tipo", v)}
-                                options={[
-                                    {label: t('real'), value: "1"},
-                                    {label: t('fictitious'), value: "0"},
-                                    {label: t('all'), value: ""},
-                                ]}
-                            />
+                                {/* Tipo */}
+                                <SelectLikeCombobox
+                                    label={t('type')}
+                                    placeholder={t('type')}
+                                    value={instantesMaps["mapa_desplazamientos_tipo"] ?? ""}
+                                    onValueChange={(v) => setInstantesFor("mapa_desplazamientos_tipo", v)}
+                                    options={[
+                                        {label: t('real'), value: "1"},
+                                        {label: t('fictitious'), value: "0"},
+                                        {label: t('all'), value: ""},
+                                    ]}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -390,8 +377,8 @@ function SelectLikeCombobox({
         options.find((o) => o.value === value)?.label ?? placeholder;
 
     return (
-        <div className="space-y-2">
-            <Label className="text-[11px] font-medium text-text-secondary">
+        <div className="space-y-1.5">
+            <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-tertiary px-1">
                 {label}
             </Label>
             <Popover open={open} onOpenChange={setOpen}>
@@ -401,23 +388,20 @@ function SelectLikeCombobox({
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="w-full justify-between h-9 rounded-md border-surface-3 bg-surface-1 text-xs text-text-primary hover:bg-surface-0/70"
+                        className="h-8 w-full rounded-md border border-surface-3 bg-surface-1/50 text-xs text-text-primary hover:bg-surface-0 transition-colors flex items-center justify-between px-2 font-medium"
                     >
-                        <span className="truncate">{selectedLabel}</span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-text-secondary"/>
+                        <span className="truncate flex-1 text-left font-medium">
+                            {selectedLabel}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-text-tertiary"/>
                     </Button>
                 </PopoverTrigger>
-
                 <PopoverContent
                     align="start"
-                    className="w-[--radix-popover-trigger-width] p-2 rounded-lg border border-surface-3 bg-surface-1/95 backdrop-blur-md shadow-mac-panel"
+                    className="w-[--radix-popover-trigger-width] p-1 rounded-lg border border-surface-3 bg-surface-1/95 backdrop-blur-md shadow-mac-panel"
                 >
                     <Command className="bg-transparent">
-                        <CommandInput placeholder={t('search')} className="h-9 text-xs"/>
-                        <CommandList>
-                            <CommandEmpty className="py-2 text-xs text-text-secondary">
-                                {t('noResults')}
-                            </CommandEmpty>
+                        <CommandList className="custom-scrollbar">
                             <CommandGroup>
                                 {options.map((o) => {
                                     const isSelected = o.value === value;
@@ -429,15 +413,15 @@ function SelectLikeCombobox({
                                                 onValueChange(o.value);
                                                 setOpen(false);
                                             }}
-                                            className="text-xs"
+                                            className="text-xs rounded-md mx-1 my-0.5"
                                         >
                                             <Check
                                                 className={cn(
-                                                    "mr-2 h-4 w-4",
+                                                    "mr-2 h-3.5 w-3.5",
                                                     isSelected ? "opacity-100 text-accent" : "opacity-0",
                                                 )}
                                             />
-                                            <span className="truncate">{o.label}</span>
+                                            <span className={cn("truncate", isSelected && "text-accent font-medium")}>{o.label}</span>
                                         </CommandItem>
                                     );
                                 })}

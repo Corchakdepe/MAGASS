@@ -35,51 +35,42 @@ export function MapsAndGraphsFilterControls({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <FilterToggle enabled={useFilterForMaps} onToggle={setUseFilterForMaps} />
 
       {useFilterForMaps && (
-        <div className="rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md p-4 space-y-4">
-          <div>
-            <div className="text-xs font-semibold text-text-primary">
+        <div className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="px-1">
+            <div className="text-[10px] uppercase tracking-widest font-bold text-text-tertiary">
               {t('stationFiltering')}
-            </div>
-            <div className="text-[11px] text-text-secondary">
-              {t('restrictResultsByValueAndRange')}
             </div>
           </div>
 
-          <FilterTypeSelect value={filterKind} onChange={setFilterKind} />
+          <div className="space-y-3 pt-2 border-t border-surface-3/50">
+            <FilterTypeSelect value={filterKind} onChange={setFilterKind} />
 
-          <div className="h-px bg-surface-3/70" aria-hidden="true" />
+            <OperatorValueInputs
+              filterState={filterState}
+              onChange={updateFilterState}
+            />
 
-          <OperatorValueInputs
-            filterState={filterState}
-            onChange={updateFilterState}
-          />
+            <DayPercentageSlider
+              value={filterState.dayPct}
+              onChange={(dayPct) => updateFilterState({dayPct})}
+            />
 
-          <div className="h-px bg-surface-3/70" aria-hidden="true" />
+            <DaysRangeSelector
+              range={daysRange}
+              onRangeChange={setDaysRange}
+              onFilterStateUpdate={updateFilterState}
+              dateDiffInDays={dateDiffInDays}
+            />
 
-          <DayPercentageSlider
-            value={filterState.dayPct}
-            onChange={(dayPct) => updateFilterState({dayPct})}
-          />
-
-          <div className="h-px bg-surface-3/70" aria-hidden="true" />
-
-          <DaysRangeSelector
-            range={daysRange}
-            onRangeChange={setDaysRange}
-            onFilterStateUpdate={updateFilterState}
-            dateDiffInDays={dateDiffInDays}
-          />
-
-          <div className="h-px bg-surface-3/70" aria-hidden="true" />
-
-          <ExceptionDaysInput
-            value={filterState.allowedFailDays}
-            onChange={(allowedFailDays) => updateFilterState({allowedFailDays})}
-          />
+            <ExceptionDaysInput
+              value={filterState.allowedFailDays}
+              onChange={(allowedFailDays) => updateFilterState({allowedFailDays})}
+            />
+          </div>
         </div>
       )}
     </div>

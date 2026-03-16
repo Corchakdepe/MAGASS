@@ -36,31 +36,35 @@ export function StationsSelector({
                 : t('stations');
 
     return (
-        <div className="space-y-1">
-            <Input
-                className="w-full justify-between h-9 rounded-md border-surface-3 bg-surface-1 text-xs text-text-primary hover:bg-surface-0/70"
-                placeholder={t('stationsPlaceholder')}
-                value={value}
-                disabled={disabled}
-                onChange={(e) => onChange(mapKey, e.target.value)}
-            />
-            <div className="mt-5 flex items-baseline justify-between gap-3">
-                <span
-                    className="rounded-full border border-accent/25 bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent">
-                    {value || "0"}
-                </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-                {value && onClear && (
+        <div className="space-y-1.5">
+            <div className="relative group">
+                <Input
+                    className="w-full h-8 rounded-md border-surface-3 bg-surface-1/50 text-xs text-text-primary hover:bg-surface-0 transition-colors focus-visible:ring-2 focus-visible:ring-accent/25 pr-10"
+                    placeholder={t('stationsPlaceholder')}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(e) => onChange(mapKey, e.target.value)}
+                />
+                {value && onClear && !disabled && (
                     <button
                         type="button"
-                        className="rounded-full border border-warning/25 bg-warning-soft px-2.5 py-1 text-xs font-semibold text-warning"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-tertiary hover:text-warning transition-colors"
                         onClick={() => onClear()}
                     >
-                        {t('clear')}
+                        <span className="text-[10px] font-bold">✕</span>
                     </button>
                 )}
             </div>
+            {value && (
+                <div className="flex items-center gap-2 px-1">
+                    <span className="text-[10px] text-text-tertiary font-medium">
+                        {t('selectedCount') || 'Selected'}:
+                    </span>
+                    <span className="text-[10px] font-bold text-accent">
+                        {value.split(';').filter(Boolean).length}
+                    </span>
+                </div>
+            )}
         </div>
     );
 }
