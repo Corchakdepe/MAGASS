@@ -1,0 +1,20 @@
+{
+  "map_name": null,
+  "matrix_type": "5",
+  "delta_media": null,
+  "generated_at": "2026-03-10T11:37:05.663752",
+  "map_kind": "voronoi",
+  "status": "error",
+  "files": {
+    "html": "20260310_113705_MapaVoronoi_instante0DNoneS0.0C0.0.html",
+    "json": "20260310_113705_MapaVoronoi_instante0DNoneS0.0C0.0.json",
+    "csv": "20260310_113705_MapaVoronoi_instante0DNoneS0.0C0.0.csv"
+  },
+  "error": "index 0 is out of bounds for axis 0 with size 0",
+  "instant": 0,
+  "stations": [
+    0
+  ],
+  "stations_count": 1,
+  "spec": "0"
+}

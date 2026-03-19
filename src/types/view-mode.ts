@@ -3,5 +3,8 @@ export type MainContentMode =
     | 'simulations'
     | 'analyticsGraphs'
     | 'analyticsMaps'
+    | 'history'
     | 'maps'
-    | 'filters';
+    | 'filters'
+    | 'statisticsAnalyzer'
+    | 'dirComparison';

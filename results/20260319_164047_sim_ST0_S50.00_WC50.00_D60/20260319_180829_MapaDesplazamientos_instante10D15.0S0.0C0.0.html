@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_61806be0bb10b7614dc3deeeea442f64 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_61806be0bb10b7614dc3deeeea442f64" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_61806be0bb10b7614dc3deeeea442f64 = L.map(
+                "map_61806be0bb10b7614dc3deeeea442f64",
+                {
+                    center: [37.37165, -5.99775],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 12,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_c9f5ba38de1bc1edd038261b7b36e783 = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca target=\"_blank\" href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\"_blank\" href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var feature_group_905825171c5728bf2983d83b7ffcd31a = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_fbbe7d34b0bf4446203eddb5799088c8 = L.polyline(
+                [[37.371652, -5.99775], [37.37165, -5.997913], [37.371622, -5.997913], [37.371605, -5.998644], [37.371603, -5.998694], [37.371602, -5.998751], [37.371572, -5.999796], [37.371571, -5.999822], [37.3716, -5.999823], [37.372134, -5.999847], [37.372433, -5.99986], [37.37255, -5.999865], [37.372995, -5.999885], [37.372999, -5.999748], [37.373028, -5.998761], [37.373062, -5.997607]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 10}
+            ).addTo(feature_group_905825171c5728bf2983d83b7ffcd31a);
+        
+    
+            var marker_9c06a51f99c43db0617699469d51c01c = L.marker(
+                [37.371652, -5.99775],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_9a3da8aa3eed6276c8af21822ffa0587 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_0d1607537cd36f9b289c8ec89508e414 = $(`<div id="html_0d1607537cd36f9b289c8ec89508e414" style="width: 100.0%; height: 100.0%;">Start of Route 1 Station 78</div>`)[0];
+                popup_9a3da8aa3eed6276c8af21822ffa0587.setContent(html_0d1607537cd36f9b289c8ec89508e414);
+            
+        
+
+        marker_9c06a51f99c43db0617699469d51c01c.bindPopup(popup_9a3da8aa3eed6276c8af21822ffa0587)
+        ;
+
+        
+    
+    
+            var marker_d30d475b1aa98843f1dc00aa9c044918 = L.marker(
+                [37.373062, -5.997607],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_8609590123d857b80cf3962721734715 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_d30d475b1aa98843f1dc00aa9c044918.setIcon(icon_8609590123d857b80cf3962721734715);
+        
+    
+        var popup_d4ffac5ffd79bd58bd10e716f2f3a31d = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_a8627e87d0da60a3c1e80e095c20dd8c = $(`<div id="html_a8627e87d0da60a3c1e80e095c20dd8c" style="width: 100.0%; height: 100.0%;">End of route 1 Station 128</div>`)[0];
+                popup_d4ffac5ffd79bd58bd10e716f2f3a31d.setContent(html_a8627e87d0da60a3c1e80e095c20dd8c);
+            
+        
+
+        marker_d30d475b1aa98843f1dc00aa9c044918.bindPopup(popup_d4ffac5ffd79bd58bd10e716f2f3a31d)
+        ;
+
+        
+    
+    
+            var feature_group_87818e43a406002227cacbb7657829a7 = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_cabf38f2572de29bb72cb7894b42d693 = L.polyline(
+                [[37.399666, -5.977762], [37.399751, -5.977616], [37.399765, -5.977589], [37.399834, -5.977467], [37.399587, -5.977277], [37.399624, -5.977199], [37.39983, -5.97677], [37.399798, -5.976743], [37.400682, -5.975079], [37.400825, -5.975162]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 10}
+            ).addTo(feature_group_87818e43a406002227cacbb7657829a7);
+        
+    
+            var marker_6ae23f5a0f485dbf6b8712d0e8035a8f = L.marker(
+                [37.399666, -5.977762],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_cb33f8f5b714b304e3c2064bd2466656 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_8371e94abba84f3b103630c81243a63d = $(`<div id="html_8371e94abba84f3b103630c81243a63d" style="width: 100.0%; height: 100.0%;">Start of Route 2 Station 122</div>`)[0];
+                popup_cb33f8f5b714b304e3c2064bd2466656.setContent(html_8371e94abba84f3b103630c81243a63d);
+            
+        
+
+        marker_6ae23f5a0f485dbf6b8712d0e8035a8f.bindPopup(popup_cb33f8f5b714b304e3c2064bd2466656)
+        ;
+
+        
+    
+    
+            var marker_fa848e2592d4e90d7e806aa223042302 = L.marker(
+                [37.400825, -5.975162],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_987b4a26e342a185f9b6a15bbf928afb = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_fa848e2592d4e90d7e806aa223042302.setIcon(icon_987b4a26e342a185f9b6a15bbf928afb);
+        
+    
+        var popup_d8f3cfe55b5469c9b2c977e71aae0f35 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_b967a3928214e9af4d855342863d3f03 = $(`<div id="html_b967a3928214e9af4d855342863d3f03" style="width: 100.0%; height: 100.0%;">End of route 2 Station 166</div>`)[0];
+                popup_d8f3cfe55b5469c9b2c977e71aae0f35.setContent(html_b967a3928214e9af4d855342863d3f03);
+            
+        
+
+        marker_fa848e2592d4e90d7e806aa223042302.bindPopup(popup_d8f3cfe55b5469c9b2c977e71aae0f35)
+        ;
+
+        
+    
+    
+            var feature_group_adc62a4b48f48394d6219d1a76f1e60e = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_d1e679bacf8566e104190bb272433752 = L.polyline(
+                [[37.373062, -5.997607], [37.373028, -5.998761], [37.372999, -5.999748], [37.372995, -5.999885], [37.373555, -5.99991], [37.374069, -5.999933], [37.374642, -5.999962], [37.374669, -5.99884], [37.374678, -5.998536]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 5}
+            ).addTo(feature_group_adc62a4b48f48394d6219d1a76f1e60e);
+        
+    
+            var marker_0b4231e7fd8120d30e1cc1081201e07b = L.marker(
+                [37.373062, -5.997607],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_011864166c8bcd5e66a0884a2439b4bd = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_a8595c12cc90f897875e232743effabd = $(`<div id="html_a8595c12cc90f897875e232743effabd" style="width: 100.0%; height: 100.0%;">Start of Route 3 Station 128</div>`)[0];
+                popup_011864166c8bcd5e66a0884a2439b4bd.setContent(html_a8595c12cc90f897875e232743effabd);
+            
+        
+
+        marker_0b4231e7fd8120d30e1cc1081201e07b.bindPopup(popup_011864166c8bcd5e66a0884a2439b4bd)
+        ;
+
+        
+    
+    
+            var marker_917628d0397144657a7eb2f42ffe598c = L.marker(
+                [37.374678, -5.998536],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_04b4a6b132ba85960597f7dc66477f2c = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_917628d0397144657a7eb2f42ffe598c.setIcon(icon_04b4a6b132ba85960597f7dc66477f2c);
+        
+    
+        var popup_136b1ce58a27ba6f5c6097dd755d93c4 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_ea05a77f306188dce959bbe0875c7725 = $(`<div id="html_ea05a77f306188dce959bbe0875c7725" style="width: 100.0%; height: 100.0%;">End of route 3 Station 249</div>`)[0];
+                popup_136b1ce58a27ba6f5c6097dd755d93c4.setContent(html_ea05a77f306188dce959bbe0875c7725);
+            
+        
+
+        marker_917628d0397144657a7eb2f42ffe598c.bindPopup(popup_136b1ce58a27ba6f5c6097dd755d93c4)
+        ;
+
+        
+    
+    
+            var feature_group_98103c008ec78427727cfcec5f1b74b5 = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_5b00182e88fa3b25a2f09990fcdc1547 = L.polyline(
+                [[37.388944, -5.995287], [37.388921, -5.995614], [37.388874, -5.995608], [37.388864, -5.995755]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 5}
+            ).addTo(feature_group_98103c008ec78427727cfcec5f1b74b5);
+        
+    
+            var marker_67a71e8089d2c7169550ae5e0e001423 = L.marker(
+                [37.388944, -5.995287],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_2ca02d35eef00fda830b20cbbacdbbb8 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_6a7bc61804b7774ee39509c11b4f607c = $(`<div id="html_6a7bc61804b7774ee39509c11b4f607c" style="width: 100.0%; height: 100.0%;">Start of Route 4 Station 26</div>`)[0];
+                popup_2ca02d35eef00fda830b20cbbacdbbb8.setContent(html_6a7bc61804b7774ee39509c11b4f607c);
+            
+        
+
+        marker_67a71e8089d2c7169550ae5e0e001423.bindPopup(popup_2ca02d35eef00fda830b20cbbacdbbb8)
+        ;
+
+        
+    
+    
+            var marker_b0566b70f0679709bedbfc83ce453d05 = L.marker(
+                [37.388864, -5.995755],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_66c7e9212c44f4ea5c5cdba5e96ff1de = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_b0566b70f0679709bedbfc83ce453d05.setIcon(icon_66c7e9212c44f4ea5c5cdba5e96ff1de);
+        
+    
+        var popup_1902a13bd326fce1c631ba7735651fa2 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_203704c9f2a17429bd6c0fec58c38212 = $(`<div id="html_203704c9f2a17429bd6c0fec58c38212" style="width: 100.0%; height: 100.0%;">End of route 4 Station 85</div>`)[0];
+                popup_1902a13bd326fce1c631ba7735651fa2.setContent(html_203704c9f2a17429bd6c0fec58c38212);
+            
+        
+
+        marker_b0566b70f0679709bedbfc83ce453d05.bindPopup(popup_1902a13bd326fce1c631ba7735651fa2)
+        ;
+
+        
+    
+    
+            var feature_group_4eeac0f8425f3fa0b52f1daa1fafeb90 = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_23614f4325472a32aca2183784e247cb = L.polyline(
+                [[37.388918, -5.995648], [37.388921, -5.995614], [37.388874, -5.995608], [37.388864, -5.995755]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 10}
+            ).addTo(feature_group_4eeac0f8425f3fa0b52f1daa1fafeb90);
+        
+    
+            var marker_eeb81ffa451667d2f039b3ae51efb86a = L.marker(
+                [37.388918, -5.995648],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_332f5981168289c7ea9011f05da73be7 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_94ebc8567ed1de6416dc660229a5adaa = $(`<div id="html_94ebc8567ed1de6416dc660229a5adaa" style="width: 100.0%; height: 100.0%;">Start of Route 5 Station 239</div>`)[0];
+                popup_332f5981168289c7ea9011f05da73be7.setContent(html_94ebc8567ed1de6416dc660229a5adaa);
+            
+        
+
+        marker_eeb81ffa451667d2f039b3ae51efb86a.bindPopup(popup_332f5981168289c7ea9011f05da73be7)
+        ;
+
+        
+    
+    
+            var marker_0def37fdb46af52e27cbda3d89e9abcd = L.marker(
+                [37.388864, -5.995755],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_2f44ac2c29f4a1cdd6e1ffd11b940920 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_0def37fdb46af52e27cbda3d89e9abcd.setIcon(icon_2f44ac2c29f4a1cdd6e1ffd11b940920);
+        
+    
+        var popup_2b8b386de4ac66b2fad2017d7a5dbfde = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_c07d96dddb75e7c2518c2f6a9b9563ea = $(`<div id="html_c07d96dddb75e7c2518c2f6a9b9563ea" style="width: 100.0%; height: 100.0%;">End of route 5 Station 85</div>`)[0];
+                popup_2b8b386de4ac66b2fad2017d7a5dbfde.setContent(html_c07d96dddb75e7c2518c2f6a9b9563ea);
+            
+        
+
+        marker_0def37fdb46af52e27cbda3d89e9abcd.bindPopup(popup_2b8b386de4ac66b2fad2017d7a5dbfde)
+        ;
+
+        
+    
+    
+            var feature_group_e3bc9b4e73c8912126622e172014ff90 = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_8d1ffec12663f4efc32631955ebba206 = L.polyline(
+                [[37.409762, -5.984358], [37.409769, -5.984387], [37.409828, -5.984503], [37.409845, -5.984639], [37.409868, -5.984691], [37.40993, -5.984665], [37.410866, -5.98432], [37.410887, -5.984312], [37.410915, -5.984299], [37.411529, -5.984083], [37.411563, -5.984069], [37.411605, -5.984054], [37.411879, -5.98399], [37.411912, -5.983989], [37.411959, -5.983986], [37.412134, -5.983955], [37.412258, -5.983899], [37.412604, -5.983817], [37.412645, -5.983806], [37.412693, -5.9838], [37.412841, -5.983779], [37.412837, -5.983701], [37.412815, -5.983539], [37.412802, -5.983475], [37.412735, -5.983446], [37.412726, -5.983388], [37.412807, -5.983001], [37.41287, -5.982879], [37.412961, -5.982789], [37.413136, -5.982682], [37.413192, -5.98263], [37.413275, -5.982484], [37.413304, -5.982386], [37.413318, -5.982394], [37.413328, -5.982398], [37.413278, -5.982524]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 10}
+            ).addTo(feature_group_e3bc9b4e73c8912126622e172014ff90);
+        
+    
+            var marker_01fd246f8acca006040977fdbaae4aa6 = L.marker(
+                [37.409762, -5.984358],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_0c1a2f6537bb428c20b5f6dc8f653e65 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_f65f352fb1f3d01a1af06e8b7b3d5332 = $(`<div id="html_f65f352fb1f3d01a1af06e8b7b3d5332" style="width: 100.0%; height: 100.0%;">Start of Route 6 Station 241</div>`)[0];
+                popup_0c1a2f6537bb428c20b5f6dc8f653e65.setContent(html_f65f352fb1f3d01a1af06e8b7b3d5332);
+            
+        
+
+        marker_01fd246f8acca006040977fdbaae4aa6.bindPopup(popup_0c1a2f6537bb428c20b5f6dc8f653e65)
+        ;
+
+        
+    
+    
+            var marker_b41a91a8807958d5b84013b568858c54 = L.marker(
+                [37.413278, -5.982524],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_b0af43211a8a4c13adae0057914a2cda = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_b41a91a8807958d5b84013b568858c54.setIcon(icon_b0af43211a8a4c13adae0057914a2cda);
+        
+    
+        var popup_31541f6956496b913169130436bc5c71 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_6215486b09ea101e4d6d5999961a5d38 = $(`<div id="html_6215486b09ea101e4d6d5999961a5d38" style="width: 100.0%; height: 100.0%;">End of route 6 Station 209</div>`)[0];
+                popup_31541f6956496b913169130436bc5c71.setContent(html_6215486b09ea101e4d6d5999961a5d38);
+            
+        
+
+        marker_b41a91a8807958d5b84013b568858c54.bindPopup(popup_31541f6956496b913169130436bc5c71)
+        ;
+
+        
+    
+    
+            var feature_group_66402bf0883ce8f2c0a90a1401c330f6 = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_e3a99ae6bce9da5f2db6a80de45275dc = L.polyline(
+                [[37.376088, -5.9548], [37.375884, -5.954877], [37.375918, -5.955094], [37.375971, -5.955427], [37.376051, -5.955363], [37.37616, -5.955325], [37.376774, -5.955117], [37.376807, -5.955111], [37.377595, -5.954838], [37.377912, -5.954719], [37.377647, -5.953515], [37.377563, -5.953131], [37.377241, -5.953248], [37.376989, -5.952199], [37.376546, -5.952374], [37.376403, -5.952433], [37.375551, -5.952779], [37.3755, -5.952448], [37.37544, -5.952476], [37.375457, -5.952579], [37.375411, -5.952596]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 10}
+            ).addTo(feature_group_66402bf0883ce8f2c0a90a1401c330f6);
+        
+    
+            var marker_909ac7234d1d5a8d3734c1e92e7e451d = L.marker(
+                [37.376088, -5.9548],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_6917e78118a13847d20280dd26f130ba = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_cbf282d64ef196ef67d7a3f809f81e6b = $(`<div id="html_cbf282d64ef196ef67d7a3f809f81e6b" style="width: 100.0%; height: 100.0%;">Start of Route 7 Station 55</div>`)[0];
+                popup_6917e78118a13847d20280dd26f130ba.setContent(html_cbf282d64ef196ef67d7a3f809f81e6b);
+            
+        
+
+        marker_909ac7234d1d5a8d3734c1e92e7e451d.bindPopup(popup_6917e78118a13847d20280dd26f130ba)
+        ;
+
+        
+    
+    
+            var marker_26917d7ca8fc58410fa57580d476c19b = L.marker(
+                [37.375411, -5.952596],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_f34fa8b507b1ac4a7596fbf421a06757 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_26917d7ca8fc58410fa57580d476c19b.setIcon(icon_f34fa8b507b1ac4a7596fbf421a06757);
+        
+    
+        var popup_65e4fa72becd459c1924040e9e40a53e = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_dccca444b5641fc725aea93897e5517d = $(`<div id="html_dccca444b5641fc725aea93897e5517d" style="width: 100.0%; height: 100.0%;">End of route 7 Station 153</div>`)[0];
+                popup_65e4fa72becd459c1924040e9e40a53e.setContent(html_dccca444b5641fc725aea93897e5517d);
+            
+        
+
+        marker_26917d7ca8fc58410fa57580d476c19b.bindPopup(popup_65e4fa72becd459c1924040e9e40a53e)
+        ;
+
+        
+    
+    
+            var feature_group_7bff30009e814bdd17e687a0800b16b5 = L.featureGroup(
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var poly_line_bcb06862da7853067dd91a570a142f24 = L.polyline(
+                [[37.369624, -5.968761], [37.369929, -5.968505], [37.3701, -5.968435], [37.370055, -5.968594], [37.369779, -5.969161], [37.369676, -5.968982], [37.369557, -5.968893], [37.369524, -5.968846], [37.369476, -5.968785], [37.369422, -5.96879], [37.369352, -5.968791], [37.36935, -5.968635], [37.369258, -5.968545], [37.369064, -5.968778], [37.36892, -5.968945], [37.368877, -5.968988], [37.368831, -5.969004], [37.368844, -5.969163], [37.368823, -5.96927], [37.36879, -5.969343], [37.368832, -5.969424], [37.368867, -5.969491], [37.369033, -5.969822], [37.369026, -5.969861], [37.368557, -5.970238], [37.367221, -5.971324], [37.367107, -5.971116], [37.367083, -5.971072]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 10}
+            ).addTo(feature_group_7bff30009e814bdd17e687a0800b16b5);
+        
+    
+            var marker_97792b3064d1f162ba22ee3f189d26bd = L.marker(
+                [37.369624, -5.968761],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+        var popup_627e622172a9538c8dd5883bc5c05229 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_6387afdc7626b2730694cb88bbf479bf = $(`<div id="html_6387afdc7626b2730694cb88bbf479bf" style="width: 100.0%; height: 100.0%;">Start of Route 8 Station 58</div>`)[0];
+                popup_627e622172a9538c8dd5883bc5c05229.setContent(html_6387afdc7626b2730694cb88bbf479bf);
+            
+        
+
+        marker_97792b3064d1f162ba22ee3f189d26bd.bindPopup(popup_627e622172a9538c8dd5883bc5c05229)
+        ;
+
+        
+    
+    
+            var marker_db642ccc54e8f8c55e1e107079811f65 = L.marker(
+                [37.367083, -5.971072],
+                {}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+    
+            var icon_d0d0dd85185b170eae5e3bd9c6a13d53 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_db642ccc54e8f8c55e1e107079811f65.setIcon(icon_d0d0dd85185b170eae5e3bd9c6a13d53);
+        
+    
+        var popup_3c4d9501cc7163f090ad70041537bde0 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_ab0b7a5e40eb1715a88f5bbcb3964d74 = $(`<div id="html_ab0b7a5e40eb1715a88f5bbcb3964d74" style="width: 100.0%; height: 100.0%;">End of route 8 Station 177</div>`)[0];
+                popup_3c4d9501cc7163f090ad70041537bde0.setContent(html_ab0b7a5e40eb1715a88f5bbcb3964d74);
+            
+        
+
+        marker_db642ccc54e8f8c55e1e107079811f65.bindPopup(popup_3c4d9501cc7163f090ad70041537bde0)
+        ;
+
+        
+    
+    
+            var layer_control_2be9c49daae2dc7011639c76521a36db = {
+                base_layers : {
+                    "openstreetmap" : tile_layer_c9f5ba38de1bc1edd038261b7b36e783,
+                },
+                overlays :  {
+                    "Rute 1" : feature_group_905825171c5728bf2983d83b7ffcd31a,
+                    "Rute 2" : feature_group_87818e43a406002227cacbb7657829a7,
+                    "Rute 3" : feature_group_adc62a4b48f48394d6219d1a76f1e60e,
+                    "Rute 4" : feature_group_98103c008ec78427727cfcec5f1b74b5,
+                    "Rute 5" : feature_group_4eeac0f8425f3fa0b52f1daa1fafeb90,
+                    "Rute 6" : feature_group_e3bc9b4e73c8912126622e172014ff90,
+                    "Rute 7" : feature_group_66402bf0883ce8f2c0a90a1401c330f6,
+                    "Rute 8" : feature_group_7bff30009e814bdd17e687a0800b16b5,
+                },
+            };
+            L.control.layers(
+                layer_control_2be9c49daae2dc7011639c76521a36db.base_layers,
+                layer_control_2be9c49daae2dc7011639c76521a36db.overlays,
+                {"autoZIndex": true, "collapsed": true, "position": "topright"}
+            ).addTo(map_61806be0bb10b7614dc3deeeea442f64);
+        
+</script>
+</html>

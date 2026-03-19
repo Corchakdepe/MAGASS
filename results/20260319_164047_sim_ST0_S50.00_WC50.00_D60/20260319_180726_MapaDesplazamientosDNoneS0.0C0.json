@@ -1,0 +1,17 @@
+{
+  "map_name": null,
+  "matrix_type": "1",
+  "delta_media": null,
+  "generated_at": "2026-03-19T18:07:26.102886",
+  "map_kind": "displacement",
+  "status": "error",
+  "files": {
+    "html": "20260319_180726_MapaDesplazamientosDNoneS0.0C0.0.html",
+    "json": "20260319_180726_MapaDesplazamientosDNoneS0.0C0.0.json",
+    "csv": "20260319_180726_MapaDesplazamientosDNoneS0.0C0.0.csv"
+  },
+  "error": "Displacement map generation failed: Failed to generate displacement map file: Message: unknown error: no chrome binary at /usr/bin/chromium\nStacktrace:\n0   chromedriver                        0x0000000102d386b8 chromedriver + 4937400\n1   chromedriver                        0x0000000102d2fb73 chromedriver + 4901747\n2   chromedriver                        0x00000001028ed616 chromedriver + 435734\n3   chromedriver                        0x0000000102918f5a chromedriver + 614234\n4   chromedriver                        0x000000010291767c chromedriver + 607868\n5   chromedriver                        0x000000010295ea08 chromedriver + 899592\n6   chromedriver                        0x000000010295debf chromedriver + 896703\n7   chromedriver                        0x0000000102954de3 chromedriver + 859619\n8   chromedriver                        0x0000000102922d7f chromedriver + 654719\n9   chromedriver                        0x00000001029240de chromedriver + 659678\n10  chromedriver                        0x0000000102cf42ad chromedriver + 4657837\n11  chromedriver                        0x0000000102cf9130 chromedriver + 4677936\n12  chromedriver                        0x0000000102cffdef chromedriver + 4705775\n13  chromedriver                        0x0000000102cfa05a chromedriver + 4681818\n14  chromedriver                        0x0000000102ccc92c chromedriver + 4495660\n15  chromedriver                        0x0000000102d17838 chromedriver + 4802616\n16  chromedriver                        0x0000000102d179b7 chromedriver + 4802999\n17  chromedriver                        0x0000000102d2899f chromedriver + 4872607\n18  libsystem_pthread.dylib             0x00007ff815211e4d _pthread_start + 115\n19  libsystem_pthread.dylib             0x00007ff81520d857 thread_start + 15\n",
+  "stations": "all",
+  "stations_count": "all",
+  "spec": "10;15;720;-1;0"
+}

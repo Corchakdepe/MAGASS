@@ -1,0 +1,21 @@
+{
+  "map_name": null,
+  "matrix_type": "7",
+  "delta_media": null,
+  "generated_at": "2026-03-10T11:39:02.667060",
+  "map_kind": "circle",
+  "status": "error",
+  "files": {
+    "html": "20260310_113902_MapaCirculos_instante0DNoneS0.0C0.0.html",
+    "json": "20260310_113902_MapaCirculos_instante0DNoneS0.0C0.0.json",
+    "csv": "20260310_113902_MapaCirculos_instante0DNoneS0.0C0.0.csv"
+  },
+  "error": "single positional indexer is out-of-bounds",
+  "instant": 0,
+  "stations": [
+    0
+  ],
+  "stations_count": 1,
+  "show_labels": false,
+  "spec": "0"
+}
