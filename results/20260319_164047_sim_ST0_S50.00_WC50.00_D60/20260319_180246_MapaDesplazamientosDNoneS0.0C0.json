@@ -1,0 +1,17 @@
+{
+  "map_name": null,
+  "matrix_type": "1",
+  "delta_media": null,
+  "generated_at": "2026-03-19T18:02:46.124850",
+  "map_kind": "displacement",
+  "status": "error",
+  "files": {
+    "html": "20260319_180246_MapaDesplazamientosDNoneS0.0C0.0.html",
+    "json": "20260319_180246_MapaDesplazamientosDNoneS0.0C0.0.json",
+    "csv": "20260319_180246_MapaDesplazamientosDNoneS0.0C0.0.csv"
+  },
+  "error": "Displacement map generation failed: No displacements for instant=0, action=-1, type=0",
+  "stations": "all",
+  "stations_count": "all",
+  "spec": "0;15;60;-1;0"
+}

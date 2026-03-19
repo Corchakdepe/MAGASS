@@ -4,16 +4,17 @@ import logging
 import hashlib
 from pathlib import Path
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 import pandas as pd
 import numpy as np
+
 from bikesim import Constantes
 from bikesim.core.models import ChartMetadata, AnalysisArgs, StationDaySpec
 from bikesim.core.exceptions import ChartGenerationError
 from bikesim.utils.matrix_utils import (
     calculate_mean_by_hour,
     get_hour_indices,
-    get_hour_index_list
+    get_hour_index_list,
 )
 from bikesim.utils.parsers import parse_station_days_spec, parse_days_list
 from bikesim.config.constants import HOURS_PER_DAY
@@ -26,104 +27,129 @@ class ChartGenerator:
     """Generates chart outputs from matrix data."""
 
     def __init__(self, output_folder: Path, total_days: int, delta_time: int):
-        """
-        Initialize generator.
-
-        Args:
-            output_folder: Folder for chart outputs
-            total_days: Total number of days in matrix
-            delta_time: Time delta
-        """
         self.output_folder = output_folder
         self.total_days = total_days
         self.delta_time = delta_time
         self.output_folder.mkdir(exist_ok=True, parents=True)
 
     def generate_all(
-            self,
-            matrix: pd.DataFrame,
-            args: AnalysisArgs
+        self,
+        matrix: pd.DataFrame,
+        args: AnalysisArgs
     ) -> List[ChartMetadata]:
-        """
-        Generate all requested charts.
-
-        Args:
-            matrix: Data matrix
-            args: Analysis arguments
-
-        Returns:
-            List of chart metadata
-        """
         charts = []
-        matrix_type = args.seleccion_agregacion  # Get matrix type from args
+        matrix_type = args.seleccion_agregacion
 
         try:
             if args.graf_barras_est_med:
-                charts.append(self.generate_station_mean_chart(
-                    matrix, args.graf_barras_est_med, matrix_type
-                ))
+                charts.append(
+                    self.generate_station_mean_chart(
+                        matrix, args.graf_barras_est_med, matrix_type
+                    )
+                )
 
             if args.graf_barras_est_acum:
-                charts.append(self.generate_station_cumulative_chart(
-                    matrix, args.graf_barras_est_acum, matrix_type
-                ))
+                charts.append(
+                    self.generate_station_cumulative_chart(
+                        matrix, args.graf_barras_est_acum, matrix_type
+                    )
+                )
 
             if args.graf_barras_dia:
-                charts.append(self.generate_day_chart(
-                    matrix, args.graf_barras_dia, matrix_type
-                ))
+                charts.append(
+                    self.generate_day_chart(
+                        matrix, args.graf_barras_dia, matrix_type
+                    )
+                )
 
             if args.graf_linea_comp_est:
-                charts.append(self.generate_comparison_chart(
-                    matrix, args.graf_linea_comp_est, matrix_type
-                ))
+                charts.append(
+                    self.generate_comparison_chart(
+                        matrix, args.graf_linea_comp_est, matrix_type
+                    )
+                )
 
             if args.graf_linea_comp_mats:
-                charts.append(self.generate_matrix_comparison_chart(
-                    matrix, args.graf_linea_comp_mats, matrix_type
-                ))
+                charts.append(
+                    self.generate_matrix_comparison_chart(
+                        matrix, args.graf_linea_comp_mats, matrix_type
+                    )
+                )
 
         except Exception as e:
-            logger.error(f"Error generating charts: {e}")
+            logger.error(f"Error generating charts: {e}", exc_info=True)
             raise ChartGenerationError(f"Chart generation failed: {e}") from e
 
         return charts
 
+    def _resolve_station_column(self, matrix: pd.DataFrame, station_id: int) -> int:
+        ncols = matrix.shape[1]
+        if ncols <= 0:
+            raise ChartGenerationError("Matrix has no station columns")
+
+        if 0 <= station_id < ncols:
+            return station_id
+
+        try:
+            cols_as_int = [int(c) for c in matrix.columns]
+            if station_id in cols_as_int:
+                return cols_as_int.index(station_id)
+        except Exception:
+            pass
+
+        raise ChartGenerationError(
+            f"Station {station_id} is out of bounds for matrix with {ncols} columns"
+        )
+
+    def _resolve_station_columns(
+        self, matrix: pd.DataFrame, station_ids: List[int]
+    ) -> List[Tuple[int, int]]:
+        resolved = []
+        for station_id in station_ids:
+            col_idx = self._resolve_station_column(matrix, station_id)
+            resolved.append((station_id, col_idx))
+        return resolved
+
+    def _calculate_mean_by_hour_safe(
+        self, matrix: pd.DataFrame, days: List[int], station_id: int
+    ) -> np.ndarray:
+        col_idx = self._resolve_station_column(matrix, station_id)
+        time_indices = get_hour_indices(days, HOURS_PER_DAY)
+        hour_indices = get_hour_index_list(days, HOURS_PER_DAY)
+
+        values = matrix.iloc[time_indices, col_idx].values
+        series = (
+            pd.Series(values)
+            .groupby(hour_indices)
+            .mean()
+            .reindex(range(HOURS_PER_DAY))
+            .tolist()
+        )
+        return np.array(series, dtype=float)
+
     def generate_station_mean_chart(
-            self,
-            matrix: pd.DataFrame,
-            spec: str,
-            matrix_type: str  # Add parameter
+        self,
+        matrix: pd.DataFrame,
+        spec: str,
+        matrix_type: str
     ) -> ChartMetadata:
-        """
-        Generate mean occupancy chart for stations.
-
-        Args:
-            matrix: Data matrix
-            spec: Specification string "station1;station2-days"
-            matrix_type: Type of matrix used
-
-        Returns:
-            Chart metadata
-        """
         station_ids, days_str = parse_station_days_spec(spec)
         days = parse_days_list(days_str, self.total_days)
+        self._resolve_station_columns(matrix, station_ids)
 
         x_hours = list(range(HOURS_PER_DAY))
         series_data = {}
 
         for station_id in station_ids:
-            series = calculate_mean_by_hour(matrix, days, station_id, HOURS_PER_DAY)
+            series = self._calculate_mean_by_hour_safe(matrix, days, station_id)
             series_data[f"est_{station_id}"] = series.tolist()
 
-        # Generate unique ID
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = f"GraficaMedia_Estaciones_{'_'.join(map(str, station_ids))}"
-        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        content_hash = hashlib.sha1(base_name.encode("utf-8")).hexdigest()[:8]
         json_filename = f"{timestamp}_Grafica_{content_hash}.json"
         json_path = self.output_folder / json_filename
 
-        # Create chart using ChartBuilder
         chart_json = ChartBuilder.create_timeseries_chart(
             title=f"Mean Occupancy: Stations {station_ids}",
             x_hours=x_hours,
@@ -131,30 +157,19 @@ class ChartGenerator:
             stations=station_ids,
             days=days,
             aggregation="mean",
-            matrix_type=matrix_type,  # Add parameter
-            output_path=str(json_path)
+            matrix_type=matrix_type,
+            output_path=str(json_path),
         )
 
         logger.info(f"Generated mean chart for stations {station_ids}")
         return ChartMetadata(**chart_json)
 
     def generate_station_cumulative_chart(
-            self,
-            matrix: pd.DataFrame,
-            spec: str,
-            matrix_type: str  # Add parameter
+        self,
+        matrix: pd.DataFrame,
+        spec: str,
+        matrix_type: str
     ) -> ChartMetadata:
-        """
-        Generate cumulative occupancy chart for stations.
-
-        Args:
-            matrix: Data matrix
-            spec: Specification string
-            matrix_type: Type of matrix used
-
-        Returns:
-            Chart metadata
-        """
         station_ids, days_str = parse_station_days_spec(spec)
         days = parse_days_list(days_str, self.total_days)
 
@@ -162,70 +177,56 @@ class ChartGenerator:
         time_indices = get_hour_indices(days, HOURS_PER_DAY)
         hour_indices = get_hour_index_list(days, HOURS_PER_DAY)
 
+        resolved = self._resolve_station_columns(matrix, station_ids)
         series_data = {}
 
-        for station_id in station_ids:
-            values = matrix.iloc[time_indices, station_id].values
+        for station_id, col_idx in resolved:
+            values = matrix.iloc[time_indices, col_idx].values
             cumsum = (
                 pd.Series(values)
                 .groupby(hour_indices)
                 .sum()
-                .reindex(x_hours)
+                .reindex(x_hours, fill_value=0)
                 .cumsum()
                 .tolist()
             )
             series_data[f"est_{station_id}"] = cumsum
 
-        # Generate unique ID
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = f"GraficaAcumulado_Estaciones_{'_'.join(map(str, station_ids))}"
-        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        content_hash = hashlib.sha1(base_name.encode("utf-8")).hexdigest()[:8]
         json_filename = f"{timestamp}_Grafica_{content_hash}.json"
         json_path = self.output_folder / json_filename
 
-        # Create chart
         chart_json = ChartBuilder.create_accumulation_chart(
             title=f"Cumulative Occupancy: Stations {station_ids}",
             x_hours=x_hours,
             series_data=series_data,
             stations=station_ids,
             days=days,
-            matrix_type=matrix_type,  # Add parameter
-            output_path=str(json_path)
+            matrix_type=matrix_type,
+            output_path=str(json_path),
         )
 
         logger.info(f"Generated cumulative chart for stations {station_ids}")
         return ChartMetadata(**chart_json)
 
     def generate_day_chart(
-            self,
-            matrix: pd.DataFrame,
-            spec: str,
-            matrix_type: str  # Add parameter
+        self,
+        matrix: pd.DataFrame,
+        spec: str,
+        matrix_type: str
     ) -> ChartMetadata:
-        """
-        Generate day-based chart (distribution or station series).
-
-        Args:
-            matrix: Data matrix
-            spec: Specification string "days-M/A[-Frec]"
-            matrix_type: Type of matrix used
-
-        Returns:
-            Chart metadata
-        """
         parts = spec.split("-")
         if len(parts) < 2:
             raise ValueError(f"Invalid day chart spec: {spec}")
 
         days_str = parts[0]
-        agg_type = parts[1]  # "M" or "A"
+        agg_type = parts[1]
         is_frequency = len(parts) >= 3 and parts[2] == "Frec"
 
         is_mean = agg_type == "M"
         days = parse_days_list(days_str, self.total_days)
-
-        # Calculate base values
         time_indices = get_hour_indices(days, HOURS_PER_DAY)
 
         if is_mean:
@@ -237,7 +238,6 @@ class ChartGenerator:
         days_repr = "_".join(map(str, days[:5])) if len(days) <= 5 else f"all_{len(days)}"
 
         if is_frequency:
-            # Distribution chart
             bin_count = 20
             vmin, vmax = float(base_vals.min()), float(base_vals.max())
 
@@ -250,7 +250,7 @@ class ChartGenerator:
             centers = (edges[:-1] + edges[1:]) / 2.0
 
             base_name = f"GraficaDias_{days_repr}_freq"
-            content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+            content_hash = hashlib.sha1(base_name.encode("utf-8")).hexdigest()[:8]
             json_filename = f"{timestamp}_Grafica_{content_hash}.json"
             json_path = self.output_folder / json_filename
 
@@ -260,16 +260,15 @@ class ChartGenerator:
                 frequencies=counts.tolist(),
                 days=days,
                 value_type="mean" if is_mean else "sum",
-                matrix_type=matrix_type,  # Add parameter
-                output_path=str(json_path)
+                matrix_type=matrix_type,
+                output_path=str(json_path),
             )
         else:
-            # Station series chart
             x = list(range(len(base_vals)))
             vals = base_vals.tolist()
 
             base_name = f"GraficaDias_{days_repr}_stations"
-            content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+            content_hash = hashlib.sha1(base_name.encode("utf-8")).hexdigest()[:8]
             json_filename = f"{timestamp}_Grafica_{content_hash}.json"
             json_path = self.output_folder / json_filename
 
@@ -279,31 +278,21 @@ class ChartGenerator:
                 values=vals,
                 days=days,
                 value_type="mean" if is_mean else "sum",
-                matrix_type=matrix_type,  # Add parameter
-                output_path=str(json_path)
+                matrix_type=matrix_type,
+                output_path=str(json_path),
             )
 
         logger.info(f"Generated day chart for days {days}")
         return ChartMetadata(**chart_json)
 
     def generate_comparison_chart(
-            self,
-            matrix: pd.DataFrame,
-            specs: List[StationDaySpec],
-            matrix_type: str  # Add parameter
+        self,
+        matrix: pd.DataFrame,
+        specs: List[StationDaySpec],
+        matrix_type: str
     ) -> ChartMetadata:
-        """
-        Generate station comparison chart.
-
-        Args:
-            matrix: Data matrix
-            specs: List of station-day specifications
-            matrix_type: Type of matrix used
-
-        Returns:
-            Chart metadata
-        """
         stations = [spec.station_id for spec in specs]
+        self._resolve_station_columns(matrix, stations)
         x_hours = list(range(HOURS_PER_DAY))
 
         series_specs = []
@@ -319,55 +308,41 @@ class ChartGenerator:
             if not days:
                 series = [None] * HOURS_PER_DAY
             else:
-                series = calculate_mean_by_hour(
-                    matrix, days, spec.station_id, HOURS_PER_DAY
-                ).tolist()
+                series = self._calculate_mean_by_hour_safe(matrix, days, spec.station_id).tolist()
 
-            series_specs.append({
-                "station_id": spec.station_id,
-                "days": days_label,
-                "values": series,
-                "aggregation": "mean"
-            })
+            series_specs.append(
+                {
+                    "station_id": spec.station_id,
+                    "days": days_label,
+                    "values": series,
+                    "aggregation": "mean",
+                }
+            )
 
-        # Generate unique ID
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = f"GraficaCompararEstaciones_{'_'.join(map(str, stations[:5]))}"
-        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        content_hash = hashlib.sha1(base_name.encode("utf-8")).hexdigest()[:8]
         json_filename = f"{timestamp}_Grafica_{content_hash}.json"
         json_path = self.output_folder / json_filename
 
-        # Create chart
         chart_json = ChartBuilder.create_comparison_chart(
             title=f"Compare Stations {stations}",
             x_hours=x_hours,
             series_specs=series_specs,
             global_context={},
-            matrix_type=matrix_type,  # Add parameter
-            output_path=str(json_path)
+            matrix_type=matrix_type,
+            output_path=str(json_path),
         )
 
         logger.info(f"Generated comparison chart for stations {stations}")
         return ChartMetadata(**chart_json)
 
     def generate_matrix_comparison_chart(
-            self,
-            matrix: pd.DataFrame,
-            spec: str,
-            matrix_type: str  # Add parameter
+        self,
+        matrix: pd.DataFrame,
+        spec: str,
+        matrix_type: str
     ) -> ChartMetadata:
-        """
-        Generate matrix comparison chart.
-
-        Args:
-            matrix: Current matrix
-            spec: Specification string "delta;stations1;stations2;M/A"
-            matrix_type: Type of matrix used
-
-        Returns:
-            Chart metadata
-        """
-
         if Constantes.MATRIZ_CUSTOM is None:
             raise ChartGenerationError("MATRIZ_CUSTOM not available for comparison")
 
@@ -380,31 +355,32 @@ class ChartGenerator:
         stations2 = list(map(int, parts[2].split(";")))
         is_mean = parts[3] == "M"
 
-        x_hours = list(range(HOURS_PER_DAY))
+        custom_matrix = Constantes.MATRIZ_CUSTOM.matrix
+        resolved_1 = self._resolve_station_columns(matrix, stations1)
+        resolved_2 = self._resolve_station_columns(custom_matrix, stations2)
 
-        # Calculate means by hour
-        current_vals = matrix.mean(axis=0).tolist()
-        custom_vals = Constantes.MATRIZ_CUSTOM.matrix.mean(axis=0).tolist()
+        x_hours = list(range(max(len(resolved_1), len(resolved_2))))
 
-        # Generate unique ID
+        current_values = [matrix.iloc[:, col_idx].mean() for _, col_idx in resolved_1]
+        custom_values = [custom_matrix.iloc[:, col_idx].mean() for _, col_idx in resolved_2]
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = "GraficaCompararMatrices"
-        content_hash = hashlib.sha1(base_name.encode('utf-8')).hexdigest()[:8]
+        content_hash = hashlib.sha1(base_name.encode("utf-8")).hexdigest()[:8]
         json_filename = f"{timestamp}_Grafica_{content_hash}.json"
         json_path = self.output_folder / json_filename
 
-        # Create chart
         chart_json = ChartBuilder.create_matrix_comparison_chart(
             title="Compare Matrices",
             x_hours=x_hours,
-            current_values=current_vals,
-            custom_values=custom_vals,
+            current_values=current_values,
+            custom_values=custom_values,
             delta=delta_matriz,
             is_mean=is_mean,
             stations1=stations1,
             stations2=stations2,
-            matrix_type=matrix_type,  # Add parameter
-            output_path=str(json_path)
+            matrix_type=matrix_type,
+            output_path=str(json_path),
         )
 
         logger.info("Generated matrix comparison chart")

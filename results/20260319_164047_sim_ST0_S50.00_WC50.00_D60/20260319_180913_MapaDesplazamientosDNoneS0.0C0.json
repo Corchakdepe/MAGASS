@@ -1,0 +1,17 @@
+{
+  "map_name": null,
+  "matrix_type": "1",
+  "delta_media": null,
+  "generated_at": "2026-03-19T18:09:14.006780",
+  "map_kind": "displacement",
+  "status": "error",
+  "files": {
+    "html": "20260319_180913_MapaDesplazamientosDNoneS0.0C0.0.html",
+    "json": "20260319_180913_MapaDesplazamientosDNoneS0.0C0.0.json",
+    "csv": "20260319_180913_MapaDesplazamientosDNoneS0.0C0.0.csv"
+  },
+  "error": "Displacement map generation failed: Failed to generate displacement map file: Message: 'chromedriver' executable needs to be in PATH. Please see https://chromedriver.chromium.org/home\n",
+  "stations": "all",
+  "stations_count": "all",
+  "spec": "10;15;720;1;0"
+}

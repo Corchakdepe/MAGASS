@@ -17,7 +17,8 @@ class AnalysisArgs(BaseModel):
 
     use_filter_for_graphs: bool = False
 
-    delta_media: Optional[int] = 60
+    # Legacy-compatible: do not transform unless explicitly requested
+    delta_media: Optional[int] = None
     delta_acumulada: Optional[int] = None
 
     graf_barras_est_med: Optional[str] = None
@@ -53,10 +54,8 @@ class SimulateArgs(BaseModel):
     ruta_entrada: str
     ruta_salida: Optional[str] = None
     stress_type: int
-    stress: float
+    stress: Union[str, float]
     walk_cost: float
     delta: int
     dias: Optional[List[int]] = None
     simname: Optional[str] = None
-
-

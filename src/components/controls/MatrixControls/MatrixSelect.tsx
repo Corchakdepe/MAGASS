@@ -22,9 +22,26 @@ export interface MatrixOption {
 
 export interface MatrixSelectProps {
   matrices: readonly MatrixOption[];
-  seleccionAgreg: string; // Semicolon-separated IDs: "1;2;3"
+  seleccionAgreg: string;
   setSeleccionAgreg: (value: string) => void;
   placeholder?: string;
+  allowEmpty?: boolean;
+}
+
+function normalizeSeleccionAgreg(value: string): string {
+  if (!value) return "";
+  const seen = new Set<string>();
+
+  return value
+    .split(";")
+    .map((id) => id.trim())
+    .filter((id) => id !== "")
+    .filter((id) => {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .join(";");
 }
 
 export function MatrixSelect({
@@ -32,45 +49,47 @@ export function MatrixSelect({
   seleccionAgreg,
   setSeleccionAgreg,
   placeholder,
+  allowEmpty = false,
 }: MatrixSelectProps) {
   const { t } = useLanguage();
   const [open, setOpen] = React.useState(false);
 
-  // Convert semicolon-separated string to array of IDs
   const selectedIds = React.useMemo(() => {
-    if (!seleccionAgreg) return [];
-    return seleccionAgreg.split(';').filter(id => id !== '');
+    return normalizeSeleccionAgreg(seleccionAgreg)
+      .split(";")
+      .filter((id) => id !== "");
   }, [seleccionAgreg]);
 
-  // Get selected matrix objects
   const selectedMatrices = React.useMemo(
     () => matrices.filter((m) => selectedIds.includes(String(m.id))),
     [matrices, selectedIds]
   );
 
+  const updateSelection = (ids: string[]) => {
+    const normalized = normalizeSeleccionAgreg(ids.join(";"));
+    if (!allowEmpty && normalized === "") return;
+    setSeleccionAgreg(normalized);
+  };
+
   const handleToggle = (matrixId: string) => {
     let newSelectedIds: string[];
 
     if (selectedIds.includes(matrixId)) {
-      // Remove if already selected
-      newSelectedIds = selectedIds.filter(id => id !== matrixId);
+      newSelectedIds = selectedIds.filter((id) => id !== matrixId);
     } else {
-      // Add if not selected
       newSelectedIds = [...selectedIds, matrixId];
     }
 
-    // Join back to semicolon-separated string
-    setSeleccionAgreg(newSelectedIds.join(';'));
-    // Don't close the popover to allow multiple selections
+    updateSelection(newSelectedIds);
   };
 
   const handleRemoveItem = (matrixId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSelectedIds = selectedIds.filter(id => id !== matrixId);
-    setSeleccionAgreg(newSelectedIds.join(';'));
+    updateSelection(selectedIds.filter((id) => id !== matrixId));
   };
 
   const handleClearAll = () => {
+    if (!allowEmpty) return;
     setSeleccionAgreg("");
     setOpen(false);
   };
@@ -86,7 +105,9 @@ export function MatrixSelect({
             className="w-full justify-between h-9 px-3 text-xs rounded-md border-surface-3 bg-surface-1 hover:bg-surface-0/70"
           >
             <span className="truncate text-text-secondary">
-              {placeholder || t('selectMatrices')}
+              {selectedMatrices.length > 0
+                ? selectedMatrices.map((m) => m.label).join(", ")
+                : placeholder || t("selectMatrices")}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -98,12 +119,12 @@ export function MatrixSelect({
         >
           <Command className="bg-transparent">
             <CommandInput
-              placeholder={t('searchMatrix')}
+              placeholder={t("searchMatrix")}
               className="h-9 text-xs border-none focus:ring-0"
             />
             <CommandList>
               <CommandEmpty className="py-3 text-xs text-text-secondary text-center">
-                {t('noResults')}
+                {t("noResults")}
               </CommandEmpty>
               <CommandGroup>
                 {matrices.map((matrix) => {
@@ -112,7 +133,7 @@ export function MatrixSelect({
                   return (
                     <CommandItem
                       key={matrix.id}
-                      value={matrix.label}
+                      value={`${matrix.label} ${matrix.id}`}
                       onSelect={() => handleToggle(String(matrix.id))}
                       className="text-xs cursor-pointer"
                     >
@@ -137,11 +158,12 @@ export function MatrixSelect({
             </CommandList>
           </Command>
 
-          {/* Footer with actions */}
-          {selectedMatrices.length > 0 && (
+          {selectedMatrices.length > 0 && allowEmpty && (
             <div className="flex items-center justify-between border-t border-surface-3 p-2">
               <span className="text-[10px] text-text-tertiary">
-                {selectedMatrices.length} {selectedMatrices.length === 1 ? t('matrix') : t('matrices')} {t('selected')}
+                {selectedMatrices.length}{" "}
+                {selectedMatrices.length === 1 ? t("matrix") : t("matrices")}{" "}
+                {t("selected")}
               </span>
               <Button
                 variant="ghost"
@@ -149,14 +171,13 @@ export function MatrixSelect({
                 className="h-7 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-2"
                 onClick={handleClearAll}
               >
-                {t('clearAll')}
+                {t("clearAll")}
               </Button>
             </div>
           )}
         </PopoverContent>
       </Popover>
 
-      {/* Selected items displayed under the button in accent color */}
       {selectedMatrices.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">
           {selectedMatrices.map((matrix) => (
@@ -166,11 +187,12 @@ export function MatrixSelect({
             >
               <span className="truncate max-w-[150px]">{matrix.label}</span>
               <button
+                type="button"
                 onClick={(e) => handleRemoveItem(String(matrix.id), e)}
                 className="hover:bg-accent/20 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-3 w-3" />
-                <span className="sr-only">{t('remove')}</span>
+                <span className="sr-only">{t("remove")}</span>
               </button>
             </div>
           ))}

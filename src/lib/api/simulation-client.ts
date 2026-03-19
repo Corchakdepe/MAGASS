@@ -367,65 +367,186 @@ export class SimulationAPIClient {
   /**
    * Format analysis request for backend
    */
+
+
   private formatAnalysisRequest(config: AnalysisConfiguration): any {
-    const payload: any = {
-      input_folder: config.inputFolder,
-      output_folder: config.outputFolder,
-      seleccion_agregacion: config.seleccionAgregacion,
-      delta_media: config.deltaMedia,
-      delta_acumulada: config.deltaAcumulada,
-      filtro: config.filtro,
-      tipo_filtro: config.tipoFiltro,
-      use_filter_for_maps: config.useFilterForMaps,
-      use_filter_for_graphs: config.useFilterForGraphs,
-    };
+  const payload: any = {
+    input_folder: config.inputFolder,
+    output_folder: config.outputFolder,
+    seleccion_agregacion: config.seleccionAgregacion,
+    delta_media: config.deltaMedia,
+    delta_acumulada: config.deltaAcumulada,
+    filtro: config.filtro,
+    tipo_filtro: config.tipoFiltro,
+    use_filter_for_maps: config.useFilterForMaps,
+    use_filter_for_graphs: config.useFilterForGraphs,
+  };
 
-    // Add map configurations
-    if (config.mapConfigs) {
-      for (const mapConfig of config.mapConfigs) {
-        payload[mapConfig.type] = this.formatMapConfig(mapConfig);
+  if (config.mapConfigs) {
+    for (const mapConfig of config.mapConfigs) {
+      const value = this.formatMapConfig(mapConfig);
+      if (value !== undefined && value !== null && value !== "") {
+        payload[mapConfig.type] = value;
       }
     }
+  }
 
-    // Add graph configurations
-    if (config.graphConfigs) {
-      for (const graphConfig of config.graphConfigs) {
-        payload[graphConfig.type] = this.formatGraphConfig(graphConfig);
+  if (config.graphConfigs) {
+    for (const graphConfig of config.graphConfigs) {
+      const value = this.formatGraphConfig(graphConfig);
+      if (value !== undefined && value !== null && value !== "") {
+        payload[graphConfig.type] = value;
       }
     }
-
-    return payload;
   }
 
-  /**
-   * Format map configuration
-   */
-  private formatMapConfig(config: any): string {
-    if (config.type === 'mapa_desplazamientos') {
-      return `${config.instantes};${config.deltaOrigen};${config.deltaDestino};${config.movimiento};${config.tipo}`;
+  return payload;
+}
+
+private normalizeSemicolonNumberList(value: unknown): string {
+  return String(value ?? "")
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => /^\d+$/.test(s))
+    .join(";");
+}
+
+private normalizeInteger(value: unknown): string {
+  const s = String(value ?? "").trim();
+  return /^-?\d+$/.test(s) ? s : "";
+}
+
+private formatMapConfig(config: any): string | undefined {
+  if (!config?.type) return undefined;
+
+  if (config.type === "mapa_desplazamientos") {
+    const instante = this.normalizeInteger(config.instante);
+    const deltaOrigen = this.normalizeInteger(config.deltaOrigen);
+    const deltaDestino = this.normalizeInteger(config.deltaDestino);
+    const movimiento = this.normalizeInteger(config.movimiento);
+    const tipo = this.normalizeInteger(config.tipo);
+
+    if (!instante || !deltaOrigen || !deltaDestino || !movimiento || !tipo) {
+      return undefined;
     }
 
-    let spec = config.instantes;
-    if (config.stations) {
-      spec += `+${config.stations}`;
-    }
-    if (config.labels) {
-      spec += '-L';
-    }
-    return spec;
+    return [instante, deltaOrigen, deltaDestino, movimiento, tipo].join(";");
   }
 
-  /**
-   * Format graph configuration
-   */
-  private formatGraphConfig(config: any): string | any[] {
-    if (config.type === 'graf_linea_comp_est' && config.stations) {
-      const stationIds = config.stations.split(';').map(Number);
-      return stationIds.map(id => ({ station_id: id, days: config.days || 'all' }));
+  const instantes = this.normalizeSemicolonNumberList(config.instantes);
+  if (!instantes) return undefined;
+
+  if (config.type === "mapa_voronoi") {
+    return instantes;
+  }
+
+  const stations = this.normalizeSemicolonNumberList(config.stations);
+  let spec = instantes;
+
+  if (stations) {
+    spec += `+${stations}`;
+  }
+
+  if (config.type === "mapa_circulo" && config.labels) {
+    spec += "-L";
+  }
+
+  return spec;
+}
+
+private formatGraphConfig(config: any): string | any[] | undefined {
+  if (!config?.type) return undefined;
+
+  switch (config.type) {
+    case "graf_barras_est_med":
+    case "graf_barras_est_acum": {
+      const stationRaw = config.station ?? config.stations;
+      const station = this.normalizeInteger(stationRaw);
+      const days =
+        config.days === "all"
+          ? "all"
+          : this.normalizeSemicolonNumberList(config.days);
+
+      if (!station) return undefined;
+      return `${station}-${days || "all"}`;
     }
 
-    return `${config.stations || ''}-${config.days || 'all'}`;
+    case "graf_barras_dia": {
+      const days =
+        config.days === "all"
+          ? "all"
+          : this.normalizeSemicolonNumberList(config.days);
+
+      const mode = config.mode === "M" ? "M" : "X";
+      let spec = `${days || "all"}-${mode}`;
+
+      if (Boolean(config.freq)) {
+        spec += "-Frec";
+      }
+
+      return spec;
+    }
+
+    case "graf_linea_comp_est": {
+      if (Array.isArray(config.items) && config.items.length > 0) {
+        const cleaned = config.items
+          .map((item: any) => {
+            const stationId = Number(item.station_id);
+            const days =
+              item.days === "all"
+                ? "all"
+                : this.normalizeSemicolonNumberList(item.days);
+
+            if (!Number.isInteger(stationId)) return null;
+
+            return {
+              station_id: stationId,
+              days: days || "all",
+            };
+          })
+          .filter(Boolean);
+
+        return cleaned.length > 0 ? cleaned : undefined;
+      }
+
+      const stations = this.normalizeSemicolonNumberList(config.stations);
+      if (!stations) return undefined;
+
+      const stationIds = stations
+        .split(";")
+        .map((s) => Number(s))
+        .filter((n) => Number.isInteger(n));
+
+      if (stationIds.length === 0) return undefined;
+
+      const days =
+        config.days === "all"
+          ? "all"
+          : this.normalizeSemicolonNumberList(config.days);
+
+      return stationIds.map((id: number) => ({
+        station_id: id,
+        days: days || "all",
+      }));
+    }
+
+    case "graf_linea_comp_mats": {
+      const delta = this.normalizeInteger(config.delta);
+      const stations1 = this.normalizeSemicolonNumberList(config.stations1);
+      const stations2 = this.normalizeSemicolonNumberList(config.stations2);
+      const mode = config.mode === "M" ? "M" : "X";
+
+      if (!delta || !stations1 || !stations2) return undefined;
+
+      return `${delta}-${stations1}-${stations2}-${mode}`;
+    }
+
+    default:
+      return undefined;
   }
+}
+
+
 
   /**
    * Parse analysis response

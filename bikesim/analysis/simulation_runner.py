@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 from os.path import join
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Union, Tuple
 
 import numpy as np
 import pandas as pd
@@ -17,6 +17,8 @@ from bikesim import Constantes
 from bikesim.auxiliares import Extractor, auxiliar_ficheros
 from bikesim.utils import GuardarCargarMatrices
 from bike_simulator5 import bike_simulator5
+
+logger = logging.getLogger(__name__)
 
 
 def _safe_numeric_station_columns(df: pd.DataFrame) -> list:
@@ -30,9 +32,6 @@ def _safe_numeric_station_columns(df: pd.DataFrame) -> list:
 
 
 def calculate_total_bikes_from_deltas(deltas_file_path: str) -> int:
-    """
-    The first data row of the deltas CSV is the initial bikes per station.
-    """
     df = pd.read_csv(deltas_file_path, header=0)
 
     if df.empty:
@@ -108,7 +107,6 @@ def _try_geocode_xyz(latitude: float, longitude: float) -> dict:
 
         if response.status_code == 200:
             data = response.json()
-
             if isinstance(data, dict):
                 if data.get("error"):
                     return {}
@@ -199,7 +197,7 @@ def update_simulation_history(
     capacity_stats: dict,
     coordinates_stats: dict,
     stress_type: int,
-    stress: float,
+    stress: Union[str, float],
     walk_cost: float,
     delta: int,
     dias: Optional[List[int]] = None,
@@ -257,19 +255,34 @@ def update_simulation_history(
         json.dump(history, f, indent=2, ensure_ascii=False)
 
 
+def _parse_stress_spec(stress: Union[str, float, int]) -> Tuple[float, Union[str, List[int]]]:
+    if isinstance(stress, (float, int)):
+        return float(stress), "All"
+
+    stress_str = str(stress).strip()
+    if "+" in stress_str:
+        stress_value_str, estaciones_str = stress_str.split("+", 1)
+        estaciones_stress = list(map(int, estaciones_str.split(";"))) if estaciones_str.strip() else []
+        return float(stress_value_str), estaciones_stress
+
+    return float(stress_str), "All"
+
+
 def run_simulation(
     ruta_entrada: str,
     ruta_salida: str,
     stress_type: int,
-    stress: float,
+    stress: Union[str, float],
     walk_cost: float,
     delta: int,
     dias: Optional[List[int]] = None,
     simname: Optional[str] = None,
 ) -> None:
+    stress_value, estaciones_stress = _parse_stress_spec(stress)
+
     Constantes.DELTA_TIME = delta
     Constantes.COSTE_ANDAR = walk_cost
-    Constantes.PORCENTAJE_ESTRES = stress
+    Constantes.PORCENTAJE_ESTRES = stress_value
     Constantes.RUTA_SALIDA = ruta_salida
 
     sim_folder = Path(ruta_salida).name
@@ -326,7 +339,6 @@ def run_simulation(
             ruta_salida,
             auxiliar_ficheros.formatoArchivo(f"Extraccion_{dias}", "csv"),
         )
-
         Extractor.extraerDias(
             ficheros[0],
             delta,
@@ -334,46 +346,39 @@ def run_simulation(
             path_fichero,
             mantenerPrimeraFila=True,
         )
-
         ficheros[0] = path_fichero
 
-    if stress > 0:
+    if stress_value > 0:
         ficheroDelta_salidaStress = join(
-            ruta_salida, auxiliar_ficheros.formatoArchivo("Dstress", "csv")
+            ruta_salida,
+            auxiliar_ficheros.formatoArchivo("Dstress", "csv")
         )
-
         Extractor.extraerStressAplicado(
             ficheros[0],
             ficheroDelta_salidaStress,
-            stress,
+            stress_value,
             tipoStress=stress_type,
-            listaEstaciones="All",
+            listaEstaciones=estaciones_stress,
         )
 
         ficheroTendencias_salidaStress = join(
-            ruta_salida, auxiliar_ficheros.formatoArchivo("Tendencias_stress", "csv")
+            ruta_salida,
+            auxiliar_ficheros.formatoArchivo("Tendencias_stress", "csv")
         )
-
         Extractor.extraerStressAplicado(
             ficheros[5],
             ficheroTendencias_salidaStress,
-            stress,
+            stress_value,
             tipoStress=stress_type,
-            listaEstaciones="All",
+            listaEstaciones=estaciones_stress,
         )
 
         ficheros[0] = ficheroDelta_salidaStress
         ficheros[5] = ficheroTendencias_salidaStress
 
     bs = bike_simulator5()
-    (
-        nearest_stations_idx,
-        nearest_stations_distance,
-        initial_movements,
-        real_movements,
-        capacidadInicial,
-        coordenadas,
-    ) = bs.load_data(
+
+    nearest_stations_idx, nearest_stations_distance, initial_movements, real_movements, capacidadInicial, coordenadas = bs.load_data(
         directorios=ficheros,
         directorios_DiastanciasAndarBicicleta=ficheros_distancia,
     )
@@ -392,10 +397,11 @@ def run_simulation(
     )
 
     if coordenadas is not None:
-        pd.DataFrame(coordenadas).to_csv(
+        pd.DataFrame(Constantes.COORDENADAS).to_csv(
             join(Constantes.RUTA_SALIDA, "coordenadas.csv"), index=False
         )
-        logging.warning("Saved coordenadas.csv to %s", join(Constantes.RUTA_SALIDA, "coordenadas.csv"))
+
+    logging.warning("Saved coordenadas.csv to %s", join(Constantes.RUTA_SALIDA, "coordenadas.csv"))
 
     indices_file = auxiliar_ficheros.buscar_archivosEntrada(ruta_entrada, ["indices_bicicleta"])
     if indices_file:

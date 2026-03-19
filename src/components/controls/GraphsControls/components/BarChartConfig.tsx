@@ -1,18 +1,18 @@
 "use client";
 
 import * as React from "react";
-import type {DateRange} from "react-day-picker";
-import {Label} from "@/components/ui/label";
-import {Input} from "@/components/ui/input";
-import {Button} from "@/components/ui/button";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {Calendar} from "@/components/ui/calendar";
-import {Calendar as CalendarIcon} from "lucide-react";
-import {useLanguage} from "@/contexts/LanguageContext";
+import type { DateRange } from "react-day-picker";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BarChartConfigProps {
-  stations: string;
-  onStationsChange: (value: string) => void;
+  station: string;
+  onStationChange: (value: string) => void;
   daysRange: DateRange | undefined;
   onDaysRangeChange: (range: DateRange | undefined) => void;
   days: string;
@@ -21,15 +21,19 @@ interface BarChartConfigProps {
   useFilter: boolean;
 }
 
-function RangeLabel({range}: {range: DateRange | undefined}) {
-  const {t} = useLanguage();
-  if (!range?.from || !range?.to) return <>{t('allDays')}</>;
+function normalizeStation(value: string): string {
+  return value.replace(/[^\d]/g, "");
+}
+
+function RangeLabel({ range }: { range: DateRange | undefined }) {
+  const { t } = useLanguage();
+  if (!range?.from || !range?.to) return <>{t("allDays")}</>;
   return <>{`${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`}</>;
 }
 
 export function BarChartConfig({
-  stations,
-  onStationsChange,
+  station,
+  onStationChange,
   daysRange,
   onDaysRangeChange,
   days,
@@ -37,7 +41,7 @@ export function BarChartConfig({
   encodeRangeAsDayList,
   useFilter,
 }: BarChartConfigProps) {
-  const {t} = useLanguage();
+  const { t } = useLanguage();
 
   const handleRangeChange = (range: DateRange | undefined) => {
     onDaysRangeChange(range);
@@ -49,24 +53,25 @@ export function BarChartConfig({
     <div className="space-y-3 pt-2 border-t border-surface-3/50">
       <div className="space-y-1.5">
         <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
-          {t('stations')}
+          {t("station")}
         </Label>
         <Input
           type="text"
+          inputMode="numeric"
           className="h-8 text-sm rounded-md border-surface-3 bg-surface-1 focus:bg-surface-0 transition-colors text-text-primary placeholder:text-text-tertiary"
-          value={stations}
-          onChange={(e) => onStationsChange(e.target.value)}
+          value={station}
+          onChange={(e) => onStationChange(normalizeStation(e.target.value))}
           disabled={useFilter}
-          placeholder={useFilter ? t('usingFilter') : "1;2;3..."}
+          placeholder={useFilter ? t("usingFilter") : "99"}
         />
         {useFilter && (
-          <p className="text-xs text-warning/90 px-1 font-medium">{t('filterOverridesStations')}</p>
+          <p className="text-xs text-warning/90 px-1 font-medium">{t("filterOverridesStations")}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
         <Label className="text-[10px] uppercase tracking-wider font-semibold text-text-primary">
-          {t('dayRange')}
+          {t("dayRange")}
         </Label>
         <Popover>
           <PopoverTrigger asChild>
@@ -79,7 +84,7 @@ export function BarChartConfig({
                 <RangeLabel range={daysRange} />
               </div>
               <span className="text-xs text-text-secondary ml-2 shrink-0 font-mono bg-surface-2/50 px-1.5 py-0.5 rounded">
-                {days}
+                {days || "all"}
               </span>
             </Button>
           </PopoverTrigger>

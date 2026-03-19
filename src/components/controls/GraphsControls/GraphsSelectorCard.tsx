@@ -1,29 +1,31 @@
 "use client";
 
 import * as React from "react";
-import {GraphTypeSelector} from "./components/GraphTypeSelector";
-import {BarChartConfig} from "./components/BarChartConfig";
-import {DayChartConfig} from "./components/DayChartConfig";
-import {LineChartConfig} from "./components/LineChartConfig";
-import {MatrixComparisonConfig} from "./components/MatrixComparisonConfig";
-import {useLanguage} from "@/contexts/LanguageContext";
-import type {GraphsSelectorCardProps} from "./types/graphControls";
+import { GraphTypeSelector } from "./components/GraphTypeSelector";
+import { BarChartConfig } from "./components/BarChartConfig";
+import { DayChartConfig } from "./components/DayChartConfig";
+import { LineChartConfig } from "./components/LineChartConfig";
+import { MatrixComparisonConfig } from "./components/MatrixComparisonConfig";
+import { useLanguage } from "@/contexts/LanguageContext";
+import type { GraphsSelectorCardProps } from "./types/graphControls";
 
-export type {GraphsSelectorCardProps, GraphKey, GraphOption} from "./types/graphControls";
+export type { GraphsSelectorCardProps, GraphKey, GraphOption } from "./types/graphControls";
 
 export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
-  const {t} = useLanguage();
+  const { t } = useLanguage();
   const {
     GRAFICAS,
     selectedCharts,
     setSelectedCharts,
     useFilter,
-    barStations,
-    setBarStations,
+
+    barStation,
+    setBarStation,
     barDaysRange,
     setBarDaysRange,
     barDays,
     setBarDays,
+
     dayDaysRange,
     setDayDaysRange,
     dayDays,
@@ -32,12 +34,14 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
     setDayMode,
     dayFreq,
     setDayFreq,
+
     lineStations,
     setLineStations,
     lineDaysRange,
     setLineDaysRange,
     lineDays,
     setLineDays,
+
     matsDelta,
     setMatsDelta,
     matsMode,
@@ -46,10 +50,10 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
     setMatsStations1,
     matsStations2,
     setMatsStations2,
+
     encodeRangeAsDayList,
   } = props;
 
-  // Determine which config sections to show
   const showBarChart = selectedCharts.some((c) =>
     ["graf_barras_est_med", "graf_barras_est_acum"].includes(c)
   );
@@ -59,31 +63,27 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
 
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3 px-1">
         {useFilter && (
           <div className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning border border-warning/20">
-            {t('activeFilter')}
+            {t("activeFilter")}
           </div>
         )}
       </div>
 
-      {/* Graph Type Selection */}
       <GraphTypeSelector
         options={GRAFICAS}
         selected={selectedCharts}
         onChange={setSelectedCharts}
       />
 
-      {/* Configuration sections for selected graphs */}
       {selectedCharts.length > 0 && (
         <div className="space-y-4 pt-1">
-          {/* Bar Chart Configuration */}
           {showBarChart && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
               <BarChartConfig
-                stations={barStations}
-                onStationsChange={setBarStations}
+                station={barStation}
+                onStationChange={setBarStation}
                 daysRange={barDaysRange}
                 onDaysRangeChange={setBarDaysRange}
                 days={barDays}
@@ -94,7 +94,6 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
             </div>
           )}
 
-          {/* Day Chart Configuration */}
           {showDayChart && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
               <DayChartConfig
@@ -111,7 +110,6 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
             </div>
           )}
 
-          {/* Line Chart Configuration */}
           {showLineChart && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
               <LineChartConfig
@@ -127,7 +125,6 @@ export function GraphsSelectorCard(props: GraphsSelectorCardProps) {
             </div>
           )}
 
-          {/* Matrix Comparison Configuration */}
           {showMatrixChart && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200">
               <MatrixComparisonConfig

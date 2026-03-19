@@ -1,4 +1,4 @@
-import type {DateRange} from "react-day-picker";
+import type { DateRange } from "react-day-picker";
 
 export type GraphKey =
   | "graf_barras_est_med"
@@ -15,32 +15,30 @@ export interface GraphOption {
 export interface GraphsSelectorCardProps {
   GRAFICAS: readonly GraphOption[];
 
-  // Selected charts
   selectedCharts: GraphKey[];
   setSelectedCharts: (charts: GraphKey[]) => void;
 
-  // Filter
   useFilter: boolean;
 
-  // Bar chart (stations)
-  barStations: string;
-  setBarStations: (value: string) => void;
+  // Bar chart: legacy backend expects ONE station, format "99-all"
+  barStation: string;
+  setBarStation: (value: string) => void;
   barDaysRange: DateRange | undefined;
   setBarDaysRange: (range: DateRange | undefined) => void;
   barDays: string;
   setBarDays: (value: string) => void;
 
-  // Bar chart (day)
+  // Day chart: legacy backend expects "days-M" or non-M, plus optional "Frec"
   dayDaysRange: DateRange | undefined;
   setDayDaysRange: (range: DateRange | undefined) => void;
   dayDays: string;
   setDayDays: (value: string) => void;
-  dayMode: "Suma" | "Media";  // Changed to match components
-  setDayMode: (mode: "Suma" | "Media") => void;
-  dayFreq: string;  // Changed to string to match components
-  setDayFreq: (value: string) => void;
+  dayMode: "X" | "M";
+  setDayMode: (mode: "X" | "M") => void;
+  dayFreq: boolean;
+  setDayFreq: (value: boolean) => void;
 
-  // Line chart (stations)
+  // Line comparison: multiple stations allowed
   lineStations: string;
   setLineStations: (value: string) => void;
   lineDaysRange: DateRange | undefined;
@@ -48,16 +46,15 @@ export interface GraphsSelectorCardProps {
   lineDays: string;
   setLineDays: (value: string) => void;
 
-  // Matrix comparison
+  // Matrix comparison: legacy backend checks mode === "M"
   matsDelta: string;
   setMatsDelta: (value: string) => void;
-  matsMode: "Suma" | "Media";  // Changed to match components
-  setMatsMode: (mode: "Suma" | "Media") => void;
+  matsMode: "X" | "M";
+  setMatsMode: (mode: "X" | "M") => void;
   matsStations1: string;
   setMatsStations1: (value: string) => void;
   matsStations2: string;
   setMatsStations2: (value: string) => void;
 
-  // Helper
   encodeRangeAsDayList: (range: DateRange | undefined) => string;
 }

@@ -719,54 +719,28 @@ class MapGenerator:
         return maps
 
     def generate_displacement_map(self, args: AnalysisArgs) -> MapMetadata:
-        """
-        Generate displacement map (HTML) and create companion JSON metadata.
-        Both files will have identical names (different extensions).
-
-        Args:
-            args: Analysis arguments containing displacement spec
-
-        Returns:
-            Map metadata
-        """
         try:
-            # Generate base filename
             base_filename = self._generate_base_filename(
                 map_type="MapaDesplazamientos",
                 args=args
             )
 
             base_path = self.output_folder / base_filename
-            html_path = base_path.with_suffix('.html')
-            csv_path = base_path.with_suffix('.csv')
 
-            # Generate displacement map using existing generator
             gen = DisplacementGenerator(self.output_folder, args.input_folder)
+            generated = gen.generate(args.mapa_desplazamientos)
 
-            # Modify the generator to use our filename
-            original_generate = gen.generate
+            source_path = Path(generated.file_path)
+            target_path = base_path.with_suffix(source_path.suffix or ".html")
 
-            def generate_with_filename(spec):
-                result = original_generate(spec)
-                # Find the generated file and rename it
-                map_files = list(self.output_folder.glob("MapaDesplazamientos*.html"))
-                if map_files:
-                    source = map_files[0]
-                    if source != html_path:
-                        shutil.move(source, html_path)
-                return result
+            if source_path.exists() and source_path != target_path:
+                shutil.move(str(source_path), str(target_path))
+            elif not source_path.exists():
+                raise FileNotFoundError(f"Generated displacement file not found: {source_path}")
 
-            # Temporarily replace the generate method
-            gen.generate = generate_with_filename.__get__(gen)
-            map_metadata = gen.generate(args.mapa_desplazamientos)
-
-            # Restore original method
-            gen.generate = original_generate
-
-            # Create empty CSV (since displacement might not have typical matrix data)
+            csv_path = base_path.with_suffix(".csv")
             pd.DataFrame(columns=["description"]).to_csv(csv_path, index=False)
 
-            # Save JSON metadata
             self._save_map_metadata(
                 base_path=base_path,
                 map_name=args.user_name_map,
@@ -776,24 +750,24 @@ class MapGenerator:
                 map_kind="displacement",
                 additional_data={
                     "csv_file": csv_path.name,
-                    "spec": args.mapa_desplazamientos
+                    "spec": args.mapa_desplazamientos,
+                    "source_generated_file": source_path.name,
+                    "final_file": target_path.name
                 }
             )
-
-            logger.info(f"Generated displacement map: {base_filename}.html")
 
             return MapMetadata(
                 id=f"displacement_{base_filename}",
                 kind="displacement",
-                format="html",
+                format=target_path.suffix.lstrip("."),
                 name="Displacement Map",
-                url=f"/{base_filename}.html",
-                file_path=str(html_path)
+                url=f"/{target_path.name}",
+                file_path=str(target_path)
             )
 
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"Error generating displacement map: {error_msg}")
+            logger.error(f"Error generating displacement map: {error_msg}", exc_info=True)
 
             base_filename = self._generate_base_filename(
                 map_type="MapaDesplazamientos",

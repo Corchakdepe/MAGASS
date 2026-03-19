@@ -2081,6 +2081,15 @@
       "numberOfBikes": null,
       "simdata": {},
       "simdataId": "20260319_164047_sim_ST0_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "ClasicaPrueba",
+      "simfolder": "20260319_165918_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260319_165918_sim_ST0_S0.00_WC0.00_D15"
     }
   ]
 }
