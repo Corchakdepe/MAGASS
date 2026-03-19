@@ -1,13 +1,17 @@
 from __future__ import annotations
-from os.path import join
-from typing import Optional, List
+
 import json
-import requests
+import logging
+import shutil
 import time
+from datetime import datetime
+from os.path import join
+from pathlib import Path
+from typing import Optional, List
+
 import numpy as np
 import pandas as pd
-from datetime import datetime
-from pathlib import Path
+import requests
 
 from bikesim import Constantes
 from bikesim.auxiliares import Extractor, auxiliar_ficheros
@@ -15,333 +19,307 @@ from bikesim.utils import GuardarCargarMatrices
 from bike_simulator5 import bike_simulator5
 
 
+def _safe_numeric_station_columns(df: pd.DataFrame) -> list:
+    station_cols = []
+    for col in df.columns:
+        if isinstance(col, int):
+            station_cols.append(col)
+        elif isinstance(col, str) and col.strip().isdigit():
+            station_cols.append(col)
+    return station_cols
+
+
 def calculate_total_bikes_from_deltas(deltas_file_path: str) -> int:
     """
-    Compute total number of bikes from the first data row of the deltas matrix
-    (initial state as 'leave-bike' movements'), as in the TFG.
+    The first data row of the deltas CSV is the initial bikes per station.
     """
     df = pd.read_csv(deltas_file_path, header=0)
 
-    if len(df) == 0:
-        print(f"Warning: {deltas_file_path} has no data rows")
+    if df.empty:
+        logging.warning("Empty deltas file: %s", deltas_file_path)
         return 0
 
-    initial_bikes_row = df.iloc[0, :]
-    total_bikes = int(initial_bikes_row.sum())
+    station_cols = _safe_numeric_station_columns(df)
 
-    print(f"Calculated total bikes from deltas ({deltas_file_path}): {total_bikes}")
-    return total_bikes
+    if not station_cols:
+        raise ValueError(f"No station columns found in {deltas_file_path}")
 
+    first_row = pd.to_numeric(df.loc[0, station_cols], errors="coerce").fillna(0)
+    total_bikes = int(first_row.sum())
 
-def get_city_from_coordenadas(coordenadas_file: str) -> str:
-    """
-    Attempt to determine city name from coordinates using geocoding.
-    """
-    try:
-        df = pd.read_csv(coordenadas_file)
-        if len(df) > 0:
-            # Use first station's coordinates as representative
-            lat = float(df.iloc[0, 1])
-            lon = float(df.iloc[0, 2])
+    logging.warning("TOTAL_BIKES source file: %s", deltas_file_path)
+    logging.warning("Detected station columns: %s", len(station_cols))
+    logging.warning("First row total bikes: %s", total_bikes)
+    logging.warning("First row sample: %s", first_row.iloc[:10].tolist())
 
-            # Try to geocode
-            city_info = _try_geocode_xyz(lat, lon)
-            if city_info and city_info.get("city") and city_info["city"] != "Unknown City":
-                return city_info["city"]
-    except Exception as e:
-        print(f"Error getting city from coordinates: {e}")
-
-    # If geocoding fails, try to extract from folder name or input path
-    return ""
-
-
-def get_station_count_from_capacidades(ruta_entrada: str) -> int:
-    """
-    Get number of stations from capacidades.csv in input folder.
-    """
-    try:
-        archivoCapacidad = auxiliar_ficheros.buscar_archivosEntrada(
-            ruta_entrada, ["capacidades"]
-        )[0]
-        df = pd.read_csv(archivoCapacidad, header=None)
-        return len(df)
-    except Exception as e:
-        print(f"Error getting station count: {e}")
-        return 0  # NO DEFAULT - return 0 if can't determine
+    return max(total_bikes, 0)
 
 
 def get_capacity_stats_from_capacidades(capacidades_file: str) -> dict:
-    """
-    Get capacity statistics from capacidades.csv file.
-    """
     try:
         df = pd.read_csv(capacidades_file, header=None)
 
         if df.empty:
-            return {"total": 0, "avg": 0, "min": 0, "max": 0}
+            return {"total": 0, "avg": 0, "min": 0, "max": 0, "count": 0}
 
-        # Handle possible header row
-        if df.iloc[0, 0] == 'header':
-            capacity_values = df.iloc[1:, 0].astype(float).values
+        first_value = str(df.iloc[0, 0]).strip().lower()
+        if first_value == "header":
+            values = pd.to_numeric(df.iloc[1:, 0], errors="coerce").dropna().values
         else:
-            capacity_values = df.iloc[:, 0].astype(float).values
+            values = pd.to_numeric(df.iloc[:, 0], errors="coerce").dropna().values
+
+        if len(values) == 0:
+            return {"total": 0, "avg": 0, "min": 0, "max": 0, "count": 0}
 
         return {
-            "total": float(capacity_values.sum()),
-            "avg": float(capacity_values.mean()),
-            "min": float(capacity_values.min()),
-            "max": float(capacity_values.max()),
-            "count": len(capacity_values)
+            "total": float(values.sum()),
+            "avg": float(values.mean()),
+            "min": float(values.min()),
+            "max": float(values.max()),
+            "count": int(len(values)),
         }
     except Exception as e:
-        print(f"Error getting capacity stats: {e}")
+        logging.exception("Error reading capacities %s: %s", capacidades_file, e)
         return {"total": 0, "avg": 0, "min": 0, "max": 0, "count": 0}
 
 
 def get_coordinates_stats(coordenadas_file: str) -> dict:
-    """
-    Get coordinate statistics from coordenadas.csv file.
-    """
     try:
         df = pd.read_csv(coordenadas_file)
         if len(df) > 0:
-            latitudes = df.iloc[:, 1].astype(float).values
-            longitudes = df.iloc[:, 2].astype(float).values
-
+            latitudes = pd.to_numeric(df.iloc[:, 1], errors="coerce").dropna().values
+            longitudes = pd.to_numeric(df.iloc[:, 2], errors="coerce").dropna().values
             return {
-                "avg_lat": float(np.mean(latitudes)),
-                "avg_lon": float(np.mean(longitudes)),
-                "count": len(df)
+                "avg_lat": float(np.mean(latitudes)) if len(latitudes) else 0.0,
+                "avg_lon": float(np.mean(longitudes)) if len(longitudes) else 0.0,
+                "count": int(len(df)),
             }
     except Exception as e:
-        print(f"Error getting coordinate stats: {e}")
+        logging.exception("Error reading coordinates %s: %s", coordenadas_file, e)
 
     return {"avg_lat": 0, "avg_lon": 0, "count": 0}
 
 
 def _try_geocode_xyz(latitude: float, longitude: float) -> dict:
-    """
-    Try to geocode coordinates using geocode.xyz API.
-    URL format: https://geocode.xyz/{lat},{lon}?json=1&auth=YOUR_API_KEY
-    """
     try:
-
-
-        # CORRECT URL FORMAT with auth parameter
         url = f"https://geocode.xyz/{latitude},{longitude}?json=1&auth=500671923186888675793x32130"
-
-
         time.sleep(1)
-
         response = requests.get(url, timeout=10)
 
         if response.status_code == 200:
             data = response.json()
 
-            # Check for rate limiting or error messages
             if isinstance(data, dict):
-                if data.get('error'):
-                    error_msg = data.get('error', {}).get('description', str(data.get('error')))
-                    if 'Throttled' in error_msg or 'rate' in error_msg.lower():
-                        print(f"Geocode.xyz rate limited: {error_msg}")
+                if data.get("error"):
                     return {}
 
-                # Check if we got a valid response
-                if 'standard' in data or 'city' in data:
-                    city = data.get('city') or data.get('standard', {}).get('city', '')
-                    country = data.get('country') or data.get('standard', {}).get('countryname', '')
+                city = data.get("city") or data.get("standard", {}).get("city", "")
+                country = data.get("country") or data.get("standard", {}).get("countryname", "")
 
-                    # Clean up city name
-                    if city:
-                        city = city.replace('"', '').strip()
-                        if "Throttled!" in city:
-                            city = ""
-
-                    # Only return if we actually got a city
-                    if city:
-                        return {
-                            "city": city,
-                            "country": country or "",
-                            "full_location": f"{city}, {country}" if city and country else city
-                        }
-
-    except requests.exceptions.Timeout:
-        print(f"Geocode.xyz timeout for {latitude},{longitude}")
-    except requests.exceptions.RequestException as e:
-        print(f"Geocode.xyz request failed: {e}")
-    except Exception as e:
-        print(f"Unexpected error in geocoding: {e}")
+                city = city.replace('"', "").strip() if city else ""
+                if city:
+                    return {
+                        "city": city,
+                        "country": country or "",
+                        "full_location": f"{city}, {country}" if country else city,
+                    }
+    except Exception:
+        pass
 
     return {}
 
-def update_simulation_history(
-        sim_folder: str,
-        sim_name: str,
-        city: str,
-        num_stations: int,
-        total_bikes: int,
-        capacity_stats: dict,
-        coordinates_stats: dict,
-        stress_type: int,
-        stress: float,
-        walk_cost: float,
-        delta: int,
-        dias: Optional[List[int]] = None,
-        ruta_entrada: str = None,
-):
-    """
-    Update simulations_history.json with new simulation entry.
-    All data is derived from actual files, no hardcoded defaults.
-    """
+
+def get_city_from_coordenadas(coordenadas_file: str) -> dict:
     try:
-        history_path = Path("./results/simulations_history.json")
-
-        # Load existing history or create new
-        if history_path.exists():
-            with open(history_path, "r", encoding="utf-8") as f:
-                history = json.load(f)
-        else:
-            history = {"simulations": []}
-
-        # Create new simulation entry with REAL data only
-        new_sim = {
-            "simname": sim_name,
-            "simfolder": sim_folder,
-            "simdataId": sim_folder,
-            "cityname": city,
-            "numberOfStations": num_stations,
-            "numberOfBikes": total_bikes,
-            "total_capacity": capacity_stats.get("total", 0),
-            "avg_capacity": capacity_stats.get("avg", 0),
-            "min_capacity": capacity_stats.get("min", 0),
-            "max_capacity": capacity_stats.get("max", 0),
-            "coordinates": {
-                "avg_lat": coordinates_stats.get("avg_lat", 0),
-                "avg_lon": coordinates_stats.get("avg_lon", 0)
-            },
-             "simdata": {  # ← SIMULATION PARAMETERS HERE
-                "stress_type": stress_type,
-                "stress": stress,
-                "walk_cost": walk_cost,
-                "delta": delta,
-                "dias": dias if dias else []
-            },
-            "path": str(Path("./results") / sim_folder),
-            "created": datetime.now().isoformat(),
-        }
-
-        # Check if simulation already exists
-        found = False
-        for i, sim in enumerate(history.get("simulations", [])):
-            if sim.get("simfolder") == sim_folder:
-                history["simulations"][i] = new_sim
-                found = True
-                print(f"Updated existing simulation in history: {sim_folder}")
-                break
-
-        if not found:
-            history["simulations"].append(new_sim)
-            print(f"Added new simulation to history: {sim_folder}")
-
-        # Save history
-        history_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(history_path, "w", encoding="utf-8") as f:
-            json.dump(history, f, indent=2, ensure_ascii=False)
-
-        print(f"Simulation history updated successfully at {history_path}")
-
+        df = pd.read_csv(coordenadas_file)
+        if len(df) > 0:
+            lat = float(df.iloc[0, 1])
+            lon = float(df.iloc[0, 2])
+            return _try_geocode_xyz(lat, lon)
     except Exception as e:
-        print(f"Error updating simulation history: {e}")
+        logging.warning("Error geocoding coordinates from %s: %s", coordenadas_file, e)
+
+    return {}
+
+
+def save_simulation_info(
+    ruta_salida: str,
+    city: str,
+    country: str,
+    full_location: str,
+    capacity_stats: dict,
+    coordinates_stats: dict,
+    total_bikes: int,
+) -> None:
+    total_capacity = float(capacity_stats.get("total", 0))
+    utilization = (total_bikes / total_capacity * 100) if total_capacity > 0 else 0.0
+
+    simulation_info = {
+        "CITY": city or "Unknown City",
+        "FULL_LOCATION": full_location or city or "",
+        "COUNTRY": country or "",
+        "STATIONS": {
+            "count": int(capacity_stats.get("count", 0)),
+            "avg_capacity": round(float(capacity_stats.get("avg", 0)), 2),
+        },
+        "TOTAL_CAPACITY": total_capacity,
+        "MIN_CAPACITY": float(capacity_stats.get("min", 0)),
+        "MAX_CAPACITY": float(capacity_stats.get("max", 0)),
+        "CAPACITY_RANGE": f"{int(capacity_stats.get('min', 0))}-{int(capacity_stats.get('max', 0))}",
+        "TOTAL_BIKES": int(total_bikes),
+        "ACTIVE_BIKES": int(total_bikes),
+        "UTILIZATION": {
+            "percentage": round(utilization, 2),
+            "description": f"{utilization:.2f}% utilization",
+        },
+        "COORDINATES": {
+            "average_latitude": float(coordinates_stats.get("avg_lat", 0)),
+            "average_longitude": float(coordinates_stats.get("avg_lon", 0)),
+        },
+        "SIMULATION_ID": Path(ruta_salida).name,
+        "GENERATED_AT": datetime.now().isoformat(),
+    }
+
+    output_path = Path(ruta_salida) / "simulation_info.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(simulation_info, f, indent=2, ensure_ascii=False)
+
+    logging.warning("Saved simulation_info.json: %s", output_path)
+    logging.warning("Saved TOTAL_BIKES=%s ACTIVE_BIKES=%s", total_bikes, total_bikes)
+
+
+def update_simulation_history(
+    sim_folder: str,
+    sim_name: str,
+    city: str,
+    num_stations: int,
+    total_bikes: int,
+    capacity_stats: dict,
+    coordinates_stats: dict,
+    stress_type: int,
+    stress: float,
+    walk_cost: float,
+    delta: int,
+    dias: Optional[List[int]] = None,
+):
+    history_path = Path("./results/simulations_history.json")
+
+    if history_path.exists():
+        with open(history_path, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    else:
+        history = {"simulations": []}
+
+    new_sim = {
+        "simname": sim_name,
+        "simfolder": sim_folder,
+        "simdataId": sim_folder,
+        "cityname": city,
+        "numberOfStations": num_stations,
+        "numberOfBikes": total_bikes,
+        "total_capacity": capacity_stats.get("total", 0),
+        "avg_capacity": capacity_stats.get("avg", 0),
+        "min_capacity": capacity_stats.get("min", 0),
+        "max_capacity": capacity_stats.get("max", 0),
+        "coordinates": {
+            "avg_lat": coordinates_stats.get("avg_lat", 0),
+            "avg_lon": coordinates_stats.get("avg_lon", 0),
+        },
+        "simdata": {
+            "stress_type": stress_type,
+            "stress": stress,
+            "walk_cost": walk_cost,
+            "delta": delta,
+            "dias": dias if dias else [],
+        },
+        "path": str(Path("./results") / sim_folder),
+        "created": datetime.now().isoformat(),
+    }
+
+    sims = history.get("simulations", [])
+    replaced = False
+
+    for i, sim in enumerate(sims):
+        if sim.get("simfolder") == sim_folder:
+            sims[i] = new_sim
+            replaced = True
+            break
+
+    if not replaced:
+        sims.append(new_sim)
+
+    history["simulations"] = sims
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(history_path, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
 
 
 def run_simulation(
-        ruta_entrada: str,
-        ruta_salida: str,
-        stress_type: int,
-        stress: float,
-        walk_cost: float,
-        delta: int,
-        dias: Optional[List[int]] = None,
-        simname: Optional[str] = None,
+    ruta_entrada: str,
+    ruta_salida: str,
+    stress_type: int,
+    stress: float,
+    walk_cost: float,
+    delta: int,
+    dias: Optional[List[int]] = None,
+    simname: Optional[str] = None,
 ) -> None:
-    """
-    High-level simulation used by API.
-    Captures ALL metadata from actual files - NO HARDCODED DEFAULTS.
-    """
     Constantes.DELTA_TIME = delta
     Constantes.COSTE_ANDAR = walk_cost
     Constantes.PORCENTAJE_ESTRES = stress
     Constantes.RUTA_SALIDA = ruta_salida
 
-    # ============ CAPTURE ALL SIMULATION METADATA FROM FILES ============
-    # 1. Get total bikes from *_15min_deltas.csv
-    deltas_files = auxiliar_ficheros.buscar_archivosEntrada(
-        ruta_entrada, ["15min_deltas"]
-    )
-    total_bikes = 0
-    if deltas_files:
-        total_bikes = calculate_total_bikes_from_deltas(deltas_files[0])
-
-    # 2. Get station count and capacity stats
-    num_stations = 0
-    capacity_stats = {"total": 0, "avg": 0, "min": 0, "max": 0, "count": 0}
-
-    try:
-        archivoCapacidad = auxiliar_ficheros.buscar_archivosEntrada(
-            ruta_entrada, ["capacidades"]
-        )[0]
-        capacity_stats = get_capacity_stats_from_capacidades(archivoCapacidad)
-        num_stations = capacity_stats["count"]
-
-        # Copy capacities to results
-        pd.read_csv(archivoCapacidad).to_csv(
-            join(ruta_salida, "capacidades.csv"), index=False
-        )
-    except Exception as e:
-        print(f"Error processing capacities: {e}")
-
-    # 3. Get city from coordinates if available
-    city = ""
-    coordinates_stats = {"avg_lat": 0, "avg_lon": 0, "count": 0}
-
-    try:
-        # First check if coordenadas.csv exists in input
-        coordenadas_files = auxiliar_ficheros.buscar_archivosEntrada(
-            ruta_entrada, ["coordenadas"]
-        )
-        if coordenadas_files:
-            coordinates_stats = get_coordinates_stats(coordenadas_files[0])
-            city = get_city_from_coordenadas(coordenadas_files[0])
-    except Exception as e:
-        print(f"Error processing coordinates: {e}")
-
-    # 4. Extract sim name from folder or use provided
     sim_folder = Path(ruta_salida).name
     if not simname:
         simname = sim_folder
 
-    # 5. Update simulation history with ALL REAL DATA - NO DEFAULTS
-    update_simulation_history(
-        sim_folder=sim_folder,
-        sim_name=simname,
-        city=city,
-        num_stations=num_stations,
-        total_bikes=total_bikes,
-        capacity_stats=capacity_stats,
-        coordinates_stats=coordinates_stats,
-        ruta_entrada=ruta_entrada,
-        stress_type=stress_type,
-        stress=stress,
-        walk_cost=walk_cost,
-        delta=delta,
-        dias=dias,
-    )
-    # ====================================================
+    Path(ruta_salida).mkdir(parents=True, exist_ok=True)
 
-    # Rest of simulation execution...
-    ficheros, ficheros_distancia = GuardarCargarMatrices.cargarDatosParaSimular(
-        ruta_entrada
+    deltas_files = auxiliar_ficheros.buscar_archivosEntrada(ruta_entrada, ["15min_deltas"])
+    logging.warning("Matched deltas files: %s", deltas_files)
+
+    total_bikes = 0
+    if deltas_files:
+        total_bikes = calculate_total_bikes_from_deltas(deltas_files[0])
+
+    archivo_capacidad = auxiliar_ficheros.buscar_archivosEntrada(ruta_entrada, ["capacidades"])[0]
+    capacity_stats = get_capacity_stats_from_capacidades(archivo_capacidad)
+    num_stations = int(capacity_stats["count"])
+
+    shutil.copy2(archivo_capacidad, join(ruta_salida, "capacidades.csv"))
+    logging.warning("Copied capacidades.csv to %s", join(ruta_salida, "capacidades.csv"))
+
+    coordinates_stats = {"avg_lat": 0, "avg_lon": 0, "count": 0}
+    city = ""
+    country = ""
+    full_location = ""
+
+    coordenadas_files = auxiliar_ficheros.buscar_archivosEntrada(ruta_entrada, ["coordenadas"])
+    if coordenadas_files:
+        coordinates_stats = get_coordinates_stats(coordenadas_files[0])
+        geo = get_city_from_coordenadas(coordenadas_files[0])
+        city = geo.get("city", "")
+        country = geo.get("country", "")
+        full_location = geo.get("full_location", city)
+
+    logging.warning(
+        "Sanity check => stations=%s total_capacity=%s total_bikes=%s",
+        num_stations,
+        capacity_stats["total"],
+        total_bikes,
     )
+
+    if capacity_stats["total"] > 0 and total_bikes > capacity_stats["total"]:
+        logging.error(
+            "INVALID TOTAL_BIKES: %s > TOTAL_CAPACITY: %s. Wrong file or wrong parsing.",
+            total_bikes,
+            capacity_stats["total"],
+        )
+
+    ficheros, ficheros_distancia = GuardarCargarMatrices.cargarDatosParaSimular(ruta_entrada)
 
     if dias is not None and len(dias) > 0:
         path_fichero = join(
@@ -413,17 +391,38 @@ def run_simulation(
         matricesSalida, resumen, Constantes.RUTA_SALIDA
     )
 
-    # Save coordinates to results
     if coordenadas is not None:
         pd.DataFrame(coordenadas).to_csv(
             join(Constantes.RUTA_SALIDA, "coordenadas.csv"), index=False
         )
+        logging.warning("Saved coordenadas.csv to %s", join(Constantes.RUTA_SALIDA, "coordenadas.csv"))
 
-    # Copy indices_bicicleta.csv if exists
-    indices_file = auxiliar_ficheros.buscar_archivosEntrada(
-        ruta_entrada, ["indices_bicicleta"]
-    )
+    indices_file = auxiliar_ficheros.buscar_archivosEntrada(ruta_entrada, ["indices_bicicleta"])
     if indices_file:
-        import shutil
         shutil.copy2(indices_file[0], join(ruta_salida, "indices_bicicleta.csv"))
-        print(f"Copied indices_bicicleta.csv to {ruta_salida}")
+        logging.warning("Copied indices_bicicleta.csv to %s", join(ruta_salida, "indices_bicicleta.csv"))
+
+    update_simulation_history(
+        sim_folder=sim_folder,
+        sim_name=simname,
+        city=city,
+        num_stations=num_stations,
+        total_bikes=total_bikes,
+        capacity_stats=capacity_stats,
+        coordinates_stats=coordinates_stats,
+        stress_type=stress_type,
+        stress=stress,
+        walk_cost=walk_cost,
+        delta=delta,
+        dias=dias,
+    )
+
+    save_simulation_info(
+        ruta_salida=ruta_salida,
+        city=city,
+        country=country,
+        full_location=full_location,
+        capacity_stats=capacity_stats,
+        coordinates_stats=coordinates_stats,
+        total_bikes=total_bikes,
+    )

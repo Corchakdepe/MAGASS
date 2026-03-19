@@ -81,34 +81,28 @@ export function useSimulationInfo(runId: string | undefined) {
     return {data, loading, error};
 }
 
-// Helper function to transform JSON format to API response format
 function transformJsonToApiFormat(jsonData: any, runId: string) {
-    // Log for debugging
-    console.log('Transforming JSON data:', jsonData);
-
-    // Extract total bikes from TOTAL_BIKES field
-    const totalBikes = jsonData.TOTAL_BIKES || 0;
-
     return {
         city: jsonData.CITY || "Unknown City",
         stations: jsonData.STATIONS?.count || 0,
         total_capacity: jsonData.TOTAL_CAPACITY || 0,
-        // Map TOTAL_BIKES to active_bikes (this is the initial state)
-        active_bikes: totalBikes,
-        // Also expose total_bikes separately if needed
-        total_bikes: totalBikes,
+        active_bikes: jsonData.ACTIVE_BIKES ?? 0,
+        total_bikes: jsonData.TOTAL_BIKES ?? 0,
         average_capacity: jsonData.STATIONS?.avg_capacity || 0,
         min_capacity: jsonData.MIN_CAPACITY || 0,
         max_capacity: jsonData.MAX_CAPACITY || 0,
-        capacity_range: jsonData.CAPACITY_RANGE || `${jsonData.MIN_CAPACITY || 0}-${jsonData.MAX_CAPACITY || 0}`,
-        simulation_id: runId,
+        capacity_range:
+            jsonData.CAPACITY_RANGE ||
+            `${jsonData.MIN_CAPACITY || 0}-${jsonData.MAX_CAPACITY || 0}`,
+        simulation_id: jsonData.SIMULATION_ID || runId,
         country: jsonData.COUNTRY || "",
         full_location: jsonData.FULL_LOCATION || jsonData.CITY || "",
         coordinates: jsonData.COORDINATES || undefined,
-        // Also include utilization data if needed
-        utilization: jsonData.UTILIZATION ? {
-            percentage: jsonData.UTILIZATION.percentage || 0,
-            description: jsonData.UTILIZATION.description || "0.00% utilization"
-        } : undefined
+        utilization: jsonData.UTILIZATION
+            ? {
+                percentage: jsonData.UTILIZATION.percentage || 0,
+                description: jsonData.UTILIZATION.description || "0.00% utilization",
+            }
+            : undefined,
     };
 }

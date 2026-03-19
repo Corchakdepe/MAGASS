@@ -1,24 +1,30 @@
-// src/components/sidebar/types/mapsAnalysis.ts
 import type { DateRange } from "react-day-picker";
 
-export type MapKey = 
-  | "mapa_densidad" 
-  | "mapa_circulo" 
-  | "mapa_voronoi" 
+export type MapKey =
+  | "mapa_densidad"
+  | "mapa_circulo"
+  | "mapa_voronoi"
   | "mapa_desplazamientos";
 
 export type FilterOperator = ">=" | "<=" | ">" | "<" | "==" | "!=";
 export type FilterKind = "EstValor" | "EstValorDias" | "Horas" | "Porcentaje";
 
+export type QuickGraphKey =
+  | "graf_barras_est_med"
+  | "graf_barras_est_acum"
+  | "graf_linea_comp_est";
+
+export const ALLOWED_GRAPH_MATRIX_IDS = [-1, 0, 1, 9, 10, 11, 12, 13] as const;
+
 export interface UnifiedFilterState {
   operator: string;
   value: string;
-  dayPct: string;          // times_per_day for EstValor/EstValorDias
-  days: string;             // day indices separated by '#' or 'all'
-  allowedFailDays: string;  // exception_days for EstValorDias
-  stationsPct: string;      // percentage for Horas filter
-  stationsList: string;     // stations for Porcentaje filter
-  matrixSelection: string;  // matrix ID (default "1" for Ocupacion_Relativa)
+  dayPct: string;
+  days: string;
+  allowedFailDays: string;
+  stationsPct: string;
+  stationsList: string;
+  matrixSelection: string;
 }
 
 export interface MapConfig {
@@ -47,65 +53,53 @@ export interface GeneratedFilter {
 }
 
 export interface MapsAnalysisState {
-  // Run info
   currentRunId: string | null;
-  
-  // Map selection and configuration
+
   selectedMaps: MapKey[];
   stationsMaps: Record<MapKey, string>;
   instantesMaps: Record<string, string>;
   mapUserName: string;
-  
-  // Filter configuration
+
   filterKind: FilterKind;
   filterState: UnifiedFilterState;
   useFilterForMaps: boolean;
-  
-  // Generated content
+
   generatedMaps: GeneratedMap[];
   generatedFilters: GeneratedFilter[];
-  
-  // Advanced settings
+
   advancedUser: boolean;
   deltaMode: "media" | "acumulada";
   deltaValueTxt: string;
   advancedEntrada: string;
   advancedSalida: string;
   deltaInMin: number;
-  
-  // UI state
+
   isGenerating: boolean;
   lastError: string | null;
-  activeTab: 'maps' | 'graphs' | 'filters';
-  
-  // Matrix selection
-  seleccionAgreg: string;
+  activeTab: "maps" | "graphs" | "filters";
 
-  // New fields to fix useMapsAnalysis and useQuickGraphs
+  seleccionAgreg: string;
   entrada: string;
   salida: string;
   labelsMaps: Record<string, boolean>;
   circleStationsForGraphs: string;
+  quickGraph: QuickGraphKey | null;
 }
 
 export interface MapsAnalysisActions {
-  // Map actions
   setSelectedMaps: (maps: MapKey[] | ((prev: MapKey[]) => MapKey[])) => void;
   setStationsMaps: (stations: Record<MapKey, string> | ((prev: Record<MapKey, string>) => Record<MapKey, string>)) => void;
   setInstantesMaps: (instants: Record<string, string> | ((prev: Record<string, string>) => Record<string, string>)) => void;
   setMapUserName: (name: string) => void;
-  
-  // Filter actions
+
   setFilterKind: (kind: FilterKind) => void;
   setFilterState: (state: UnifiedFilterState | ((prev: UnifiedFilterState) => UnifiedFilterState)) => void;
   setUseFilterForMaps: (use: boolean) => void;
-  
-  // Generated content actions
+
   addGeneratedMap: (map: { type: string; path: string; thumbnail?: string }) => void;
   addGeneratedFilter: (filter: { type: string; path: string; stations: number[] }) => void;
   clearGenerated: () => void;
-  
-  // Advanced settings actions
+
   setAdvancedUser: (advanced: boolean) => void;
   setDeltaMode: (mode: "media" | "acumulada") => void;
   setDeltaValueTxt: (value: string) => void;
@@ -115,14 +109,13 @@ export interface MapsAnalysisActions {
   setSalida: (value: string) => void;
   setLabelsMaps: (value: Record<string, boolean>) => void;
   setCircleStationsForGraphs: (value: string) => void;
-  
-  // UI actions
+  setQuickGraph: (value: QuickGraphKey | null) => void;
+
   setIsGenerating: (isGenerating: boolean) => void;
   setLastError: (error: string | null) => void;
-  setActiveTab: (tab: 'maps' | 'graphs' | 'filters') => void;
+  setActiveTab: (tab: "maps" | "graphs" | "filters") => void;
   setSeleccionAgreg: (value: string) => void;
-  
-  // Reset
+
   reset: () => void;
 }
 

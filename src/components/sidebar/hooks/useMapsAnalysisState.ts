@@ -28,26 +28,21 @@ const DEFAULT_FILTER_STATE = {
 
 const getDefaultState = (runId?: string): MapsAnalysisState => ({
   currentRunId: runId || null,
-
   selectedMaps: [],
   stationsMaps: { ...DEFAULT_STATIONS_MAPS },
   instantesMaps: {},
   mapUserName: "",
-
   filterKind: "EstValorDias" as FilterKind,
   filterState: { ...DEFAULT_FILTER_STATE },
   useFilterForMaps: false,
-
   generatedMaps: [],
   generatedFilters: [],
-
   advancedUser: false,
   deltaMode: "media" as const,
   deltaValueTxt: "",
   advancedEntrada: "",
   advancedSalida: "",
   deltaInMin: 15,
-
   isGenerating: false,
   lastError: null,
   activeTab: 'maps' as const,
@@ -61,11 +56,10 @@ const getDefaultState = (runId?: string): MapsAnalysisState => ({
 
 const STORAGE_KEY_PREFIX = 'maps-analysis-state';
 
-export function useMapsAnalysisState(runId?: string): [
-  MapsAnalysisState,
-  MapsAnalysisActions,
-  boolean
-] {
+export function useMapsAnalysisState(
+  runId?: string,
+  externalStationsMaps?: Record<string, string>
+): [MapsAnalysisState, MapsAnalysisActions, boolean] {
   const storageKey = runId ? `${STORAGE_KEY_PREFIX}-${runId}` : STORAGE_KEY_PREFIX;
 
   const [state, setState, hydrated] = usePersistentState<MapsAnalysisState>(
@@ -83,6 +77,31 @@ export function useMapsAnalysisState(runId?: string): [
       }
     }
   }, [runId, state.currentRunId, storageKey, setState]);
+
+  useEffect(() => {
+    const pickedCircle = externalStationsMaps?.mapa_circulo ?? "";
+    if (!hydrated) return;
+
+    setState(prev => {
+      const nextStationsMaps = {
+        ...prev.stationsMaps,
+        mapa_circulo: pickedCircle,
+      };
+
+      if (
+        prev.circleStationsForGraphs === pickedCircle &&
+        prev.stationsMaps.mapa_circulo === pickedCircle
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        stationsMaps: nextStationsMaps,
+        circleStationsForGraphs: pickedCircle,
+      };
+    });
+  }, [externalStationsMaps?.mapa_circulo, hydrated, setState]);
 
   const setSelectedMaps = useCallback((maps: MapKey[] | ((prev: MapKey[]) => MapKey[])) => {
     setState(prev => ({
