@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -19,7 +19,6 @@ import {
   prettyMapName,
   getMapType,
   extractInstantFromName,
-  buildMapJsonUrl
 } from "../utils/mapUtils";
 import type {
   VisualizationMapsProps,
@@ -28,6 +27,24 @@ import type {
   RawResultItem
 } from "../types";
 import {API_BASE} from "@/lib/analysis/constants";
+
+// Loading skeleton component
+function MapsLoadingSkeleton() {
+  return (
+    <div className="h-full flex flex-col">
+      <div className="w-full h-[120vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
+        <div className="h-14 border-b border-surface-3 bg-surface-2/50 animate-pulse" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="space-y-4 text-center">
+            <div className="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
+            <div className="text-sm text-text-secondary">Loading maps...</div>
+          </div>
+        </div>
+        <div className="h-12 border-t border-surface-3 bg-surface-2/50 animate-pulse" />
+      </div>
+    </div>
+  );
+}
 
 export default function VisualizationMaps({
   runId,
@@ -39,19 +56,97 @@ export default function VisualizationMaps({
   const { toast } = useToast();
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // State
+  // ==================== STATE HOOKS ====================
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoadingContexts, setIsLoadingContexts] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(true);
   const [iframeError, setIframeError] = useState<string | null>(null);
   const [iframeReloadKey, setIframeReloadKey] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mapJsonData, setMapJsonData] = useState<MapContext | null>(null);
+  const [localMaps, setLocalMaps] = useState<RawResultItem[]>([]);
+  const [enrichedMaps, setEnrichedMaps] = useState<RawResultItem[]>([]);
 
   const { persisted, setPersisted, hydrated } = useMapPersistence(runId, pickerOpen);
 
-  // Filter and sort maps
+  // ==================== DATA FETCHING CALLBACKS ====================
+  const fetchAllMapContexts = useCallback(async (mapsToEnrich: RawResultItem[]) => {
+    if (!mapsToEnrich || mapsToEnrich.length === 0) {
+      setIsInitialLoading(false);
+      return;
+    }
+
+    setIsLoadingContexts(true);
+    setLoadingError(null);
+
+    const enriched: RawResultItem[] = [];
+    let completed = 0;
+
+    try {
+      await Promise.all(mapsToEnrich.map(async (map) => {
+        try {
+          if (map.context) {
+            enriched.push(map);
+          } else {
+            const baseName = map.name.replace(/\.(html|png|mp4)$/, '');
+            const jsonFilename = `${baseName}.json`;
+            const jsonUrl = `${API_BASE}/results/file/${runId}/${jsonFilename}`;
+
+            const response = await fetch(jsonUrl);
+            if (response.ok) {
+              const context = await response.json();
+              enriched.push({ ...map, context });
+            } else {
+              enriched.push(map);
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to fetch context for map ${map.id}:`, error);
+          enriched.push(map);
+        } finally {
+          completed++;
+          setLoadingProgress(Math.round((completed / mapsToEnrich.length) * 100));
+        }
+      }));
+
+      setEnrichedMaps(enriched);
+    } catch (error) {
+      console.error('Error fetching map contexts:', error);
+      setLoadingError('Failed to load map metadata');
+      setEnrichedMaps(mapsToEnrich);
+    } finally {
+      setIsLoadingContexts(false);
+      setIsInitialLoading(false);
+    }
+  }, [runId]);
+
+  const fetchMapJson = useCallback(async (map: RawResultItem) => {
+    if (!map?.name) return null;
+
+    const baseName = map.name.replace(/\.(html|png|mp4)$/, '');
+    const jsonFilename = `${baseName}.json`;
+    const jsonUrl = `${API_BASE}/results/file/${runId}/${jsonFilename}`;
+
+    try {
+      const response = await fetch(jsonUrl);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error("Failed to fetch map JSON:", error);
+    }
+    return null;
+  }, [runId]);
+
+  // ==================== USEMEMO FOR FILTERED MAPS ====================
+  // This MUST come before any callbacks that depend on filteredMaps
   const { orderedMaps, filteredMaps, allKinds, allFormats, favoritesSet } = useMemo(() => {
-    const ordered = [...(maps ?? [])].sort((a, b) =>
+    const mapsToUse = enrichedMaps.length > 0 ? enrichedMaps : localMaps;
+
+    const ordered = [...mapsToUse].sort((a, b) =>
       String(a.created ?? "").localeCompare(String(b.created ?? ""))
     );
 
@@ -83,10 +178,10 @@ export default function VisualizationMaps({
       allFormats: Array.from(formats).sort(),
       favoritesSet: favSet,
     };
-  }, [maps, persisted]);
+  }, [enrichedMaps, localMaps, persisted]);
 
-  // Navigation
-  const selectIndex = (idx: number) => {
+  // ==================== CALLBACKS THAT DEPEND ON FILTEREDMAPS ====================
+  const selectIndex = useCallback((idx: number) => {
     setSelectedIndex(idx);
     const m = filteredMaps[idx];
     if (m) {
@@ -95,59 +190,54 @@ export default function VisualizationMaps({
     setMapJsonData(null);
     setIframeError(null);
     setIframeLoading(true);
-  };
+  }, [filteredMaps, setPersisted]);
 
-  const toggleFavorite = (id: string) => {
+  const toggleFavorite = useCallback((id: string) => {
     setPersisted((p) => {
       const set = new Set(p.favoritesIds);
       if (set.has(id)) set.delete(id);
       else set.add(id);
       return { ...p, favoritesIds: Array.from(set) };
     });
-  };
+  }, [setPersisted]);
 
-  const copyToClipboard = async (txt: string, label: string) => {
+  const copyToClipboard = useCallback(async (txt: string, label: string) => {
     try {
       await navigator.clipboard.writeText(txt);
       toast({ title: t("copied"), description: label });
     } catch {
       toast({ title: t("copyFailed"), description: t("clipboardNotAvailable") });
     }
-  };
+  }, [t, toast]);
 
-  const handleReload = () => {
+  const handleReload = useCallback(() => {
     setIframeError(null);
     setIframeLoading(true);
     setIframeReloadKey((k) => k + 1);
-  };
+  }, []);
 
-  const handleResetView = () => {
+  const handleResetView = useCallback(() => {
     sendToMap(iframeRef, { type: "MAP_COMMAND", command: "RESET_VIEW" });
     toast({ title: t("commandSent"), description: t("resetViewIfSupported") });
-  };
+  }, [t, toast]);
 
-  // Fetch companion JSON file
-  const fetchMapJson = async (map: RawResultItem) => {
-    if (!map?.name) return;
-
-    const baseName = map.name.replace(/\.(html|png|mp4)$/, '');
-    const jsonFilename = `${baseName}.json`;
-    const jsonUrl = `${API_BASE}/results/file/${runId}/${jsonFilename}`;
-
-    try {
-      const response = await fetch(jsonUrl);
-      if (response.ok) {
-        const data = await response.json();
-        setMapJsonData(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch map JSON:", error);
-    }
-  };
-
-  // Sync selected index with persisted state
+  // ==================== USEEFFECT HOOKS ====================
   useEffect(() => {
-    if (!hydrated || filteredMaps.length === 0) return;
+    if (maps && maps.length > 0) {
+      setLocalMaps(maps);
+    }
+  }, [maps]);
+
+  useEffect(() => {
+    if (localMaps.length > 0) {
+      fetchAllMapContexts(localMaps);
+    } else {
+      setIsInitialLoading(false);
+    }
+  }, [localMaps, fetchAllMapContexts]);
+
+  useEffect(() => {
+    if (!hydrated || filteredMaps.length === 0 || isInitialLoading) return;
 
     if (persisted.selectedMapId) {
       const idx = filteredMaps.findIndex((m) => String(m.id) === persisted.selectedMapId);
@@ -159,16 +249,29 @@ export default function VisualizationMaps({
     } else {
       setSelectedIndex(0);
     }
-  }, [hydrated, filteredMaps, persisted.selectedMapId]);
+  }, [hydrated, filteredMaps, persisted.selectedMapId, isInitialLoading]);
 
-  // Fetch JSON when active map changes
   useEffect(() => {
-    if (filteredMaps[selectedIndex]) {
-      fetchMapJson(filteredMaps[selectedIndex]);
-    }
-  }, [selectedIndex, filteredMaps]);
+    if (isInitialLoading) return;
 
-  // Keyboard navigation
+    const active = filteredMaps[selectedIndex];
+    if (active) {
+      if (active.context) {
+        setMapJsonData(active.context);
+      } else {
+        fetchMapJson(active).then(data => {
+          if (data) {
+            setMapJsonData(data);
+            setEnrichedMaps(prev =>
+              prev.map(m => m.id === active.id ? { ...m, context: data } : m)
+            );
+          }
+        });
+      }
+    }
+  }, [selectedIndex, filteredMaps, isInitialLoading, fetchMapJson]);
+
+  // ==================== CUSTOM HOOKS ====================
   useMapNavigation({
     selectedIndex,
     maxIndex: filteredMaps.length - 1,
@@ -188,7 +291,6 @@ export default function VisualizationMaps({
     },
   });
 
-  // PostMessage handling
   useMapMessages(onStationPick, (msg) => {
     toast({
       title: t("stationSelected"),
@@ -198,7 +300,72 @@ export default function VisualizationMaps({
     });
   });
 
-  // Empty state - no maps at all
+  // ==================== DERIVED VALUES ====================
+  const active = filteredMaps[selectedIndex] as MapMetadata | undefined;
+  const activeId = active ? String(active.id) : "";
+  const isFav = active ? favoritesSet.has(activeId) : false;
+  const href = active?.api_full_url ?? (active ? `${apiBase}/results/file/${runId}/${active.name}` : "");
+  const isHtml = active?.format === "html";
+  const displayName = active ? prettyMapName(String(active.name ?? "")) : "";
+  const mapType = active ? getMapType(String(active.kind ?? ""), String(active.name ?? "")) : "";
+  const instant = active ? extractInstantFromName(String(active.name ?? "")) : "";
+
+  // Create the station click handler after we have displayName
+  const handleStationClick = useCallback((stationId: number) => {
+    if (onStationPick) {
+      onStationPick({
+        mapName: displayName,
+        station: stationId,
+        data: null
+      });
+    }
+  }, [onStationPick, displayName]);
+
+  // ==================== CONDITIONAL RETURNS ====================
+  if (isInitialLoading) {
+    return <MapsLoadingSkeleton />;
+  }
+
+  if (isLoadingContexts) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="w-full h-[120vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
+          <div className="h-14 border-b border-surface-3 bg-surface-2/50" />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="space-y-4 text-center max-w-md px-4">
+              <div className="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
+              <div className="text-sm font-medium text-text-primary">
+                Loading map metadata...
+              </div>
+              <div className="w-full bg-surface-2 rounded-full h-2">
+                <div
+                  className="bg-accent h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
+              <div className="text-xs text-text-secondary">
+                {loadingProgress}% complete • {enrichedMaps.length} of {localMaps.length} maps loaded
+              </div>
+            </div>
+          </div>
+          <div className="h-12 border-t border-surface-3 bg-surface-2/50" />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-4 p-8">
+        <div className="text-xl font-semibold text-danger">{loadingError}</div>
+        <p className="text-text-secondary">Please try refreshing the page</p>
+        <Button onClick={() => window.location.reload()}>
+          Refresh Page
+        </Button>
+      </div>
+    );
+  }
+
   if (!orderedMaps || orderedMaps.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4 p-8">
@@ -210,7 +377,6 @@ export default function VisualizationMaps({
     );
   }
 
-  // No matches state
   if (!filteredMaps || filteredMaps.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4 p-8">
@@ -235,8 +401,6 @@ export default function VisualizationMaps({
     );
   }
 
-  // Get active map
-  const active = filteredMaps[selectedIndex] as MapMetadata;
   if (!active) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4 p-8">
@@ -245,26 +409,7 @@ export default function VisualizationMaps({
     );
   }
 
-  const activeId = String(active.id);
-  const isFav = favoritesSet.has(activeId);
-  const href = active.api_full_url ?? `${apiBase}/results/file/${runId}/${active.name}`;
-
-  const isHtml = active.format === "html";
-  const displayName = prettyMapName(String(active.name ?? ""));
-  const mapType = getMapType(String(active.kind ?? ""), String(active.name ?? ""));
-  const instant = extractInstantFromName(String(active.name ?? ""));
-
-  // Wrap onStationPick to handle the expected signature
-  const handleStationClick = (stationId: number) => {
-    if (onStationPick) {
-      onStationPick({
-        mapName: displayName,
-        station: stationId,
-        data: null
-      });
-    }
-  };
-
+  // ==================== MAIN RENDER ====================
   return (
     <div className="h-full flex flex-col">
       <div className="w-full h-[120vh] flex flex-col rounded-lg border border-surface-3 bg-surface-1/85 backdrop-blur-md shadow-mac-panel overflow-hidden">
@@ -286,9 +431,7 @@ export default function VisualizationMaps({
           onResetView={handleResetView}
         />
 
-        {/* Main content area with flex column layout */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Map takes all available space */}
           <div className="flex-1 min-h-0">
             <MapViewer
               isHtml={isHtml}
@@ -317,7 +460,6 @@ export default function VisualizationMaps({
             />
           </div>
 
-          {/* Configuration panel - scrollable if needed */}
           <div className="border-t border-surface-3 max-h-[30vh] overflow-y-auto">
             <MapConfiguration
               map={active}

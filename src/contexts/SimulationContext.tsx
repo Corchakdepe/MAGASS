@@ -105,6 +105,7 @@ export function SimulationProvider({
   /**
    * Update context with partial data
    */
+
   const updateContext = useCallback((updates: Partial<BikeSimulationContext>) => {
     setContextState((prev) => {
       if (!prev) {

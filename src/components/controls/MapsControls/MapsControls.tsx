@@ -40,6 +40,8 @@ export type MapsControlsProps = {
     setSelectedMaps: React.Dispatch<React.SetStateAction<MapKey[]>>;
     stationsMaps: Record<MapKey, string>;
     setStationsMaps: React.Dispatch<React.SetStateAction<Record<MapKey, string>>>;
+    // New: shared stations coming from map clicks (mapa_densidad + mapa_circulo only)
+    externalStationsMaps?: Partial<Record<MapKey, string>>;
     instantesMaps: Record<string, string>;
     setInstantesMaps: React.Dispatch<React.SetStateAction<Record<string, string>>>;
     deltaOutMin: number;
@@ -48,7 +50,6 @@ export type MapsControlsProps = {
     onClearExternalStationsMaps?: () => void;
 };
 
-// Default empty stations object
 const DEFAULT_STATIONS_MAPS: Record<MapKey, string> = {
     mapa_densidad: "",
     mapa_circulo: "",
@@ -62,6 +63,7 @@ export function MapsControls({
     setSelectedMaps,
     stationsMaps = DEFAULT_STATIONS_MAPS,
     setStationsMaps,
+    externalStationsMaps,
     instantesMaps = {},
     setInstantesMaps,
     deltaOutMin,
@@ -74,10 +76,19 @@ export function MapsControls({
     const { t } = useLanguage();
     const selectedMap = selectedMaps[0];
 
+    // Merge: externalStationsMaps wins over local stationsMaps for the keys it provides.
+    // This means map clicks are always reflected immediately without any useEffect.
+    const safeStationsMaps = React.useMemo<Record<MapKey, string>>(() => ({
+        ...DEFAULT_STATIONS_MAPS,
+        ...stationsMaps,
+        ...(externalStationsMaps ?? {}),
+    }), [stationsMaps, externalStationsMaps]);
+
     const setStationsFor = (key: MapKey, next: string) => {
         setStationsMaps((prev) => ({ ...prev, [key]: next }));
     };
 
+    // Clear both the local state AND the shared external state
     const clearStationsFor = (key: MapKey) => {
         setStationsMaps((prev) => ({ ...prev, [key]: "" }));
         onClearExternalStationsMaps?.();
@@ -91,11 +102,6 @@ export function MapsControls({
 
     const selectedMapLabel =
         MAPAS.find((m) => m.arg === (selectedMap ?? ""))?.label ?? t('selectMap');
-
-    // Safety check - if stationsMaps is undefined, use default
-    const safeStationsMaps = React.useMemo(() => {
-        return stationsMaps || DEFAULT_STATIONS_MAPS;
-    }, [stationsMaps]);
 
     return (
         <div className="space-y-4">
@@ -161,7 +167,9 @@ export function MapsControls({
                                                             isSelected ? "opacity-100 text-accent" : "opacity-0",
                                                         )}
                                                     />
-                                                    <span className={cn("truncate", isSelected && "text-accent font-medium")}>{m.label}</span>
+                                                    <span className={cn("truncate", isSelected && "text-accent font-medium")}>
+                                                        {m.label}
+                                                    </span>
                                                 </CommandItem>
                                             );
                                         })}
@@ -203,7 +211,7 @@ export function MapsControls({
             {useFilterForMaps && (
                 <div className="flex items-center gap-2 rounded-md bg-accent/5 px-2 py-1.5 border border-accent/20 animate-in fade-in slide-in-from-top-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                    <span className="text-[10px] font-semibold text-accent uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-wider">
                         {t('activeFilter')}
                     </span>
                 </div>
@@ -232,7 +240,7 @@ export function MapsControls({
                                 </Label>
                                 <StationsSelector
                                     mapKey="mapa_densidad"
-                                    value={safeStationsMaps["mapa_densidad"] ?? ""}
+                                    value={safeStationsMaps["mapa_densidad"]}
                                     disabled={useFilterForMaps}
                                     onChange={(_, next) => setStationsFor("mapa_densidad", next)}
                                     onClear={() => clearStationsFor("mapa_densidad")}
@@ -250,7 +258,7 @@ export function MapsControls({
                                 </Label>
                                 <StationsSelector
                                     mapKey="mapa_circulo"
-                                    value={safeStationsMaps["mapa_circulo"] ?? ""}
+                                    value={safeStationsMaps["mapa_circulo"]}
                                     disabled={useFilterForMaps}
                                     onChange={(_, next) => setStationsFor("mapa_circulo", next)}
                                     onClear={() => clearStationsFor("mapa_circulo")}
@@ -335,7 +343,6 @@ export function MapsControls({
                             </div>
 
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                {/* Movimiento */}
                                 <SelectLikeCombobox
                                     label={t('movement')}
                                     placeholder={t('movement')}
@@ -347,7 +354,6 @@ export function MapsControls({
                                     ]}
                                 />
 
-                                {/* Tipo */}
                                 <SelectLikeCombobox
                                     label={t('type')}
                                     placeholder={t('type')}
@@ -431,7 +437,9 @@ function SelectLikeCombobox({
                                                     isSelected ? "opacity-100 text-accent" : "opacity-0",
                                                 )}
                                             />
-                                            <span className={cn("truncate", isSelected && "text-accent font-medium")}>{o.label}</span>
+                                            <span className={cn("truncate", isSelected && "text-accent font-medium")}>
+                                                {o.label}
+                                            </span>
                                         </CommandItem>
                                     );
                                 })}

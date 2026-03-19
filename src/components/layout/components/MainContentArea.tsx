@@ -114,7 +114,7 @@ export function MainContentArea({
                 simulationContext.artifacts.filters.values()
             )
                 .map((artifact) => artifactToRawItem(artifact))
-                .filter((x) => x.format === "csv" || x.format === "json");
+                .filter((x) => x.format === "csv" || x.format === "json" || x.format === "txt");
             setFilters(filterArtifacts);
         } else {
             setFilters([]);

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { prettyMapName } from "../utils/formatters";
+import { getMatrixLabel, formatStations, formatInstants } from "../utils/mapUtils";
 import type { PersistedState, RawResultItem } from "../types";
 
 interface MapPickerProps {
@@ -110,6 +111,7 @@ export function MapPicker({
                   />
                   <span className="text-xs text-text-secondary">
                     {t("onlyFavorites")}
+
                   </span>
                 </div>
               </div>
@@ -188,9 +190,24 @@ export function MapPicker({
                           >
                             {title}
                           </div>
-                          <div className="text-[11px] text-text-tertiary truncate">
-                            {String(m.kind ?? "")} · {String(m.format ?? "")} · id {id}
-                          </div>
+                          {m.context && (
+                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-text-tertiary border-t border-surface-3 pt-1">
+                              <span className="flex items-center gap-1">
+                                <span className="font-medium text-text-secondary">{t("matrix")}:</span> {getMatrixLabel(m.context.matrix_type)}
+                              </span>
+                              {m.context.delta_media !== undefined && (
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium text-text-secondary">Δ:</span> {m.context.delta_media}
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1">
+                                <span className="font-medium text-text-secondary">{t("instant")}:</span> {formatInstants(m.context.instant, m.context.start_instant, m.context.end_instant)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="font-medium text-text-secondary">{t("stations")}:</span> {formatStations(m.context.stations)}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">

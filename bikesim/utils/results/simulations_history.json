@@ -1982,6 +1982,60 @@
       "numberOfBikes": null,
       "simdata": {},
       "simdataId": "20260312_130217_sim_ST0_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "Sevilla stress caminar",
+      "simfolder": "20260317_105926_sim_ST2_S5.00_WC85.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260317_105926_sim_ST2_S5.00_WC85.00_D60"
+    },
+    {
+      "simname": "Sevilla stress bicis",
+      "simfolder": "20260317_110008_sim_ST1_S85.00_WC0.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260317_110008_sim_ST1_S85.00_WC0.00_D60"
+    },
+    {
+      "simname": "Sevilla todos los dias",
+      "simfolder": "20260317_180047_sim_ST3_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260317_180047_sim_ST3_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "Sevilla todos los dias",
+      "simfolder": "20260317_180130_sim_ST3_S50.00_WC50.00_D60",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260317_180130_sim_ST3_S50.00_WC50.00_D60"
+    },
+    {
+      "simname": "Marzo 2021",
+      "simfolder": "20260318_195041_sim_ST1_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260318_195041_sim_ST1_S0.00_WC0.00_D15"
+    },
+    {
+      "simname": "Marzo0 2021",
+      "simfolder": "20260318_195427_sim_ST0_S0.00_WC0.00_D15",
+      "cityname": null,
+      "numberOfStations": null,
+      "numberOfBikes": null,
+      "simdata": {},
+      "simdataId": "20260318_195427_sim_ST0_S0.00_WC0.00_D15"
     }
   ]
 }

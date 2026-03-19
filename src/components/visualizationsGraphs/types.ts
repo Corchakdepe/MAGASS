@@ -100,4 +100,5 @@ export interface GraphItem {
   created?: string;
   url?: string;
   apifullurl?: string;
+  context?: ChartContext;
 }

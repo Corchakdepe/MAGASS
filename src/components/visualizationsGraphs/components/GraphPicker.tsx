@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { prettyGraphName } from "../utils/formatters";
+import { MATRICES } from "@/lib/analysis/constants";
 import type { PersistedState } from "../types";
 
 interface GraphPickerProps {
@@ -33,6 +34,34 @@ interface GraphPickerProps {
   onSelectIndex: (index: number) => void;
   onToggleFavorite: (id: string) => void;
 }
+
+// Helper to get matrix label (redundant but local for simple access)
+const getMatrixLabel = (matrixType: string | number | undefined): string => {
+  if (!matrixType || matrixType === "Unknown") return "Unknown";
+  const matrixId = typeof matrixType === "string" ? parseInt(matrixType, 10) : matrixType;
+  const matrix = MATRICES.find((m) => m.id === matrixId);
+  return matrix ? matrix.label : String(matrixType);
+};
+
+// Helper for formatting days
+const formatDays = (days: number[] | string | undefined): string => {
+  if (!days) return "Not specified";
+  if (typeof days === "string") return days;
+  if (Array.isArray(days)) {
+    if (days.length === 0) return "No days";
+    if (days.length > 5) return `${days.length} days (${days[0]}-${days[days.length - 1]})`;
+    return days.join(", ");
+  }
+  return String(days);
+};
+
+// Helper for formatting stations
+const formatStations = (stations: number[] | undefined): string => {
+  if (!stations) return "Not specified";
+  if (stations.length === 0) return "No stations";
+  if (stations.length > 5) return `${stations.length} stations (${stations.slice(0, 3).join(", ")}...)`;
+  return stations.join(", ");
+};
 
 export function GraphPicker({
   open,
@@ -201,9 +230,19 @@ export function GraphPicker({
                           >
                             {title}
                           </div>
-                          <div className="text-[11px] text-text-tertiary truncate">
-                            {String(m.kind ?? "")} · {String(m.format ?? "")} · {id}
-                          </div>
+                          {m.context && (
+                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-text-tertiary border-t border-surface-3 pt-1">
+                              <span className="flex items-center gap-1">
+                                <span className="font-medium text-text-secondary">{t("matrix")}:</span> {getMatrixLabel(m.context.matrix_type)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="font-medium text-text-secondary">{t("days")}:</span> {formatDays(m.context.days)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <span className="font-medium text-text-secondary">{t("stations")}:</span> {formatStations(m.context.stations)}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">

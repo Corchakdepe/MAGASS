@@ -1,6 +1,6 @@
 import { SidebarProvider, Sidebar } from "@/components/ui/sidebar";
 import SidebarRunHistory from "@/components/sidebar/components/history/SidebarRunHistory";
-import MapsAnalysisPanel from "@/components/sidebar/components/MapsAnalysisPanel";
+import {MapsAnalysisPanel} from "@/components/sidebar/components/MapsAnalysisPanel";
 import FiltersAnalysisPanel from "@/components/sidebar/components/FiltersAnalysisPanel";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
